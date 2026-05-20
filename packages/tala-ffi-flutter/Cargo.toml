@@ -1,0 +1,25 @@
+[package]
+name = "tala-ffi-flutter"
+description = "Flutter bridge facade for Tala cryptographic primitives."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+path = "src/lib.rs"
+
+[features]
+default = []
+frb = []
+
+[dependencies]
+curve25519-dalek = "4"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+tala-crypto = { path = "../tala-crypto" }
+
+[lints]
+workspace = true

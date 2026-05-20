@@ -1,0 +1,24 @@
+[package]
+name = "tala-ffi-tauri"
+description = "Tauri bridge facade for trustee-side Tala cryptographic operations."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[features]
+default = []
+tauri = []
+
+[dependencies]
+curve25519-dalek = "4"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+tala-crypto = { path = "../tala-crypto" }
+
+[lints]
+workspace = true

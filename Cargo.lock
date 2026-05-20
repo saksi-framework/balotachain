@@ -759,6 +759,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "tala-ffi-flutter"
+version = "0.1.0"
+dependencies = [
+ "curve25519-dalek",
+ "serde",
+ "sha2",
+ "tala-crypto",
+]
+
+[[package]]
+name = "tala-ffi-tauri"
+version = "0.1.0"
+dependencies = [
+ "curve25519-dalek",
+ "serde",
+ "sha2",
+ "tala-crypto",
+]
+
+[[package]]
 name = "tala-protocol"
 version = "0.1.0"
 dependencies = [

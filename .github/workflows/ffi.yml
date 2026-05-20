@@ -1,0 +1,40 @@
+name: FFI Bridges
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  rust-ffi:
+    name: Rust FFI crates (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy,rustfmt
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Test bridge crates
+        run: cargo test -p tala-ffi-flutter -p tala-ffi-tauri
+
+      - name: Clippy bridge crates
+        run: cargo clippy -p tala-ffi-flutter -p tala-ffi-tauri --all-targets -- -D warnings
+

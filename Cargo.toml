@@ -2,6 +2,8 @@
 members = [
     "packages/tala-crypto",
     "packages/tala-credentials",
+    "packages/tala-ffi-flutter",
+    "packages/tala-ffi-tauri",
     "packages/tala-protocol",
 ]
 resolver = "2"
