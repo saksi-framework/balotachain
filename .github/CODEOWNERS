@@ -1,0 +1,27 @@
+# Default ownership for the early BalotaChain repository.
+* @Banyel3
+
+# Tala framework packages (Rust).
+/packages/tala-crypto/        @Banyel3
+/packages/tala-credentials/   @Banyel3
+/packages/tala-protocol/      @Banyel3
+/packages/tala-ffi-flutter/   @Banyel3
+/packages/tala-ffi-tauri/     @Banyel3
+
+# Tala framework: Hyperledger Fabric bulletin board (Go).
+/packages/tala-bulletin/                @Banyel3
+/packages/tala-bulletin/chaincode/      @Banyel3
+/packages/tala-bulletin/network/        @Banyel3
+/packages/tala-bulletin/client-sdk/     @Banyel3
+
+# BalotaChain application clients.
+/apps/voter/      @Banyel3
+/apps/trustee/    @Banyel3
+/apps/admin/      @Banyel3
+/apps/auditor/    @Banyel3
+
+# Documentation and repository governance.
+/docs/      @Banyel3
+/spec/      @Banyel3
+/tools/     @Banyel3
+/.github/   @Banyel3
