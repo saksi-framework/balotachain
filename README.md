@@ -18,10 +18,6 @@ Tala is the open-source cryptographic application framework on which BalotaChain
 
 The relationship between the two projects is intentional: BalotaChain is one verifiable application built on top of Tala, and Tala is intended to outlive it as reusable Philippine open-source cryptographic infrastructure. Future Filipino developers and researchers will be able to build their own verifiable systems — beyond elections — on the same primitives. In this repository the framework will eventually live under `packages/tala-*` and the application under `apps/balotachain`.
 
-## Repository Layout
-
-This repository is organized as a monorepo. Future application clients live under `apps/`, reusable Tala packages live under `packages/`, specifications live under `spec/`, documentation lives under `docs/`, and repository-local tooling lives under `tools/`. JavaScript workspace packages use pnpm with Turborepo; Rust crates use the root Cargo workspace; Go modules remain package-local.
-
 ## License
 
 BalotaChain is released under the Apache License 2.0. See [LICENSE](LICENSE).
