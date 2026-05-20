@@ -1,0 +1,18 @@
+[package]
+name = "tala-ffi-tauri"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Tala: Rust -> TypeScript bridge via Tauri commands for the trustee, admin, and auditor apps. Empty skeleton; wired up in issue #8."
+
+[lib]
+name = "tala_ffi_tauri"
+path = "src/lib.rs"
+
+[dependencies]
+tala-crypto = { path = "../tala-crypto" }
+tala-credentials = { path = "../tala-credentials" }
+tala-protocol = { path = "../tala-protocol/rust" }

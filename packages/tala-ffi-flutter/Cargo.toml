@@ -1,0 +1,19 @@
+[package]
+name = "tala-ffi-flutter"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Tala: Rust -> Dart FFI bridge via flutter_rust_bridge for the voter app. Empty skeleton; wired up in issue #8."
+
+[lib]
+name = "tala_ffi_flutter"
+path = "src/lib.rs"
+crate-type = ["staticlib", "cdylib", "lib"]
+
+[dependencies]
+tala-crypto = { path = "../tala-crypto" }
+tala-credentials = { path = "../tala-credentials" }
+tala-protocol = { path = "../tala-protocol/rust" }

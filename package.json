@@ -1,0 +1,16 @@
+{
+  "name": "balotachain",
+  "private": true,
+  "description": "BalotaChain monorepo root — coordinates Tauri TypeScript workspaces. Flutter, Rust, and Go packages are managed by their own toolchains.",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
+  }
+}

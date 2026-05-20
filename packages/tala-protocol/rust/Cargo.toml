@@ -1,0 +1,17 @@
+[package]
+name = "tala-protocol"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Tala: canonical wire types and serialization shared by the Rust crypto stack and the Go Fabric chaincode. Empty skeleton; real types land in issue #7."
+
+[lib]
+name = "tala_protocol"
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
