@@ -1,0 +1,76 @@
+name: Cryptographic review
+description: Request review of a cryptographic construction, parameter choice, proof, or threat model.
+title: "[Crypto review]: "
+labels:
+  - cryptography
+  - review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for public design review. If you believe you found an exploitable vulnerability, do not open a public issue. Follow SECURITY.md for private disclosure.
+  - type: dropdown
+    id: review-subject
+    attributes:
+      label: Review subject
+      description: What kind of cryptographic material needs review?
+      options:
+        - Construction / protocol design
+        - Parameter selection
+        - Security proof
+        - Implementation approach
+        - Threat model
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the construction, parameter, proof, or decision being reviewed.
+    validations:
+      required: true
+  - type: textarea
+    id: threat-model-context
+    attributes:
+      label: Threat model context
+      description: Describe the adversary capabilities, trust assumptions, security goals, and deployment context.
+      placeholder: |
+        - Adversary capabilities:
+        - Trust assumptions:
+        - Security goals:
+        - Deployment or election setting:
+    validations:
+      required: true
+  - type: textarea
+    id: parameters-or-artifacts
+    attributes:
+      label: Parameters, artifacts, or proof details
+      description: List relevant parameters, protocol steps, proof claims, files, commits, or diagrams.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link papers, specifications, ADRs, prior issues, or related implementations.
+      placeholder: |
+        - Paper/spec:
+        - Related issue/ADR:
+        - Implementation reference:
+    validations:
+      required: true
+  - type: textarea
+    id: review-questions
+    attributes:
+      label: Review questions
+      description: What specific questions should reviewers answer?
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Add caveats, known limitations, or non-goals.
+    validations:
+      required: false
