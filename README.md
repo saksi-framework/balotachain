@@ -1,5 +1,7 @@
 # BalotaChain
 
+[![CI](https://github.com/tala-blockchain/balotachain/actions/workflows/ci.yml/badge.svg)](https://github.com/tala-blockchain/balotachain/actions/workflows/ci.yml)
+
 *End-to-end verifiable cryptographic voting on the Tala framework.*
 
 ## Project Status
