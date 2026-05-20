@@ -51,4 +51,3 @@ func TestBallotVectorUsesStableFieldLayout(t *testing.T) {
 		}
 	}
 }
-

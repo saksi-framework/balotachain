@@ -15,6 +15,9 @@ env:
     packages/tala-protocol/go
     packages/tala-bulletin/chaincode
     packages/tala-bulletin/client-sdk
+  # Allow Go to fetch and write missing go.sum entries during CI. The repo
+  # is in early scaffold and not all modules have committed go.sum yet.
+  GOFLAGS: -mod=mod
 
 jobs:
   lint:
