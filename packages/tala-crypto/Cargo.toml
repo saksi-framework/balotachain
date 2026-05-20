@@ -16,6 +16,7 @@ merlin = "3"
 rand_core = "0.6"
 serde = { version = "1", features = ["derive"] }
 subtle = "2"
+tala-protocol = { path = "../tala-protocol" }
 thiserror = "1"
 zeroize = { version = "1", features = ["zeroize_derive"] }
 
