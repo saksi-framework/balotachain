@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible problem in BalotaChain.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve BalotaChain. If this report involves a security vulnerability, do not open a public issue. Use the private disclosure path in SECURITY.md instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the problem.
+      placeholder: What went wrong?
+    validations:
+      required: true
+  - type: dropdown
+    id: affected-component
+    attributes:
+      label: Affected component
+      description: Which part of the project is affected?
+      options:
+        - BalotaChain application
+        - Tala framework
+        - Cryptographic protocol
+        - Chaincode / ledger
+        - Client / user interface
+        - Documentation
+        - Build / tooling
+        - Unknown / not sure
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest set of steps that reproduces the behavior.
+      placeholder: |
+        1. Run ...
+        2. Configure ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Include logs, screenshots, or error output if useful.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Share the relevant runtime, platform, branch, commit, dependency, or deployment details.
+      placeholder: |
+        - OS:
+        - Branch / commit:
+        - Runtime / tool versions:
+        - Deployment or test setup:
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add anything else that may help diagnose the issue.
+    validations:
+      required: false
