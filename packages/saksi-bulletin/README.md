@@ -1,4 +1,4 @@
-# tala-bulletin
+# saksi-bulletin
 
 The bulletin board on Hyperledger Fabric. Three subdirectories:
 

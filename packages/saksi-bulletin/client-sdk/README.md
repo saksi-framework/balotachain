@@ -1,8 +1,8 @@
-# tala-bulletin/client-sdk
+# saksi-bulletin/client-sdk
 
 Go client SDK wrapping `fabric-gateway`. Every non-chaincode caller — admin, trustee, auditor, voter-side relay — talks to the bulletin board through this package.
 
-**Status:** empty Go module. Real implementation lands in issue [#30](https://github.com/tala-blockchain/balotachain/issues/30).
+**Status:** empty Go module. Real implementation lands in issue [#30](https://github.com/saksi-framework/balotachain/issues/30).
 
 ## Why a wrapper
 

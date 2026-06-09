@@ -1,6 +1,6 @@
-# tala-ffi-flutter
+# saksi-ffi-flutter
 
-Flutter bridge facade for voter-facing Tala operations. The crate exposes
+Flutter bridge facade for voter-facing Saksi operations. The crate exposes
 FFI-safe DTOs and functions that `flutter_rust_bridge` can generate Dart
 bindings for when the Flutter voter app lands.
 

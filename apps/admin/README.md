@@ -3,8 +3,8 @@
 Desktop client for election administrators.
 
 - **Platform:** Tauri v2 (Rust backend + TypeScript front end). Targets macOS, Linux, Windows.
-- **Crypto:** linked against the Rust workspace via [`packages/tala-ffi-tauri`](../../packages/tala-ffi-tauri).
-- **Initialized by:** [issue #35](https://github.com/tala-blockchain/balotachain/issues/35).
+- **Crypto:** linked against the Rust workspace via [`packages/saksi-ffi-tauri`](../../packages/saksi-ffi-tauri).
+- **Initialized by:** [issue #35](https://github.com/saksi-framework/balotachain/issues/35).
 
 Covers the election lifecycle:
 

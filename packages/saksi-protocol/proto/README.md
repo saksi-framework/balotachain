@@ -1,7 +1,7 @@
 # Protocol Schema
 
 `tala/protocol/v1/wire.proto` is the canonical schema for bytes that cross a
-trust boundary between BalotaChain clients, Tala cryptographic code, and the
+trust boundary between BalotaChain clients, Saksi cryptographic code, and the
 bulletin board.
 
 Rust bindings are generated with `prost`. Go bindings should be generated with

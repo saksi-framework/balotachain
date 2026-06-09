@@ -1,13 +1,13 @@
-# tala-protocol
+# saksi-protocol
 
 Canonical wire types and serialization shared between the Rust crypto stack, the Go chaincode, and the application clients.
 
-**Status:** empty skeleton. Real types and serialization land in issue [#7](https://github.com/tala-blockchain/balotachain/issues/7).
+**Status:** empty skeleton. Real types and serialization land in issue [#7](https://github.com/saksi-framework/balotachain/issues/7).
 
 ## Layout
 
 ```
-tala-protocol/
+saksi-protocol/
 ├── rust/      # Rust crate (member of the root Cargo workspace)
 │   └── src/lib.rs
 └── go/        # Go module mirroring the Rust types byte-for-byte

@@ -1,13 +1,13 @@
 # Contributing to BalotaChain
 
-Thanks for helping with BalotaChain and the underlying Tala framework. This
+Thanks for helping with BalotaChain and the underlying Saksi framework. This
 project is still early research-grade software, so contributions should make the
 codebase clearer, safer, and easier to review.
 
 ## Goals
 
 - Build an end-to-end verifiable voting application for BalotaChain.
-- Grow Tala as reusable open-source cryptographic infrastructure.
+- Grow Saksi as reusable open-source cryptographic infrastructure.
 - Keep protocol, implementation, and operational decisions reviewable.
 - Favor correctness, auditability, and explicit tradeoffs over speed.
 
@@ -24,18 +24,18 @@ Use stable toolchains unless a file in the repository pins a narrower version.
 
 - **Rust** stable, with the repository minimum supported Rust version documented
   in `rust-toolchain.toml` (currently stable, 1.78+). Used by every crate in the
-  Cargo workspace under `packages/tala-*`.
+  Cargo workspace under `packages/saksi-*`.
 - **Go** matching the `go` directive in
-  `packages/tala-bulletin/chaincode/go.mod` and
-  `packages/tala-bulletin/client-sdk/go.mod` (currently 1.22). Used only inside
-  `packages/tala-bulletin/` and `packages/tala-protocol/go/`.
+  `packages/saksi-bulletin/chaincode/go.mod` and
+  `packages/saksi-bulletin/client-sdk/go.mod` (currently 1.22). Used only inside
+  `packages/saksi-bulletin/` and `packages/saksi-protocol/go/`.
 - **Node.js** matching `.nvmrc`, with pnpm managed through Corepack. Used by
   the Tauri desktop apps under `apps/trustee`, `apps/admin`, `apps/auditor`.
 - **Dart + Flutter** for the mobile voter client under `apps/voter`. Install
   Flutter from <https://docs.flutter.dev/get-started/install>; the Dart SDK
   ships with it.
 - **Docker Desktop or Docker Engine** for the development Hyperledger Fabric
-  network under `packages/tala-bulletin/network/`.
+  network under `packages/saksi-bulletin/network/`.
 - **Git** and the **GitHub CLI** for the branch and pull request workflow.
 
 Platform-specific setup notes are in [docs/dev-environment.md](docs/dev-environment.md).
@@ -45,14 +45,14 @@ Platform-specific setup notes are in [docs/dev-environment.md](docs/dev-environm
 From a fresh clone:
 
 ```sh
-git clone https://github.com/tala-blockchain/balotachain.git
+git clone https://github.com/saksi-framework/balotachain.git
 cd balotachain
 corepack enable
 pnpm install
 cargo check --workspace
-cd packages/tala-bulletin/chaincode && go build ./... && cd -
-cd packages/tala-bulletin/client-sdk && go build ./... && cd -
-cd packages/tala-protocol/go && go build ./... && cd -
+cd packages/saksi-bulletin/chaincode && go build ./... && cd -
+cd packages/saksi-bulletin/client-sdk && go build ./... && cd -
+cd packages/saksi-protocol/go && go build ./... && cd -
 ```
 
 The repository is scaffolded before most packages have real implementations, so
@@ -86,7 +86,7 @@ cargo build --workspace
 Go (per Go module — there are three):
 
 ```sh
-for d in packages/tala-bulletin/chaincode packages/tala-bulletin/client-sdk packages/tala-protocol/go; do
+for d in packages/saksi-bulletin/chaincode packages/saksi-bulletin/client-sdk packages/saksi-protocol/go; do
   (cd "$d" && gofmt -l . && go vet ./... && go test ./... && go build ./...)
 done
 ```
