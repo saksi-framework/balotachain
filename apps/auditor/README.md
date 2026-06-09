@@ -3,7 +3,7 @@
 Desktop client for the public verifier. This client is the keystone of BalotaChain's end-to-end verifiability story: any party — voter, observer, researcher, journalist — can run it against any closed election and independently confirm the result.
 
 - **Platform:** Tauri v2 (Rust backend + TypeScript front end). Targets macOS, Linux, Windows.
-- **Crypto:** linked against the Rust workspace via [`packages/saksi-ffi-tauri`](../../packages/saksi-ffi-tauri).
+- **Crypto:** linked against the [Saksi framework](https://github.com/saksi-framework/saksi)'s `saksi-ffi-tauri`, consumed as a Cargo `git` dependency.
 - **Initialized by:** [issue #36](https://github.com/saksi-framework/balotachain/issues/36).
 
 The audit pipeline verifies, for any closed election:

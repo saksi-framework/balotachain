@@ -1,18 +1,8 @@
 # Default ownership for the early BalotaChain repository.
 * @Banyel3
 
-# Saksi framework packages (Rust).
-/packages/saksi-crypto/        @Banyel3
-/packages/saksi-credentials/   @Banyel3
-/packages/saksi-protocol/      @Banyel3
-/packages/saksi-ffi-flutter/   @Banyel3
-/packages/saksi-ffi-tauri/     @Banyel3
-
-# Saksi framework: Hyperledger Fabric bulletin board (Go).
-/packages/saksi-bulletin/                @Banyel3
-/packages/saksi-bulletin/chaincode/      @Banyel3
-/packages/saksi-bulletin/network/        @Banyel3
-/packages/saksi-bulletin/client-sdk/     @Banyel3
+# The Saksi cryptographic framework now lives in its own repository:
+# https://github.com/saksi-framework/saksi
 
 # BalotaChain application clients.
 /apps/voter/      @Banyel3

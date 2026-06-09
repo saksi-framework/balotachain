@@ -6,18 +6,18 @@ package-specific commands to appear as implementation work lands.
 
 ## Version Policy
 
-- **Rust:** stable. The MSRV is declared in `rust-toolchain.toml`.
-- **Go:** the version declared by `packages/saksi-bulletin/chaincode/go.mod`,
-  `packages/saksi-bulletin/client-sdk/go.mod`, and
-  `packages/saksi-protocol/go/go.mod` (currently 1.22). Used only inside those
-  modules.
 - **Node.js:** the version declared in `.nvmrc`.
 - **pnpm:** the `packageManager` field in `package.json`, through Corepack.
 - **Dart and Flutter:** Flutter stable. The voter app under `apps/voter/`
   targets iOS and Android.
+- **Rust:** stable. Needed to build the Tauri app crates, which depend on the
+  [Saksi framework](https://github.com/saksi-framework/saksi) (`saksi-ffi-tauri`)
+  as a Cargo `git` dependency.
+- **Go:** currently 1.22. Needed when an app-side relay imports the Saksi
+  bulletin client SDK.
 - **Docker:** Docker Desktop or Docker Engine capable of running Hyperledger
-  Fabric containers, for the local Fabric network in
-  `packages/saksi-bulletin/network/`.
+  Fabric containers, for the Saksi development Fabric network (in the Saksi
+  repository).
 
 ## macOS
 
@@ -88,11 +88,12 @@ After cloning:
 ```sh
 corepack enable
 pnpm install
-cargo check --workspace
-for d in packages/saksi-bulletin/chaincode packages/saksi-bulletin/client-sdk packages/saksi-protocol/go; do
-  (cd "$d" && go build ./...)
-done
 ```
+
+The Saksi framework (Rust and Go) is a dependency, not part of this repository;
+it is fetched on demand when the app crates that consume it are built. For
+framework development, clone and build
+[`saksi-framework/saksi`](https://github.com/saksi-framework/saksi) directly.
 
 If a toolchain is missing, run the bootstrap helper for a checklist:
 
@@ -130,8 +131,8 @@ work starts:
 - For Android development, install Android Studio and an Android SDK with the
   emulator, or use a physical device with USB debugging enabled.
 - For iOS development on macOS, install the latest Xcode plus CocoaPods.
-- The voter app links the Rust crypto core through
-  `packages/saksi-ffi-flutter/` via
+- The voter app links the Rust crypto core through the Saksi framework's
+  `saksi-ffi-flutter` (a dependency) via
   [`flutter_rust_bridge`](https://github.com/fzyzcjy/flutter_rust_bridge).
 
 ## Hyperledger Fabric Local Network
@@ -149,6 +150,7 @@ each, matching the 3-of-5 threshold default declared in the architecture.
 Expected future workflow once issue #26 lands:
 
 ```sh
+# In a clone of github.com/saksi-framework/saksi:
 cd packages/saksi-bulletin/network
 ./network.sh up
 ./network.sh deployCC
