@@ -3,7 +3,7 @@
 Desktop client for trustees.
 
 - **Platform:** Tauri v2 (Rust backend + TypeScript front end). Targets macOS, Linux, Windows.
-- **Crypto:** linked against the Rust workspace via [`packages/saksi-ffi-tauri`](../../packages/saksi-ffi-tauri).
+- **Crypto:** linked against the [Saksi framework](https://github.com/saksi-framework/saksi)'s `saksi-ffi-tauri`, consumed as a Cargo `git` dependency.
 - **Initialized by:** [issue #33](https://github.com/saksi-framework/balotachain/issues/33).
 
 The trustee app drives two ceremonies:

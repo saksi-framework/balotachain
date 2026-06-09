@@ -22,21 +22,21 @@ codebase clearer, safer, and easier to review.
 
 Use stable toolchains unless a file in the repository pins a narrower version.
 
-- **Rust** stable, with the repository minimum supported Rust version documented
-  in `rust-toolchain.toml` (currently stable, 1.78+). Used by every crate in the
-  Cargo workspace under `packages/saksi-*`.
-- **Go** matching the `go` directive in
-  `packages/saksi-bulletin/chaincode/go.mod` and
-  `packages/saksi-bulletin/client-sdk/go.mod` (currently 1.22). Used only inside
-  `packages/saksi-bulletin/` and `packages/saksi-protocol/go/`.
 - **Node.js** matching `.nvmrc`, with pnpm managed through Corepack. Used by
   the Tauri desktop apps under `apps/trustee`, `apps/admin`, `apps/auditor`.
 - **Dart + Flutter** for the mobile voter client under `apps/voter`. Install
   Flutter from <https://docs.flutter.dev/get-started/install>; the Dart SDK
   ships with it.
-- **Docker Desktop or Docker Engine** for the development Hyperledger Fabric
-  network under `packages/saksi-bulletin/network/`.
+- **Rust** stable — the Tauri app crates depend on the Saksi framework
+  (`saksi-ffi-tauri`) as a Cargo `git` dependency, so building them pulls and
+  compiles Saksi.
+- **Go** (currently 1.22) — app-side relays import the Saksi bulletin client SDK
+  (`github.com/saksi-framework/saksi/packages/saksi-bulletin/client-sdk`).
 - **Git** and the **GitHub CLI** for the branch and pull request workflow.
+
+The Saksi cryptographic framework itself is developed in its own repository,
+[`saksi-framework/saksi`](https://github.com/saksi-framework/saksi); contribute
+framework changes there.
 
 Platform-specific setup notes are in [docs/dev-environment.md](docs/dev-environment.md).
 
@@ -49,14 +49,12 @@ git clone https://github.com/saksi-framework/balotachain.git
 cd balotachain
 corepack enable
 pnpm install
-cargo check --workspace
-cd packages/saksi-bulletin/chaincode && go build ./... && cd -
-cd packages/saksi-bulletin/client-sdk && go build ./... && cd -
-cd packages/saksi-protocol/go && go build ./... && cd -
 ```
 
-The repository is scaffolded before most packages have real implementations, so
-some commands may initially exercise placeholder packages only.
+The repository is scaffolded before the application clients have real
+implementations, so some commands may initially exercise placeholder packages
+only. Rust and Go dependencies (the Saksi framework) are fetched on demand when
+the app crates that consume them are built.
 
 Flutter setup for `apps/voter/` and Tauri setup for `apps/trustee/`,
 `apps/admin/`, `apps/auditor/` are deferred to the respective scaffolding
@@ -74,22 +72,10 @@ pnpm test
 pnpm build
 ```
 
-Rust (all crates in the Cargo workspace):
-
-```sh
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-cargo build --workspace
-```
-
-Go (per Go module — there are three):
-
-```sh
-for d in packages/saksi-bulletin/chaincode packages/saksi-bulletin/client-sdk packages/saksi-protocol/go; do
-  (cd "$d" && gofmt -l . && go vet ./... && go test ./... && go build ./...)
-done
-```
+Rust and Go checks for the cryptographic framework run in the
+[Saksi repository](https://github.com/saksi-framework/saksi). In this repository,
+Rust and Go are exercised only when an application client that consumes Saksi is
+built.
 
 Dart and Flutter (when `apps/voter/` is initialized in issue #31):
 
