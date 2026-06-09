@@ -1,6 +1,6 @@
 # spec
 
-Protocol specifications, threat model, and formal protocol descriptions for BalotaChain and the Tala framework.
+Protocol specifications, threat model, and formal protocol descriptions for BalotaChain and the Saksi framework.
 
 Contents will accumulate as the project develops. Initial focus:
 

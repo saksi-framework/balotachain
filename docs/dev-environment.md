@@ -7,9 +7,9 @@ package-specific commands to appear as implementation work lands.
 ## Version Policy
 
 - **Rust:** stable. The MSRV is declared in `rust-toolchain.toml`.
-- **Go:** the version declared by `packages/tala-bulletin/chaincode/go.mod`,
-  `packages/tala-bulletin/client-sdk/go.mod`, and
-  `packages/tala-protocol/go/go.mod` (currently 1.22). Used only inside those
+- **Go:** the version declared by `packages/saksi-bulletin/chaincode/go.mod`,
+  `packages/saksi-bulletin/client-sdk/go.mod`, and
+  `packages/saksi-protocol/go/go.mod` (currently 1.22). Used only inside those
   modules.
 - **Node.js:** the version declared in `.nvmrc`.
 - **pnpm:** the `packageManager` field in `package.json`, through Corepack.
@@ -17,7 +17,7 @@ package-specific commands to appear as implementation work lands.
   targets iOS and Android.
 - **Docker:** Docker Desktop or Docker Engine capable of running Hyperledger
   Fabric containers, for the local Fabric network in
-  `packages/tala-bulletin/network/`.
+  `packages/saksi-bulletin/network/`.
 
 ## macOS
 
@@ -89,7 +89,7 @@ After cloning:
 corepack enable
 pnpm install
 cargo check --workspace
-for d in packages/tala-bulletin/chaincode packages/tala-bulletin/client-sdk packages/tala-protocol/go; do
+for d in packages/saksi-bulletin/chaincode packages/saksi-bulletin/client-sdk packages/saksi-protocol/go; do
   (cd "$d" && go build ./...)
 done
 ```
@@ -131,7 +131,7 @@ work starts:
   emulator, or use a physical device with USB debugging enabled.
 - For iOS development on macOS, install the latest Xcode plus CocoaPods.
 - The voter app links the Rust crypto core through
-  `packages/tala-ffi-flutter/` via
+  `packages/saksi-ffi-flutter/` via
   [`flutter_rust_bridge`](https://github.com/fzyzcjy/flutter_rust_bridge).
 
 ## Hyperledger Fabric Local Network
@@ -149,7 +149,7 @@ each, matching the 3-of-5 threshold default declared in the architecture.
 Expected future workflow once issue #26 lands:
 
 ```sh
-cd packages/tala-bulletin/network
+cd packages/saksi-bulletin/network
 ./network.sh up
 ./network.sh deployCC
 ./network.sh down

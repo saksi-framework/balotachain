@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-BalotaChain and Tala pass election parameters, ballots, ciphertexts, proofs,
+BalotaChain and Saksi pass election parameters, ballots, ciphertexts, proofs,
 credential presentations, DKG transcripts, partial decryptions, and tally
 results across trust boundaries. The Rust crypto implementation and Go bulletin
 board code must agree on these bytes exactly.
@@ -23,7 +23,7 @@ schema with `protoc-gen-go` when Go packages consume protocol messages
 directly.
 
 Every top-level wire message includes a `version` field. Transcript-based
-hashing uses domain-separated helpers in `tala-protocol` so NIZK protocols can
+hashing uses domain-separated helpers in `saksi-protocol` so NIZK protocols can
 share a consistent convention.
 
 ## Consequences

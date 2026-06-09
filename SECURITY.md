@@ -6,11 +6,11 @@ BalotaChain is **research-grade software** under active development as part of a
 
 ## Reporting a Vulnerability
 
-If you believe you have found a security vulnerability in BalotaChain or in the underlying Tala framework, please report it privately. Do **not** open a public GitHub issue, discussion, or pull request describing the vulnerability.
+If you believe you have found a security vulnerability in BalotaChain or in the underlying Saksi framework, please report it privately. Do **not** open a public GitHub issue, discussion, or pull request describing the vulnerability.
 
 Send disclosures to:
 
-**security@tala-blockchain.org**
+**security@saksi-framework.org**
 
 Please include:
 
@@ -29,7 +29,7 @@ We follow a **90-day coordinated disclosure** policy. After a report is received
 
 In scope:
 
-- Cryptographic flaws in BalotaChain or Tala constructions, protocols, and implementations.
+- Cryptographic flaws in BalotaChain or Saksi constructions, protocols, and implementations.
 - Vulnerabilities in the application code, chaincode, client, or supporting tooling within this repository.
 - Issues that compromise ballot secrecy, voter privacy, election integrity, or the verifiability properties (cast-as-intended, recorded-as-cast, counted-as-recorded).
 

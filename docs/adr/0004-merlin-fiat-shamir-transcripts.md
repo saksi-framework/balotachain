@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Tala uses transcript-based non-interactive zero-knowledge proofs for encrypted
+Saksi uses transcript-based non-interactive zero-knowledge proofs for encrypted
 ballots, trustee key material, decryption shares, commitments, and credential
 presentations. These protocols need a shared Fiat-Shamir convention with clear
 domain separation.
@@ -18,8 +18,8 @@ message binding explicit.
 
 ## Decision
 
-Tala cryptographic proofs will use Merlin transcripts throughout. Transcript
-labels are defined centrally in `tala-crypto::transcript` and include protocol,
+Saksi cryptographic proofs will use Merlin transcripts throughout. Transcript
+labels are defined centrally in `saksi-crypto::transcript` and include protocol,
 purpose, and version information.
 
 ## Consequences

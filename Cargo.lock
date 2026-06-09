@@ -664,6 +664,72 @@ dependencies = [
 ]
 
 [[package]]
+name = "saksi-credentials"
+version = "0.0.0"
+dependencies = [
+ "curve25519-dalek",
+ "merlin",
+ "proptest",
+ "rand_core 0.6.4",
+ "saksi-crypto",
+ "serde",
+ "subtle",
+ "thiserror",
+ "zeroize",
+]
+
+[[package]]
+name = "saksi-crypto"
+version = "0.0.0"
+dependencies = [
+ "curve25519-dalek",
+ "merlin",
+ "proptest",
+ "rand_core 0.6.4",
+ "saksi-protocol",
+ "serde",
+ "subtle",
+ "thiserror",
+ "zeroize",
+]
+
+[[package]]
+name = "saksi-ffi-flutter"
+version = "0.0.0"
+dependencies = [
+ "curve25519-dalek",
+ "saksi-credentials",
+ "saksi-crypto",
+ "saksi-protocol",
+ "serde",
+ "sha2",
+]
+
+[[package]]
+name = "saksi-ffi-tauri"
+version = "0.0.0"
+dependencies = [
+ "curve25519-dalek",
+ "saksi-credentials",
+ "saksi-crypto",
+ "saksi-protocol",
+ "serde",
+ "sha2",
+]
+
+[[package]]
+name = "saksi-protocol"
+version = "0.0.0"
+dependencies = [
+ "prost",
+ "prost-build",
+ "protoc-bin-vendored",
+ "serde",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -738,72 +804,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "tala-credentials"
-version = "0.0.0"
-dependencies = [
- "curve25519-dalek",
- "merlin",
- "proptest",
- "rand_core 0.6.4",
- "serde",
- "subtle",
- "tala-crypto",
- "thiserror",
- "zeroize",
-]
-
-[[package]]
-name = "tala-crypto"
-version = "0.0.0"
-dependencies = [
- "curve25519-dalek",
- "merlin",
- "proptest",
- "rand_core 0.6.4",
- "serde",
- "subtle",
- "tala-protocol",
- "thiserror",
- "zeroize",
-]
-
-[[package]]
-name = "tala-ffi-flutter"
-version = "0.0.0"
-dependencies = [
- "curve25519-dalek",
- "serde",
- "sha2",
- "tala-credentials",
- "tala-crypto",
- "tala-protocol",
-]
-
-[[package]]
-name = "tala-ffi-tauri"
-version = "0.0.0"
-dependencies = [
- "curve25519-dalek",
- "serde",
- "sha2",
- "tala-credentials",
- "tala-crypto",
- "tala-protocol",
-]
-
-[[package]]
-name = "tala-protocol"
-version = "0.0.0"
-dependencies = [
- "prost",
- "prost-build",
- "protoc-bin-vendored",
- "serde",
- "sha2",
- "thiserror",
 ]
 
 [[package]]
