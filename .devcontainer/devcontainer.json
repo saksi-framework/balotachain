@@ -1,0 +1,26 @@
+{
+  "name": "BalotaChain",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {},
+    "ghcr.io/devcontainers/features/go:1": { "version": "1.26" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@9 --activate && pnpm install --frozen-lockfile || true",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "bulletin-gateway" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "golang.go",
+        "dbaeumer.vscode-eslint",
+        "tauri-apps.tauri-vscode"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}

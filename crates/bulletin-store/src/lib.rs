@@ -133,6 +133,7 @@ pub enum StoreError {
     Io(std::io::Error),
     Parse(serde_json::Error),
     WrongVersion(u32),
+    Http(String),
 }
 
 impl std::fmt::Display for StoreError {
@@ -143,6 +144,7 @@ impl std::fmt::Display for StoreError {
             StoreError::WrongVersion(v) => {
                 write!(f, "bulletin schema version {} not supported", v)
             }
+            StoreError::Http(e) => write!(f, "http: {}", e),
         }
     }
 }
@@ -207,6 +209,60 @@ pub fn results_fingerprint(tally: &BTreeMap<String, RaceResult>) -> String {
     hasher.update(json.as_bytes());
     let digest = hasher.finalize();
     format!("sha256:{}", hex::encode(digest))
+}
+
+/// Where the bulletin lives for a given client run.
+///
+/// `File` is the original local-file behavior. `Http` points at a running
+/// `bulletin-gateway` (the containerized backend), so the same client code works
+/// regardless of which machine it runs on — set `BALOTA_BULLETIN_URL` and every
+/// client shares one backend. The two variants are interchangeable: both expose
+/// `load`/`save` over the identical whole-document contract.
+#[derive(Debug, Clone)]
+pub enum BulletinSource {
+    File(PathBuf),
+    Http(String),
+}
+
+impl BulletinSource {
+    /// Select a source from the environment: `Http` if `BALOTA_BULLETIN_URL` is
+    /// set (and non-empty), otherwise the local file at [`default_path`].
+    pub fn from_env() -> Self {
+        match std::env::var("BALOTA_BULLETIN_URL") {
+            Ok(url) if !url.trim().is_empty() => {
+                BulletinSource::Http(url.trim().trim_end_matches('/').to_string())
+            }
+            _ => BulletinSource::File(default_path()),
+        }
+    }
+
+    pub fn load(&self) -> Result<Bulletin, StoreError> {
+        match self {
+            BulletinSource::File(path) => load(path),
+            BulletinSource::Http(base) => {
+                let resp = ureq::get(&format!("{base}/bulletin"))
+                    .call()
+                    .map_err(|e| StoreError::Http(e.to_string()))?;
+                let bulletin: Bulletin = resp.into_json()?; // io::Error -> StoreError::Io
+                if bulletin.version != SCHEMA_VERSION {
+                    return Err(StoreError::WrongVersion(bulletin.version));
+                }
+                Ok(bulletin)
+            }
+        }
+    }
+
+    pub fn save(&self, bulletin: &Bulletin) -> Result<(), StoreError> {
+        match self {
+            BulletinSource::File(path) => save(path, bulletin),
+            BulletinSource::Http(base) => {
+                ureq::put(&format!("{base}/bulletin"))
+                    .send_json(bulletin)
+                    .map_err(|e| StoreError::Http(e.to_string()))?;
+                Ok(())
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -318,5 +374,37 @@ mod tests {
     fn default_path_includes_home() {
         let p = default_path();
         assert!(p.ends_with(".balotachain/bulletin.json"));
+    }
+
+    #[test]
+    fn from_env_selects_file_or_http() {
+        // edition 2024 makes env mutation unsafe; this is the only test touching the var.
+        unsafe { std::env::remove_var("BALOTA_BULLETIN_URL") };
+        assert!(matches!(
+            BulletinSource::from_env(),
+            BulletinSource::File(_)
+        ));
+
+        unsafe { std::env::set_var("BALOTA_BULLETIN_URL", "http://localhost:8080/") };
+        match BulletinSource::from_env() {
+            // trailing slash trimmed
+            BulletinSource::Http(u) => assert_eq!(u, "http://localhost:8080"),
+            other => panic!("expected Http, got {other:?}"),
+        }
+        unsafe { std::env::remove_var("BALOTA_BULLETIN_URL") };
+    }
+
+    #[test]
+    fn file_source_load_save_roundtrip() {
+        let (_dir, path) = tmp_store();
+        let src = BulletinSource::File(path);
+        let mut b = Bulletin::empty();
+        b.voters.push(Voter {
+            id: "v-1".into(),
+            email: "a@b.c".into(),
+            name: "A".into(),
+        });
+        src.save(&b).unwrap();
+        assert_eq!(src.load().unwrap(), b);
     }
 }

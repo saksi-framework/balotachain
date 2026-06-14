@@ -4,6 +4,10 @@ Orientation for coding agents. Read this first, then the latest update doc, then
 
 ## Latest update
 
+- **2026-06-14:** Containerized backend (Stage 1) — `crates/bulletin-gateway` HTTP service +
+  `docker-compose.yml` + `.devcontainer`. `docker compose up` serves shared bulletin state on
+  `:8080`; verified building/running/persisting in Docker. `BulletinSource` (File|Http) added to
+  `bulletin-store` so clients flip to the gateway via `BALOTA_BULLETIN_URL`. See `docker/README.md`.
 - **2026-06-14:** [Phase 0-3 shipped — one-voter staging demo](docs/updates/2026-06-14-phase-0-3-shipped.md)
   (UI for all 4 apps + real Saksi crypto + file-backed bulletin stand-in + E2E driver; 70 tests green).
 
@@ -47,23 +51,32 @@ pnpm; Rust + Go live in Saksi.
 
 ## Where we left off / next steps
 
-Build session ended green. Resume options:
+Containerized backend (Stage 1) is in and verified. Resume options:
 
-1. **Run the demo locally**:
+1. **⚠ Recover the voter Flutter source.** `apps/voter/lib/` was NOT committed in the Phase 0-3
+   push — only `test/`, platform scaffolding, and `pubspec*` are in git. The voter app won't
+   build until `lib/` (design mirror + screens + services + data) is pushed from the device that
+   built it. Everything else (Rust crates, 3 Tauri apps, gateway) is present.
+2. **Wire clients to the gateway.** Swap the bare `load(path)`/`save(path, b)` calls in each
+   `apps/{trustee,admin,auditor}/src-tauri/src/balota.rs` and `crates/e2e-runner` to
+   `BulletinSource::from_env()` (already in `bulletin-store`, tested). Build each src-tauri to
+   verify. Then with `BALOTA_BULLETIN_URL=http://localhost:8080` all apps share the container.
+3. **Run the containerized backend**: `docker compose up -d --build` (see `docker/README.md`).
+4. **Run the demo locally** (file mode):
    ```
    cargo install --path crates/balota-encrypt           # voter CLI on PATH
    cargo run --release -p e2e-runner -- ~/.balotachain/bulletin.json
    pnpm --filter trustee tauri dev    # in another shell, etc.
-   flutter run -d macos --release  # from apps/voter
+   flutter run -d windows            # from apps/voter (once lib/ recovered)
    ```
-2. **Move toward real Fabric**: install Go locally (or use CI), bring up `fabric-samples`,
-   replace each `lib/bulletin.ts` (and Dart `bulletin_store.dart`) with a
-   `saksi-bulletin/client-sdk` gRPC adapter. Schema unchanged.
-3. **Real proofs**: finish Saksi side (CDS OR proof, Benaloh, credentials, Chaum-Pedersen,
-   Schnorr). All currently SHA-256 stubs.
-4. **Real combine + tally**: replace the deterministic demo tally in
-   `crates/e2e-runner/src/lib.rs::finalize_demo_tally` with proper DKG combine + homomorphic
-   tally decryption (Saksi work).
+5. **Stage 2 — real Fabric**: add Fabric test-network + saksi Go chaincode as compose services;
+   gateway routes the ballot slice through `saksi-bulletin/client-sdk`. Gateway REST surface +
+   schema unchanged, so clients don't change. (Go + Docker ARE installed on this box now.)
+6. **Real proofs**: finish Saksi side (CDS OR, Benaloh, credentials, Chaum-Pedersen, Schnorr —
+   all SHA-256 stubs). Note: saksi now exposes `partial_decrypt_v2` (Phase F); `partial_decrypt`
+   is deprecated.
+7. **Real combine + tally**: replace `crates/e2e-runner/src/lib.rs::finalize_demo_tally` with
+   real DKG combine + homomorphic tally decryption (Saksi work).
 
 ## Locked decisions
 - Use Saksi proof stubs as-is for the demo (real proofs = later Saksi work).
@@ -74,5 +87,7 @@ Build session ended green. Resume options:
 - Architecture is locked in `docs/architecture/2026-05-20-initial-architecture-decisions.md`;
   changes need an ADR (`docs/adr/`, see `template.md`) + maintainer approval.
 - Commits: Conventional Commits. See `CONTRIBUTING.md`.
-- Dev setup: `docs/dev-environment.md`; toolchain check: `tools/bootstrap.{sh,ps1}`.
-- No Go toolchain on the primary dev machine — verify Go via CI / in the Saksi repo.
+- Dev setup: `docs/dev-environment.md`; toolchain check: `tools/bootstrap.{sh,ps1}`. Reproducible
+  env: `.devcontainer/` (Rust + Go + Node/pnpm + Docker).
+- Primary Windows dev box now HAS Go (`go1.26.4`) + Docker (29.5.3) + Compose — the old "no Go
+  here, verify via CI" note is stale; Go/Docker changes can be built and tested locally.

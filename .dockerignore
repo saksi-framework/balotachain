@@ -1,0 +1,15 @@
+# Keep the Docker build context small and deterministic.
+**/target
+**/node_modules
+**/.dart_tool
+**/build
+.git
+**/*.tmp
+**/.balotachain
+apps/voter/ios
+apps/voter/android
+apps/voter/macos
+apps/voter/linux
+apps/voter/windows
+**/src-tauri/target
+docs

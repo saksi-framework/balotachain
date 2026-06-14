@@ -121,4 +121,9 @@ interface BulletinStore {
 }
 ```
 
-To switch to Fabric, replace the file-backed adapter with one that calls `saksi-bulletin/client-sdk` over gRPC. Apps don't change.
+Two backends already implement this in Rust via `BulletinSource` (`crates/bulletin-store`):
+`File` (local JSON) and `Http` (the containerized `bulletin-gateway`, selected with
+`BALOTA_BULLETIN_URL`). See `docker/README.md`.
+
+To switch to real Fabric, back the gateway's ballot slice with `saksi-bulletin/client-sdk` over
+gRPC (Stage 2). The gateway's REST surface and this schema stay the same, so apps don't change.

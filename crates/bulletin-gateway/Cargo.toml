@@ -1,0 +1,25 @@
+[package]
+name = "bulletin-gateway"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+description = "HTTP gateway for the BalotaChain bulletin store. Containerized, network-accessible stand-in for the Hyperledger Fabric bulletin board so all clients share one backend regardless of host machine."
+
+[lib]
+name = "bulletin_gateway"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bulletin-gateway"
+path = "src/main.rs"
+
+[dependencies]
+bulletin-store = { path = "../bulletin-store" }
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "signal"] }
+serde_json = "1"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"

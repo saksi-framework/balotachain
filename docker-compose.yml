@@ -1,0 +1,31 @@
+# BalotaChain backend stack.
+#
+# Stage 1 (this file): the bulletin gateway — a containerized, network-accessible
+# stand-in for the Hyperledger Fabric bulletin board. `docker compose up` brings
+# up shared backend state on http://localhost:8080 so all clients work the same
+# regardless of host machine. State persists in the `balota-state` volume.
+#
+# Clients point at it via BALOTA_BULLETIN_URL=http://localhost:8080 (see README).
+#
+# Stage 2 (later): add a Fabric test-network + saksi Go chaincode and have the
+# gateway route the ballot slice through saksi-bulletin/client-sdk. No client
+# change — the gateway's REST surface stays the same.
+
+services:
+  bulletin-gateway:
+    build:
+      context: .
+      dockerfile: docker/bulletin-gateway.Dockerfile
+    image: balotachain/bulletin-gateway
+    container_name: balota-bulletin-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      BULLETIN_PATH: /data/bulletin.json
+      BULLETIN_ADDR: 0.0.0.0:8080
+    volumes:
+      - balota-state:/data
+    restart: unless-stopped
+
+volumes:
+  balota-state:
