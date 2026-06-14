@@ -168,26 +168,19 @@ jobs:
         working-directory: crates/bulletin-gateway
         run: cargo test
 
-  fabric:
-    # Real Hyperledger Fabric bulletin board base: bring up the test-network and
-    # deploy the saksi chaincode on Linux (it can't run on the dev box — that
-    # path has a space that breaks fabric-samples). A successful deployCC proves
-    # the chaincode packages, installs, approves, and commits against a live
-    # network. Heavy, so it skips PRs; runs on push to main and manual dispatch.
-    #
-    # NOTE: a full on-chain ballot round-trip is NOT asserted here. The chaincode
-    # gates SubmitBallot on an existing, open election, but saksi's
-    # run-one-transaction.sh submits the golden ballot without first calling
-    # CreateElection (and there is no election test-vector yet). Wiring an
-    # election setup before the ballot is saksi-side follow-up work.
-    name: Fabric bulletin (chaincode deploy)
+  adapter:
+    # Pure mapping test for the fabric-adapter (saksi protobuf -> BalotaChain
+    # bulletin JSON). No Fabric needed, so it runs on PRs too. Needs saksi as a
+    # sibling checkout for the path-replaced client-sdk / saksi-protocol modules.
+    name: Fabric adapter (mapping)
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
     steps:
       - name: Check out balotachain
         uses: actions/checkout@v4
+        with:
+          path: balotachain
 
-      - name: Check out saksi (chaincode + client-sdk)
+      - name: Check out saksi
         uses: actions/checkout@v4
         with:
           repository: saksi-framework/saksi
@@ -197,6 +190,43 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.23.4"
+
+      - name: Test mapping
+        working-directory: balotachain/services/fabric-adapter
+        run: go test ./...
+
+  fabric:
+    # Real Hyperledger Fabric bulletin board, end to end on Linux (it can't run
+    # on the dev box — that path has a space that breaks fabric-samples):
+    # bring up the test-network, deploy the saksi chaincode, run the saksi demo
+    # to record a REAL election lifecycle on-chain (CreateElection -> DKG ->
+    # ballots -> close -> partial decryptions -> tally), then start the balotachain
+    # fabric-adapter and assert GET /bulletin returns that real election + tally.
+    # Heavy, so it skips PRs; runs on push to main and manual dispatch.
+    name: Fabric bulletin (real election + adapter)
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    env:
+      FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
+    steps:
+      - name: Check out balotachain
+        uses: actions/checkout@v4
+        with:
+          path: balotachain
+
+      - name: Check out saksi (chaincode + client-sdk + demo)
+        uses: actions/checkout@v4
+        with:
+          repository: saksi-framework/saksi
+          path: saksi
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.4"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install Fabric (samples, binaries, images)
         run: |
@@ -209,17 +239,51 @@ jobs:
         run: go mod vendor
 
       - name: Bring up network and deploy chaincode
-        env:
-          FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
         run: |
           export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
           cd saksi/packages/saksi-bulletin/network
           ./network.sh all
 
+      - name: Record a real election on-chain (saksi demo)
+        run: |
+          export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
+          cd saksi
+          ./tools/saksi-demo.sh gen
+          ./tools/saksi-demo.sh cycle
+
+      - name: Start adapter and assert GET /bulletin reflects the chain
+        run: |
+          set -euo pipefail
+          ORG="$FABRIC_SAMPLES/test-network/organizations/peerOrganizations/org1.example.com"
+          MSP="$ORG/users/User1@org1.example.com/msp"
+          ELECTION_ID="$(jq -r .election_id /tmp/saksi-bundle.json)"
+          echo "election id = $ELECTION_ID"
+
+          cd balotachain/services/fabric-adapter
+          go build -o /tmp/fabric-adapter .
+          ELECTION_ID="$ELECTION_ID" \
+          ADDR=127.0.0.1:8899 \
+          PEER_ENDPOINT=localhost:7051 \
+          GATEWAY_PEER=peer0.org1.example.com \
+          TLS_CERT="$ORG/peers/peer0.org1.example.com/tls/ca.crt" \
+          CERT="$(find "$MSP/signcerts" -type f | head -n1)" \
+          KEY="$(find "$MSP/keystore" -type f | head -n1)" \
+          /tmp/fabric-adapter &
+          ADAPTER_PID=$!
+          trap 'kill "$ADAPTER_PID" 2>/dev/null || true' EXIT
+
+          for i in $(seq 1 20); do curl -fsS 127.0.0.1:8899/healthz && break || sleep 1; done
+          echo
+          curl -fsS 127.0.0.1:8899/bulletin -o /tmp/bulletin.json
+          cat /tmp/bulletin.json | jq .
+
+          jq -e --arg id "$ELECTION_ID" '.election.id == $id' /tmp/bulletin.json
+          jq -e '(.tally.results | to_entries[0].value.candidates | length) > 0' /tmp/bulletin.json
+          jq -e '.tally.trustees_total > 0' /tmp/bulletin.json
+          echo "adapter served the real on-chain election + tally"
+
       - name: Tear down network
         if: always()
-        env:
-          FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
         run: |
           export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
           cd saksi/packages/saksi-bulletin/network
