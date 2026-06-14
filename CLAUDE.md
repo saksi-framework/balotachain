@@ -4,6 +4,15 @@ Orientation for coding agents. Read this first, then the latest update doc, then
 
 ## Latest update
 
+- **2026-06-14:** Stage 2 (real Fabric) — base verified in CI. New `fabric` job (Linux, push/manual
+  only) checks out saksi, installs Fabric 2.5.15, vendors + **deploys the saksi chaincode** to the
+  test-network (deployCC green). Can't run locally: the dev path's space breaks `fabric-samples`
+  (chaincode vendors + builds fine; only bring-up fails). NOT yet asserted: a full on-chain ballot
+  round-trip — the chaincode gates `SubmitBallot` on an existing/open election, but saksi's
+  `run-one-transaction.sh` skips `CreateElection` and there's no election test-vector. Two saksi-side
+  follow-ups: (a) election-setup-before-ballot demo, (b) the gateway↔chaincode integration (Go
+  adapter exposing the lifecycle + JSON↔protobuf mapping). The chaincode is a FULL bulletin board
+  (CreateElection/PublishDKGTranscript/SubmitBallot/CloseElection/SubmitPartialDecryption/PublishTally).
 - **2026-06-14:** Containerized backend (Stage 1) + client wiring (Stage 1.5). `crates/bulletin-gateway`
   HTTP service + `docker-compose.yml` + `.devcontainer`; `docker compose up` serves shared bulletin
   state on `:8080` (verified building/running/persisting). All clients flip to the gateway via
@@ -71,9 +80,13 @@ Containerized backend (Stage 1) is in and verified. Resume options:
    pnpm --filter trustee tauri dev    # in another shell, etc.
    flutter run -d windows            # from apps/voter
    ```
-3. **Stage 2 — real Fabric**: add Fabric test-network + saksi Go chaincode as compose services;
-   gateway routes the ballot slice through `saksi-bulletin/client-sdk`. Gateway REST surface +
-   schema unchanged, so clients don't change. (Go + Docker ARE installed on this box now.)
+3. **Stage 2 — real Fabric (continue)**: base is CI-verified (chaincode deploys). Remaining,
+   mostly saksi-side: (a) a demo that does `CreateElection` (+open) before `SubmitBallot` so a real
+   ballot records on-chain — needs an election test-vector; (b) the gateway↔chaincode integration —
+   a Go adapter exposing the chaincode lifecycle over HTTP + JSON↔protobuf mapping, then point the
+   gateway's ballot/lifecycle ops at it (REST surface + schema unchanged, so clients don't change).
+   Local Fabric needs a space-free path / WSL / devcontainer (the dev path's space breaks
+   fabric-samples); CI is the verification path.
 4. **Real proofs**: finish Saksi side (CDS OR, Benaloh, credentials, Chaum-Pedersen, Schnorr —
    all SHA-256 stubs). Note: saksi now exposes `partial_decrypt_v2` (Phase F); `partial_decrypt`
    is deprecated.
