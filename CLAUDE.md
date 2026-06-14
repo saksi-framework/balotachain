@@ -17,24 +17,48 @@ All crypto / FFI / Fabric chaincode live in the **sibling Saksi repo** (`../saks
 `github.com/saksi-framework/saksi`), consumed as a dependency. This repo manages TS/Tauri via
 pnpm; Rust + Go live in Saksi.
 
-## Current state (2026-06-14)
+## Current state (2026-06-14, end of build session)
 
-- Repo = scaffolding only: monorepo layout, pnpm workspace (`apps/trustee|admin|auditor`),
-  CI (TS only), ADRs 0001–0004, docs, bootstrap scripts. **All four apps are README-only —
-  no UI, no app source yet.**
-- Three high-fidelity designs delivered via claude.design (voter app, trustee console, bulletin
-  board) — to be implemented pixel-faithful. Full design system + screen specs captured in the
-  active plan.
-- Saksi happy-path verified working: `encrypt_ballot`, `partial_decrypt` + DKG combine, Fabric
-  `SubmitBallot`/`GetBallot`, protobuf wire types. Proofs (CDS, Benaloh, credentials,
-  Chaum-Pedersen, Schnorr) are **stubs returning SHA-256 digests** — using as-is for the demo.
+- Plan Phases 0, 1, 2, and E2E verification are **complete**. See
+  `docs/plans/2026-06-14-balotachain-ui-demo-plan.md` for the locked decisions
+  (voter=Flutter, UI-first then wire Saksi, minimal admin UI) and the final test totals.
+- All four client apps now have source + tests + green build pipelines:
+  - `apps/voter` — Flutter (8 screens, splash→verify, Material 3 theme, `flutter_test` 9/9).
+  - `apps/trustee`, `apps/admin`, `apps/auditor` — Tauri 2 + React 18 + TS, vitest passing.
+- Shared design systems:
+  - `packages/ui` — `@balotachain/ui` (tokens + React primitives + 9 icons).
+  - `apps/voter/lib/design/` — Flutter mirror (tokens + 9 widget primitives).
+- Bulletin store (file-backed Fabric stand-in until Docker/Go available):
+  - Schema: `docs/bulletin-store-schema.md`. Path: `~/.balotachain/bulletin.json`.
+  - Crate: `crates/bulletin-store/`. Each Tauri app's `src-tauri/src/balota.rs` exposes Tauri
+    commands wrapping it. Voter writes via the `balota-encrypt` CLI.
+- Real Saksi crypto wired:
+  - voter → `saksi-ffi-flutter::api::encrypt_ballot` (via `crates/balota-encrypt/`, shelled
+    out from Dart with `Process.run`).
+  - trustee → `saksi-ffi-tauri::commands::partial_decrypt` (via Tauri command in
+    `apps/trustee/src-tauri/`).
+- End-to-end driver: `crates/e2e-runner/` (binary `balota-e2e`). Tests the whole one-voter
+  cycle without Tauri/Flutter shells. 2/2 integration tests green.
 
 ## Where we left off / next steps
 
-Planning complete; implementation not started. Resume by:
-1. Read **`docs/plans/2026-06-14-balotachain-ui-demo-plan.md`** (the active plan).
-2. Resolve the 3 OPEN DECISIONS in that plan (voter tech, build depth, admin step).
-3. Execute Phase 0 → 3.
+Build session ended green. Resume options:
+
+1. **Run the demo locally**:
+   ```
+   cargo install --path crates/balota-encrypt           # voter CLI on PATH
+   cargo run --release -p e2e-runner -- ~/.balotachain/bulletin.json
+   pnpm --filter trustee tauri dev    # in another shell, etc.
+   flutter run -d macos --release  # from apps/voter
+   ```
+2. **Move toward real Fabric**: install Go locally (or use CI), bring up `fabric-samples`,
+   replace each `lib/bulletin.ts` (and Dart `bulletin_store.dart`) with a
+   `saksi-bulletin/client-sdk` gRPC adapter. Schema unchanged.
+3. **Real proofs**: finish Saksi side (CDS OR proof, Benaloh, credentials, Chaum-Pedersen,
+   Schnorr). All currently SHA-256 stubs.
+4. **Real combine + tally**: replace the deterministic demo tally in
+   `crates/e2e-runner/src/lib.rs::finalize_demo_tally` with proper DKG combine + homomorphic
+   tally decryption (Saksi work).
 
 ## Locked decisions
 - Use Saksi proof stubs as-is for the demo (real proofs = later Saksi work).

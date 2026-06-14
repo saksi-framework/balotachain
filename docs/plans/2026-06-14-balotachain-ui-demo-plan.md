@@ -73,45 +73,73 @@ Design bundle source: the three claude.design handoff links (Trustee Console / B
 BalotaChain standalone). Each is a gzipped tar with `chats/chat1.md` (full intent transcript),
 `project/*.jsx` (React source), and standalone HTML. Re-fetch from those links if needed.
 
-## OPEN DECISIONS (resolve before implementation)
+## Locked decisions (resolved 2026-06-14)
 
-1. **Voter app tech:** Flutter (honor ADR-0001, port React→Dart, wire `saksi-ffi-flutter`)
-   **vs** React+Tauri/PWA (reuse prototype directly, one design language across all apps, wire
-   `saksi-ffi-tauri`, needs ADR amendment to drop Flutter).
-2. **Build depth:** UI pixel-faithful with mock data first → then wire real Saksi
-   **vs** wire Saksi per app as built.
-3. **Admin step** (no design; needed for full one-voter cycle = create election + register voter +
-   issue credential): seed via setup script/CLI **vs** minimal admin UI in design system
-   **vs** defer (hardcode election params).
+1. **Voter app tech: Flutter** — honors ADR-0001. Port React designs to Dart; wire
+   `saksi-ffi-flutter`. No ADR amendment needed.
+2. **Build depth: UI-first then wire Saksi** — Phase 1 ships all 4 apps pixel-faithful with
+   mock data, Phase 2 swaps in real Saksi calls per app.
+3. **Admin step: minimal admin UI in design system** — small Tauri admin app reusing
+   shared React tokens/primitives; covers create-election, voter register, credential
+   issuance. Replaces the script/CLI option.
 
-Recommendation: React+Tauri voter (fastest, reuse) · UI-first then wire · seed via script.
+## Implementation phases
 
-## Implementation phases (once decisions resolved)
-
-- **Phase 0 — Shared design system:** extract tokens + primitives into a shared package
-  (e.g. `packages/ui` TS/React, or Flutter theme) so all apps pull one source. Map
-  `balota-components.jsx` primitives 1:1.
-- **Phase 1 — Port the 3 UIs pixel-faithful** with mock data, fully clickable:
-  - `apps/voter` — 8 screens + stepped ballot state machine.
-  - `apps/trustee` — Tauri shell + console screen + submit-decryption flow.
-  - `apps/auditor` (or standalone bulletin web page) — bulletin board dashboard.
+- **Phase 0 — Shared design system (two flavors):**
+  - **0a (TS/React):** `packages/ui` — tokens + primitives (PrimaryButton, SecondaryButton,
+    OptionCard, TextInput, TopBar, PageDots, icons) consumed by `apps/trustee`, `apps/admin`,
+    `apps/auditor` (Tauri).
+  - **0b (Flutter):** mirror tokens + widgets as a Flutter theme/package consumed by
+    `apps/voter`. Match React tokens 1:1.
+- **Phase 1 — Port the 4 UIs pixel-faithful** with mock data, fully clickable:
+  - `apps/voter` (Flutter) — 8 screens + stepped ballot state machine.
+  - `apps/trustee` (Tauri/React) — console + submit-decryption flow.
+  - `apps/auditor` (Tauri/React) — bulletin board dashboard.
+  - `apps/admin` (Tauri/React) — create election, register voter, issue credential.
 - **Phase 2 — Wire real Saksi happy-path:**
-  - voter: `encrypt_ballot()` → submit ballot hex to Fabric via client SDK.
-  - trustee: `partial_decrypt()` → DKG combine; advance ceremony.
+  - voter: `encrypt_ballot()` via `saksi-ffi-flutter` → submit ballot hex to Fabric via
+    client SDK.
+  - trustee: `partial_decrypt()` via `saksi-ffi-tauri` → DKG combine; advance ceremony.
   - bulletin/auditor: read ballots + tally from Fabric (`GetBallot`), show results + sha256.
+  - admin: create election + voter register + credential issuance on chain.
   - Bring up `fabric-samples` test-network + deploy saksi chaincode (`network.sh`,
     `run-one-transaction.sh`, `cmd/submit-ballot`).
-- **Phase 3 — Admin/setup** (per decision): create election, register the 1 voter, issue
-  credential (stub nullifier passes chaincode structural check).
-- **ADR:** if voter goes React, write ADR amending ADR-0001 (Flutter → React/Tauri for voter).
 
 ## Verification (end-to-end one-voter cycle)
-1. Start Fabric test-network, deploy chaincode (saksi `tools`/`network.sh`).
-2. Admin/script: create election (3 positions), register 1 voter, issue credential.
-3. Voter app: log in → cast stepped ballot → `encrypt_ballot` → submit → get tracking code.
-4. Confirm ballot recorded on Fabric (`GetBallot`); voter verification screen resolves code.
-5. Trustee console: submit partial decryption → combine → tally decrypted.
-6. Bulletin board: shows final results + integrity stats + sha256 tally fingerprint; verify-vote
-   lookup of the tracking code succeeds.
-7. Tests: `cargo test` (saksi), `pnpm test` (apps), Go chaincode test (note: chaincode/client-sdk
-   Go tests currently fail on setup — needs Fabric test harness fix).
+
+### Status: implemented and green (2026-06-14)
+
+Local dev machine lacks Go and Docker is not running, so Fabric is swapped for a file-backed
+**bulletin store** at `~/.balotachain/bulletin.json` (schema:
+`docs/bulletin-store-schema.md`, crate: `crates/bulletin-store/`). The store is a drop-in
+stand-in — each app's bulletin adapter is a thin interface that can be swapped for the real
+`saksi-bulletin/client-sdk` once Fabric is up.
+
+End-to-end driver: `crates/e2e-runner/` (binary: `balota-e2e`).
+
+```
+cargo run --release -p e2e-runner -- ~/.balotachain/bulletin.json
+```
+
+This runs the full cycle through every library on disk (no Tauri/Flutter shell required):
+admin commands → voter encrypt (real ElGamal via `saksi-ffi-flutter::api::encrypt_ballot`) →
+trustee partial decrypt (real `saksi-ffi-tauri::commands::partial_decrypt`) → demo tally with a
+deterministic `sha256:` fingerprint. After it runs, launching the Tauri apps reads the same
+bulletin and the auditor's verify-vote / tally fingerprint cards reflect real numbers.
+
+### Test totals (2026-06-14, all green)
+
+| Layer            | Count | Command |
+|---|---|---|
+| Rust crates       | 19 | `cargo test -p bulletin-store -p balota-encrypt -p e2e-runner` (9 + 6 + 2 + 2 docs) |
+| Rust src-tauri    | 15 | `cargo test --lib` in `apps/{trustee,admin,auditor}/src-tauri` (4 + 4 + 7) |
+| TS vitest         | 29 | `pnpm -r test` (trustee 7 + admin 6 + auditor 16) |
+| Dart flutter_test | 9  | `flutter test` in `apps/voter` |
+| Type/build/lint   | —  | `pnpm -r typecheck`, `pnpm -r build`, `flutter analyze` all clean |
+
+### Remaining (real-Fabric path, future work)
+
+1. Install Go toolchain locally OR run the demo on a CI runner with Go + Docker preinstalled.
+2. Bring up `fabric-samples` test-network + deploy `saksi-bulletin/chaincode`.
+3. Replace each app's bulletin adapter (one file per app) with a `saksi-bulletin/client-sdk` gRPC implementation.
+4. Implement real DKG combine + tally decryption (currently a deterministic demo tally).
