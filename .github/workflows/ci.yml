@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -166,6 +167,65 @@ jobs:
       - name: Test bulletin-gateway
         working-directory: crates/bulletin-gateway
         run: cargo test
+
+  fabric:
+    # Real Hyperledger Fabric bulletin board: bring up the test-network, deploy
+    # the saksi chaincode, and record one real ballot on-chain. Verifies the
+    # Fabric base (which can't run on the dev box — its path has a space that
+    # breaks fabric-samples). Heavy, so it skips PRs; runs on push to main and
+    # manual dispatch.
+    name: Fabric bulletin (real chaincode)
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Check out balotachain
+        uses: actions/checkout@v4
+
+      - name: Check out saksi (chaincode + client-sdk)
+        uses: actions/checkout@v4
+        with:
+          repository: saksi-framework/saksi
+          path: saksi
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.4"
+
+      - name: Install Fabric (samples, binaries, images)
+        run: |
+          curl -sSL https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh -o install-fabric.sh
+          chmod +x install-fabric.sh
+          ./install-fabric.sh --fabric-version 2.5.15 binary docker samples
+
+      - name: Vendor chaincode dependencies
+        working-directory: saksi/packages/saksi-bulletin/chaincode
+        run: go mod vendor
+
+      - name: Bring up network and deploy chaincode
+        env:
+          FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
+        run: |
+          export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
+          cd saksi/packages/saksi-bulletin/network
+          ./network.sh all
+
+      - name: Record one real ballot on-chain
+        env:
+          FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
+        run: |
+          export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
+          cd saksi/packages/saksi-bulletin/network
+          ./run-one-transaction.sh
+
+      - name: Tear down network
+        if: always()
+        env:
+          FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
+        run: |
+          export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
+          cd saksi/packages/saksi-bulletin/network
+          ./network.sh down || true
 
   build:
     name: Build (${{ matrix.os }})
