@@ -4,6 +4,15 @@ Orientation for coding agents. Read this first, then the latest update doc, then
 
 ## Latest update
 
+- **2026-06-14:** Stage 2 — **read-path link to real Fabric done + CI-verified**. New
+  `services/fabric-adapter/` (Go) connects to the saksi chaincode via client-sdk and serves
+  `GET /bulletin` in the BalotaChain schema, so the auditor/bulletin board views a REAL on-chain
+  election by pointing `BALOTA_BULLETIN_URL` at it. protobuf→JSON mapping is pure + unit-tested
+  (local + `adapter` CI job). The `fabric` CI job records a real election lifecycle on-chain via
+  `saksi-demo` then asserts the adapter's `GET /bulletin` returns it. Read-only: the chaincode
+  verifies real credential signatures, so writing balotachain's stub-credential demo data on-chain
+  needs the full real protocol (deferred — conflicts with the locked "stubs as-is" decision).
+  Saksi #31 (full lifecycle client-sdk + demo bundle generator) made this possible.
 - **2026-06-14:** Stage 2 (real Fabric) — base verified in CI. New `fabric` job (Linux, push/manual
   only) checks out saksi, installs Fabric 2.5.15, vendors + **deploys the saksi chaincode** to the
   test-network (deployCC green). Can't run locally: the dev path's space breaks `fabric-samples`
@@ -80,13 +89,12 @@ Containerized backend (Stage 1) is in and verified. Resume options:
    pnpm --filter trustee tauri dev    # in another shell, etc.
    flutter run -d windows            # from apps/voter
    ```
-3. **Stage 2 — real Fabric (continue)**: base is CI-verified (chaincode deploys). Remaining,
-   mostly saksi-side: (a) a demo that does `CreateElection` (+open) before `SubmitBallot` so a real
-   ballot records on-chain — needs an election test-vector; (b) the gateway↔chaincode integration —
-   a Go adapter exposing the chaincode lifecycle over HTTP + JSON↔protobuf mapping, then point the
-   gateway's ballot/lifecycle ops at it (REST surface + schema unchanged, so clients don't change).
-   Local Fabric needs a space-free path / WSL / devcontainer (the dev path's space breaks
-   fabric-samples); CI is the verification path.
+3. **Stage 2 — real Fabric**: base CI-verified (deploy) and the **read-path link is done**
+   (`services/fabric-adapter` → auditor/bulletin views a real on-chain election; CI-verified).
+   Remaining = the **write path**: making balotachain produce chaincode-valid ballots (real
+   credentials/DKG/presentation proofs end-to-end) — large, reverses the locked "stubs" decision.
+   To actually point the auditor at real Fabric, run the adapter (needs a live network reachable;
+   local Fabric needs a space-free path / WSL — the dev path's space breaks fabric-samples).
 4. **Real proofs**: finish Saksi side (CDS OR, Benaloh, credentials, Chaum-Pedersen, Schnorr —
    all SHA-256 stubs). Note: saksi now exposes `partial_decrypt_v2` (Phase F); `partial_decrypt`
    is deprecated.
