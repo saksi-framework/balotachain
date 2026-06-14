@@ -2,3 +2,4 @@ packages:
   - "apps/trustee"
   - "apps/admin"
   - "apps/auditor"
+  - "packages/*"

@@ -1,0 +1,27 @@
+[package]
+name = "e2e-runner"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+description = "End-to-end one-voter / one-election cycle driver for the BalotaChain staging demo. Stands in for fabric-samples + GitHub Actions until Docker/Go are available locally."
+
+[[bin]]
+name = "balota-e2e"
+path = "src/main.rs"
+
+[lib]
+name = "e2e_runner"
+path = "src/lib.rs"
+
+[dependencies]
+bulletin-store    = { path = "../bulletin-store" }
+balota-encrypt    = { path = "../balota-encrypt" }
+saksi-ffi-flutter = { path = "../../../saksi/packages/saksi-ffi-flutter" }
+saksi-ffi-tauri   = { path = "../../../saksi/packages/saksi-ffi-tauri" }
+chrono            = { version = "0.4", default-features = false, features = ["clock", "std"] }
+sha2              = "0.10"
+hex               = "0.4"
+rand              = "0.8"
+
+[dev-dependencies]
+tempfile = "3"

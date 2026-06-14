@@ -1,0 +1,27 @@
+[package]
+name = "balota-encrypt"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+description = "Saksi ElGamal encrypt CLI used by the voter app over Process.run."
+
+[lib]
+name = "balota_encrypt"
+path = "src/lib.rs"
+
+[[bin]]
+name = "balota-encrypt"
+path = "src/main.rs"
+
+[dependencies]
+saksi-ffi-flutter = { path = "../../../saksi/packages/saksi-ffi-flutter" }
+bulletin-store    = { path = "../bulletin-store" }
+serde             = { version = "1", features = ["derive"] }
+serde_json        = "1"
+chrono            = { version = "0.4", default-features = false, features = ["clock", "std"] }
+rand              = "0.8"
+sha2              = "0.10"
+hex               = "0.4"
+
+[dev-dependencies]
+tempfile = "3"

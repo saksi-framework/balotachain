@@ -1,0 +1,60 @@
+:root {
+  --bc-color-teal: #0F6E6E;
+  --bc-color-teal-dark: #0A5252;
+  --bc-color-teal-light: #E3F1F1;
+  --bc-color-bg: #FAFAF8;
+  --bc-color-surface: #FFFFFF;
+  --bc-color-text-1: #1A2526;
+  --bc-color-text-2: #5C6B6B;
+  --bc-color-success: #2E7D5B;
+  --bc-color-warn: #C8851A;
+  --bc-color-error: #C0392B;
+  --bc-color-border: #E0E4E3;
+
+  --bc-radius-card: 16px;
+  --bc-radius-button: 12px;
+  --bc-radius-pill: 9999px;
+
+  --bc-space-xs: 8px;
+  --bc-space-sm: 16px;
+  --bc-space-md: 24px;
+  --bc-space-lg: 32px;
+
+  --bc-type-body: 16px;
+  --bc-type-h1: 28px;
+  --bc-type-h2: 24px;
+  --bc-type-button: 18px;
+  --bc-line-height: 1.5;
+  --bc-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bc-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --bc-shadow-card: 0 1px 2px rgba(26, 37, 38, 0.06), 0 1px 8px rgba(26, 37, 38, 0.04);
+
+  --bc-min-button-height: 56px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--bc-font-family);
+  font-size: var(--bc-type-body);
+  line-height: var(--bc-line-height);
+  background: var(--bc-color-bg);
+  color: var(--bc-color-text-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+}
