@@ -1,6 +1,11 @@
 # CLAUDE.md — BalotaChain
 
-Orientation for coding agents. Read this first, then the active plan.
+Orientation for coding agents. Read this first, then the latest update doc, then the active plan.
+
+## Latest update
+
+- **2026-06-14:** [Phase 0-3 shipped — one-voter staging demo](docs/updates/2026-06-14-phase-0-3-shipped.md)
+  (UI for all 4 apps + real Saksi crypto + file-backed bulletin stand-in + E2E driver; 70 tests green).
 
 ## What this is
 
