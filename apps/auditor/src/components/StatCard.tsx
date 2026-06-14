@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { tokens } from '@balotachain/ui';
+import type { ReactNode } from "react";
+import { tokens } from "@balotachain/ui";
 
 export type StatCardProps = {
   label: string;
@@ -8,7 +8,12 @@ export type StatCardProps = {
   emphasize?: boolean;
 };
 
-export function StatCard({ label, value, caption, emphasize = false }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  caption,
+  emphasize = false,
+}: StatCardProps) {
   return (
     <div
       style={{
@@ -16,8 +21,8 @@ export function StatCard({ label, value, caption, emphasize = false }: StatCardP
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.card,
         padding: tokens.space.md,
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
         gap: tokens.space.xs,
         minWidth: 0,
       }}
@@ -27,7 +32,7 @@ export function StatCard({ label, value, caption, emphasize = false }: StatCardP
           fontSize: 12,
           fontWeight: 600,
           letterSpacing: 0.4,
-          textTransform: 'uppercase',
+          textTransform: "uppercase",
           color: tokens.color.text2,
         }}
       >
@@ -39,7 +44,7 @@ export function StatCard({ label, value, caption, emphasize = false }: StatCardP
           fontWeight: emphasize ? 700 : 600,
           color: tokens.color.text1,
           lineHeight: 1.2,
-          wordBreak: 'break-word',
+          wordBreak: "break-word",
         }}
       >
         {value}

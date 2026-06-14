@@ -1,5 +1,5 @@
-import { type CSSProperties } from 'react';
-import { tokens } from '../tokens.js';
+import { type CSSProperties } from "react";
+import { tokens } from "../tokens.js";
 
 export type PageDotsProps = {
   count: number;
@@ -8,8 +8,8 @@ export type PageDotsProps = {
 
 export function PageDots({ count, current }: PageDotsProps) {
   const wrap: CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
+    display: "inline-flex",
+    alignItems: "center",
     gap: tokens.space.xs,
   };
 
@@ -21,9 +21,11 @@ export function PageDots({ count, current }: PageDotsProps) {
           width: 8,
           height: 8,
           borderRadius: tokens.radius.pill,
-          background: active ? tokens.color.teal : 'transparent',
-          border: active ? `1px solid ${tokens.color.teal}` : `1px solid ${tokens.color.border}`,
-          transition: 'background 120ms ease, border-color 120ms ease',
+          background: active ? tokens.color.teal : "transparent",
+          border: active
+            ? `1px solid ${tokens.color.teal}`
+            : `1px solid ${tokens.color.border}`,
+          transition: "background 120ms ease, border-color 120ms ease",
         };
         return (
           <span

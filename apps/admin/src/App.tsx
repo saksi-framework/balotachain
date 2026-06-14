@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import {
   tokens,
   PrimaryButton,
@@ -8,11 +14,15 @@ import {
   CheckIcon,
   CopyIcon,
   AlertIcon,
-} from '@balotachain/ui';
-import { Card } from './components/Card';
-import { Chip } from './components/Chip';
-import { Stepper } from './components/Stepper';
-import { defaultElection, defaultVoter, positions as uiPositions } from './mocks/defaults';
+} from "@balotachain/ui";
+import { Card } from "./components/Card";
+import { Chip } from "./components/Chip";
+import { Stepper } from "./components/Stepper";
+import {
+  defaultElection,
+  defaultVoter,
+  positions as uiPositions,
+} from "./mocks/defaults";
 import {
   loadBulletin,
   createElection,
@@ -22,16 +32,16 @@ import {
   type Position,
   type Voter as StoreVoter,
   type Credential as StoreCredential,
-} from './lib/bulletin';
+} from "./lib/bulletin";
 
 type ElectionForm = { name: string; opens: string; closes: string };
 type VoterDraft = { id: string; email: string; name: string };
 type Step = 1 | 2 | 3 | 4;
 
 const STEPS = [
-  { label: '1 Election' },
-  { label: '2 Voter roll' },
-  { label: '3 Credentials' },
+  { label: "1 Election" },
+  { label: "2 Voter roll" },
+  { label: "3 Credentials" },
 ];
 
 const PAGE_MAX = 960;
@@ -40,9 +50,9 @@ const FIELD_MAX = 480;
 // Real schema positions for the bulletin. The UI tile list is keyed by the
 // same titles; we map labels to {id, label, pick} for the Rust backend.
 const SCHEMA_POSITIONS: Position[] = [
-  { id: 'president', label: 'President', pick: 1 },
-  { id: 'vp', label: 'Vice President', pick: 1 },
-  { id: 'senators', label: 'Senators', pick: 12 },
+  { id: "president", label: "President", pick: 1 },
+  { id: "vp", label: "Vice President", pick: 1 },
+  { id: "senators", label: "Senators", pick: 12 },
 ];
 
 function emptyBulletin(): Bulletin {
@@ -68,19 +78,19 @@ function Header() {
         height: 56,
         background: tokens.color.surface,
         borderBottom: `1px solid ${tokens.color.border}`,
-        display: 'flex',
-        alignItems: 'center',
+        display: "flex",
+        alignItems: "center",
       }}
     >
       <div
         style={{
           maxWidth: PAGE_MAX,
-          margin: '0 auto',
-          width: '100%',
+          margin: "0 auto",
+          width: "100%",
           padding: `0 ${tokens.space.md}px`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <div
@@ -96,8 +106,8 @@ function Header() {
         </div>
         <div
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
+            display: "inline-flex",
+            alignItems: "center",
             gap: tokens.space.xs,
             color: tokens.color.text2,
             fontSize: 14,
@@ -113,7 +123,7 @@ function Header() {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label style={{ display: 'block', maxWidth: FIELD_MAX }}>
+    <label style={{ display: "block", maxWidth: FIELD_MAX }}>
       <div
         style={{
           fontSize: 13,
@@ -130,7 +140,13 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionTitle({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) {
   return (
     <div style={{ marginBottom: tokens.space.md }}>
       <h2
@@ -165,19 +181,21 @@ function Banner({
   variant,
   children,
 }: {
-  variant: 'success' | 'error';
+  variant: "success" | "error";
   children: ReactNode;
 }) {
-  const isSuccess = variant === 'success';
+  const isSuccess = variant === "success";
   const fg = isSuccess ? tokens.color.success : tokens.color.error;
-  const bg = isSuccess ? 'rgba(46, 125, 91, 0.08)' : 'rgba(192, 57, 43, 0.08)';
-  const border = isSuccess ? 'rgba(46, 125, 91, 0.24)' : 'rgba(192, 57, 43, 0.24)';
+  const bg = isSuccess ? "rgba(46, 125, 91, 0.08)" : "rgba(192, 57, 43, 0.08)";
+  const border = isSuccess
+    ? "rgba(46, 125, 91, 0.24)"
+    : "rgba(192, 57, 43, 0.24)";
   const Icon = isSuccess ? CheckIcon : AlertIcon;
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
+        display: "flex",
+        alignItems: "center",
         gap: tokens.space.xs,
         padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
         background: bg,
@@ -189,7 +207,7 @@ function Banner({
         marginBottom: tokens.space.md,
       }}
     >
-      <span style={{ color: fg, display: 'inline-flex' }}>
+      <span style={{ color: fg, display: "inline-flex" }}>
         <Icon size={18} />
       </span>
       <span>{children}</span>
@@ -197,14 +215,20 @@ function Banner({
   );
 }
 
-function MonoText({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+function MonoText({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+}) {
   return (
     <span
       style={{
         fontFamily: tokens.type.mono,
         fontSize: 13,
         color: tokens.color.text1,
-        wordBreak: 'break-all',
+        wordBreak: "break-all",
         ...style,
       }}
     >
@@ -228,14 +252,14 @@ function CopyButton({ value }: { value: string }) {
         }
       }}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
+        display: "inline-flex",
+        alignItems: "center",
         gap: 4,
-        background: 'transparent',
+        background: "transparent",
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.button,
-        padding: '4px 8px',
-        cursor: 'pointer',
+        padding: "4px 8px",
+        cursor: "pointer",
         color: copied ? tokens.color.success : tokens.color.text2,
         fontSize: 12,
         fontWeight: 600,
@@ -244,7 +268,7 @@ function CopyButton({ value }: { value: string }) {
       aria-label="Copy"
     >
       {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
-      <span>{copied ? 'Copied' : 'Copy'}</span>
+      <span>{copied ? "Copied" : "Copy"}</span>
     </button>
   );
 }
@@ -263,8 +287,8 @@ function Select({
       value={value}
       onChange={(e) => onChange(e.currentTarget.value)}
       style={{
-        display: 'block',
-        width: '100%',
+        display: "block",
+        width: "100%",
         padding: tokens.space.sm,
         background: tokens.color.surface,
         border: `1px solid ${tokens.color.border}`,
@@ -273,8 +297,8 @@ function Select({
         fontSize: tokens.type.body,
         fontFamily: tokens.type.fontFamily,
         lineHeight: tokens.type.lineHeight,
-        outline: 'none',
-        appearance: 'none',
+        outline: "none",
+        appearance: "none",
       }}
     >
       {children}
@@ -290,14 +314,18 @@ function PositionTile({ title, pick }: { title: string; pick: number }) {
         borderRadius: tokens.radius.button,
         padding: tokens.space.sm,
         background: tokens.color.bg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
         gap: tokens.space.sm,
       }}
     >
       <span
-        style={{ color: tokens.color.text1, fontSize: tokens.type.body, fontWeight: 600 }}
+        style={{
+          color: tokens.color.text1,
+          fontSize: tokens.type.body,
+          fontWeight: 600,
+        }}
       >
         {title}
       </span>
@@ -312,7 +340,7 @@ function VoterRollTable({ voters }: { voters: StoreVoter[] }) {
     fontSize: 14,
     color: tokens.color.text1,
     borderTop: `1px solid ${tokens.color.border}`,
-    textAlign: 'left',
+    textAlign: "left",
   };
   const head: CSSProperties = {
     ...cell,
@@ -320,8 +348,8 @@ function VoterRollTable({ voters }: { voters: StoreVoter[] }) {
     fontSize: 12,
     fontWeight: 600,
     letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    borderTop: 'none',
+    textTransform: "uppercase",
+    borderTop: "none",
     background: tokens.color.bg,
   };
   return (
@@ -329,10 +357,10 @@ function VoterRollTable({ voters }: { voters: StoreVoter[] }) {
       style={{
         border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.button,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
     >
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={head}>ID</th>
@@ -344,7 +372,11 @@ function VoterRollTable({ voters }: { voters: StoreVoter[] }) {
           {voters.length === 0 ? (
             <tr>
               <td
-                style={{ ...cell, color: tokens.color.text2, fontStyle: 'italic' }}
+                style={{
+                  ...cell,
+                  color: tokens.color.text2,
+                  fontStyle: "italic",
+                }}
                 colSpan={3}
               >
                 No voters registered yet.
@@ -369,7 +401,9 @@ function VoterRollTable({ voters }: { voters: StoreVoter[] }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space.xs }}>
+    <div
+      style={{ display: "flex", alignItems: "center", gap: tokens.space.xs }}
+    >
       <span
         style={{
           width: 80,
@@ -377,7 +411,7 @@ function Row({ label, value }: { label: string; value: string }) {
           color: tokens.color.text2,
           fontWeight: 600,
           letterSpacing: 0.4,
-          textTransform: 'uppercase',
+          textTransform: "uppercase",
           flexShrink: 0,
         }}
       >
@@ -392,7 +426,13 @@ function Row({ label, value }: { label: string; value: string }) {
 function CredentialList({ creds }: { creds: StoreCredential[] }) {
   if (creds.length === 0) return null;
   return (
-    <div style={{ marginTop: tokens.space.md, display: 'grid', gap: tokens.space.xs }}>
+    <div
+      style={{
+        marginTop: tokens.space.md,
+        display: "grid",
+        gap: tokens.space.xs,
+      }}
+    >
       <div
         style={{
           fontSize: 13,
@@ -411,22 +451,22 @@ function CredentialList({ creds }: { creds: StoreCredential[] }) {
             borderRadius: tokens.radius.button,
             padding: tokens.space.sm,
             background: tokens.color.bg,
-            display: 'grid',
+            display: "grid",
             gap: 6,
           }}
         >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               gap: tokens.space.sm,
             }}
           >
             <div
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
+                display: "inline-flex",
+                alignItems: "center",
                 gap: tokens.space.xs,
               }}
             >
@@ -466,7 +506,7 @@ export default function App() {
   });
   const [voterError, setVoterError] = useState<string | null>(null);
 
-  const [selectedVoterId, setSelectedVoterId] = useState<string>('');
+  const [selectedVoterId, setSelectedVoterId] = useState<string>("");
 
   // Hydrate from the bulletin store on mount. If the Tauri bridge is not
   // available (e.g. running in a browser, vitest), fall back to local state
@@ -496,8 +536,8 @@ export default function App() {
 
   const canRegister = useMemo(
     () =>
-      voterDraft.id.trim() !== '' &&
-      voterDraft.name.trim() !== '' &&
+      voterDraft.id.trim() !== "" &&
+      voterDraft.name.trim() !== "" &&
       validEmail(voterDraft.email),
     [voterDraft],
   );
@@ -524,7 +564,7 @@ export default function App() {
 
   async function handleRegisterVoter() {
     if (!canRegister) {
-      setVoterError('Provide a voter ID, a valid email, and a display name.');
+      setVoterError("Provide a voter ID, a valid email, and a display name.");
       return;
     }
     const id = voterDraft.id.trim();
@@ -552,7 +592,7 @@ export default function App() {
         ],
       }));
     }
-    setVoterDraft({ id: '', email: '', name: '' });
+    setVoterDraft({ id: "", email: "", name: "" });
   }
 
   function handleAdvanceToCredentials() {
@@ -572,7 +612,9 @@ export default function App() {
       // Local fallback so the credential list still shows something useful.
       const buf = new Uint8Array(16);
       crypto.getRandomValues(buf);
-      const token = Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('');
+      const token = Array.from(buf, (b) =>
+        b.toString(16).padStart(2, "0"),
+      ).join("");
       const nullifier = `sha256:${token}${token}`;
       setBulletin((prev) => ({
         ...prev,
@@ -602,7 +644,7 @@ export default function App() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: "100vh",
         background: tokens.color.bg,
         fontFamily: tokens.type.fontFamily,
         color: tokens.color.text1,
@@ -613,15 +655,13 @@ export default function App() {
       <main
         style={{
           maxWidth: PAGE_MAX,
-          margin: '0 auto',
+          margin: "0 auto",
           padding: tokens.space.md,
-          display: 'grid',
+          display: "grid",
           gap: tokens.space.md,
         }}
       >
-        {currentStep !== 4 && (
-          <Stepper steps={STEPS} current={currentStep} />
-        )}
+        {currentStep !== 4 && <Stepper steps={STEPS} current={currentStep} />}
 
         {backendError && (
           <Banner variant="error">
@@ -637,7 +677,7 @@ export default function App() {
                 Election created. ID: {electionId}
               </Banner>
             )}
-            <div style={{ display: 'grid', gap: tokens.space.md }}>
+            <div style={{ display: "grid", gap: tokens.space.md }}>
               <Field label="Election name">
                 <TextInput
                   value={election.name}
@@ -675,7 +715,7 @@ export default function App() {
                 >
                   Positions
                 </div>
-                <div style={{ display: 'grid', gap: tokens.space.xs }}>
+                <div style={{ display: "grid", gap: tokens.space.xs }}>
                   {uiPositions.map((p) => (
                     <PositionTile key={p.title} title={p.title} pick={p.pick} />
                   ))}
@@ -691,7 +731,7 @@ export default function App() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <PrimaryButton onClick={handleCreateElection}>
                   Create election
                 </PrimaryButton>
@@ -704,7 +744,7 @@ export default function App() {
           <Card>
             <SectionTitle title="Register voter" />
             {voterError && <Banner variant="error">{voterError}</Banner>}
-            <div style={{ display: 'grid', gap: tokens.space.md }}>
+            <div style={{ display: "grid", gap: tokens.space.md }}>
               <Field label="Voter ID">
                 <TextInput
                   value={voterDraft.id}
@@ -718,7 +758,10 @@ export default function App() {
                 <TextInput
                   value={voterDraft.email}
                   onChange={(e) =>
-                    setVoterDraft({ ...voterDraft, email: e.currentTarget.value })
+                    setVoterDraft({
+                      ...voterDraft,
+                      email: e.currentTarget.value,
+                    })
                   }
                   placeholder="voter1@wmsu.edu.ph"
                   type="email"
@@ -728,7 +771,10 @@ export default function App() {
                 <TextInput
                   value={voterDraft.name}
                   onChange={(e) =>
-                    setVoterDraft({ ...voterDraft, name: e.currentTarget.value })
+                    setVoterDraft({
+                      ...voterDraft,
+                      name: e.currentTarget.value,
+                    })
                   }
                   placeholder="Demo Voter"
                 />
@@ -751,18 +797,27 @@ export default function App() {
 
               <div
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   gap: tokens.space.sm,
-                  flexWrap: 'wrap',
+                  flexWrap: "wrap",
                 }}
               >
-                <SecondaryButton onClick={() => setCurrentStep(1)}>Back</SecondaryButton>
+                <SecondaryButton onClick={() => setCurrentStep(1)}>
+                  Back
+                </SecondaryButton>
                 <div
-                  style={{ display: 'inline-flex', gap: tokens.space.xs, flexWrap: 'wrap' }}
+                  style={{
+                    display: "inline-flex",
+                    gap: tokens.space.xs,
+                    flexWrap: "wrap",
+                  }}
                 >
-                  <PrimaryButton onClick={handleRegisterVoter} disabled={!canRegister}>
+                  <PrimaryButton
+                    onClick={handleRegisterVoter}
+                    disabled={!canRegister}
+                  >
                     Register voter
                   </PrimaryButton>
                   <PrimaryButton
@@ -783,7 +838,7 @@ export default function App() {
               title="Issue credential"
               subtitle="A blinded credential ties a voter to a one-time nullifier without revealing identity."
             />
-            <div style={{ display: 'grid', gap: tokens.space.md }}>
+            <div style={{ display: "grid", gap: tokens.space.md }}>
               <Field label="Voter">
                 <Select value={selectedVoterId} onChange={setSelectedVoterId}>
                   {voters.map((v) => (
@@ -796,9 +851,9 @@ export default function App() {
 
               <div
                 style={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
                 }}
               >
                 <PrimaryButton
@@ -813,16 +868,21 @@ export default function App() {
 
               <div
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                   gap: tokens.space.sm,
                   marginTop: tokens.space.sm,
-                  flexWrap: 'wrap',
+                  flexWrap: "wrap",
                 }}
               >
-                <SecondaryButton onClick={() => setCurrentStep(2)}>Back</SecondaryButton>
-                <PrimaryButton onClick={handleFinish} disabled={creds.length === 0}>
+                <SecondaryButton onClick={() => setCurrentStep(2)}>
+                  Back
+                </SecondaryButton>
+                <PrimaryButton
+                  onClick={handleFinish}
+                  disabled={creds.length === 0}
+                >
                   Finish setup
                 </PrimaryButton>
               </div>
@@ -831,17 +891,17 @@ export default function App() {
         )}
 
         {currentStep === 4 && (
-          <Card style={{ textAlign: 'center', padding: tokens.space.lg }}>
+          <Card style={{ textAlign: "center", padding: tokens.space.lg }}>
             <div
               style={{
                 width: 64,
                 height: 64,
                 borderRadius: tokens.radius.pill,
-                background: 'rgba(46, 125, 91, 0.12)',
+                background: "rgba(46, 125, 91, 0.12)",
                 color: tokens.color.success,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
                 marginBottom: tokens.space.md,
               }}
             >
@@ -866,19 +926,19 @@ export default function App() {
                 maxWidth: 520,
               }}
             >
-              1 election, {voters.length} voter(s), {creds.length} credential(s) issued.
-              The demo can now run end-to-end.
+              1 election, {voters.length} voter(s), {creds.length} credential(s)
+              issued. The demo can now run end-to-end.
             </p>
             <div
               style={{
-                textAlign: 'left',
+                textAlign: "left",
                 background: tokens.color.bg,
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.button,
                 padding: tokens.space.sm,
-                margin: '0 auto',
+                margin: "0 auto",
                 maxWidth: 520,
-                display: 'grid',
+                display: "grid",
                 gap: 6,
               }}
             >
@@ -891,7 +951,9 @@ export default function App() {
               ))}
             </div>
             <div style={{ marginTop: tokens.space.md }}>
-              <SecondaryButton onClick={handleEditAgain}>Edit again</SecondaryButton>
+              <SecondaryButton onClick={handleEditAgain}>
+                Edit again
+              </SecondaryButton>
             </div>
           </Card>
         )}

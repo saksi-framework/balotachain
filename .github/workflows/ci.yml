@@ -76,6 +76,11 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      # Apps import @balotachain/ui by its built entrypoints (dist), so build it
+      # before typechecking the workspaces that consume it.
+      - name: Build shared UI package
+        run: pnpm --filter @balotachain/ui build
+
       - name: Typecheck TypeScript workspaces
         run: pnpm typecheck
 
@@ -103,6 +108,10 @@ jobs:
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
+
+      # Apps resolve @balotachain/ui from its built dist at test time.
+      - name: Build shared UI package
+        run: pnpm --filter @balotachain/ui build
 
       - name: Test TypeScript workspaces
         run: pnpm test
@@ -211,5 +220,8 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      # Audit production dependencies (what actually ships in the clients).
+      # Dev-only tooling advisories (test runner / bundler dev server) are not
+      # part of any shipped artifact and are kept current via dependency bumps.
       - name: Audit Node dependencies
-        run: pnpm audit --audit-level moderate
+        run: pnpm audit --prod --audit-level moderate

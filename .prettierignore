@@ -4,3 +4,10 @@ target/
 coverage/
 .dart_tool/
 build/
+pnpm-lock.yaml
+# Flutter-generated platform scaffolding (not ours to format)
+apps/voter/ios/
+apps/voter/android/
+apps/voter/macos/
+apps/voter/linux/
+apps/voter/windows/

@@ -1,7 +1,7 @@
 // Typed adapter over the trustee Tauri commands. Mirrors the
 // `bulletin-store` Rust schema (see docs/bulletin-store-schema.md).
 
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
 export type Ciphertext = {
   pad: string;
@@ -89,11 +89,11 @@ export type Bulletin = {
 };
 
 export function loadBulletin(): Promise<Bulletin> {
-  return invoke<Bulletin>('load_bulletin');
+  return invoke<Bulletin>("load_bulletin");
 }
 
 export function saveBulletin(bulletin: Bulletin): Promise<void> {
-  return invoke<void>('save_bulletin', { bulletin });
+  return invoke<void>("save_bulletin", { bulletin });
 }
 
 export function submitPartialDecryption(
@@ -101,7 +101,7 @@ export function submitPartialDecryption(
   secretShare: number,
   ballotIndex: number,
 ): Promise<Bulletin> {
-  return invoke<Bulletin>('submit_partial_decryption', {
+  return invoke<Bulletin>("submit_partial_decryption", {
     trusteeId,
     secretShare,
     ballotIndex,
@@ -112,7 +112,7 @@ export function submitAllPartialDecryptions(
   trusteeId: string,
   secretShare: number,
 ): Promise<Bulletin> {
-  return invoke<Bulletin>('submit_all_partial_decryptions', {
+  return invoke<Bulletin>("submit_all_partial_decryptions", {
     trusteeId,
     secretShare,
   });

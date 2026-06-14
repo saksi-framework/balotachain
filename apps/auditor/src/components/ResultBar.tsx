@@ -1,4 +1,4 @@
-import { tokens } from '@balotachain/ui';
+import { tokens } from "@balotachain/ui";
 
 export type ResultBarProps = {
   percent: number;
@@ -10,11 +10,11 @@ export function ResultBar({ percent, dimmed = false }: ResultBarProps) {
   return (
     <div
       style={{
-        width: '100%',
+        width: "100%",
         height: 8,
         background: tokens.color.tealLight,
         borderRadius: tokens.radius.pill,
-        overflow: 'hidden',
+        overflow: "hidden",
         opacity: dimmed ? 0.5 : 1,
       }}
       role="progressbar"
@@ -25,10 +25,10 @@ export function ResultBar({ percent, dimmed = false }: ResultBarProps) {
       <div
         style={{
           width: `${clamped}%`,
-          height: '100%',
+          height: "100%",
           background: tokens.color.teal,
           borderRadius: tokens.radius.pill,
-          transition: 'width 240ms ease',
+          transition: "width 240ms ease",
         }}
       />
     </div>

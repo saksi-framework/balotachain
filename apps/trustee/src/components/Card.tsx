@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { tokens } from '@balotachain/ui';
+import type { CSSProperties, ReactNode } from "react";
+import { tokens } from "@balotachain/ui";
 
 export type CardProps = {
   children: ReactNode;

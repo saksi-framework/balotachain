@@ -1,34 +1,38 @@
-import type { ReactNode } from 'react';
-import { tokens } from '@balotachain/ui';
+import type { ReactNode } from "react";
+import { tokens } from "@balotachain/ui";
 
-export type ChipVariant = 'success' | 'warn' | 'neutral' | 'teal';
+export type ChipVariant = "success" | "warn" | "neutral" | "teal";
 
 export type ChipProps = {
   variant: ChipVariant;
   children: ReactNode;
 };
 
-function palette(variant: ChipVariant): { bg: string; fg: string; border: string } {
+function palette(variant: ChipVariant): {
+  bg: string;
+  fg: string;
+  border: string;
+} {
   switch (variant) {
-    case 'success':
+    case "success":
       return {
-        bg: 'rgba(46, 125, 91, 0.12)',
+        bg: "rgba(46, 125, 91, 0.12)",
         fg: tokens.color.success,
-        border: 'rgba(46, 125, 91, 0.24)',
+        border: "rgba(46, 125, 91, 0.24)",
       };
-    case 'warn':
+    case "warn":
       return {
-        bg: 'rgba(200, 133, 26, 0.12)',
+        bg: "rgba(200, 133, 26, 0.12)",
         fg: tokens.color.warn,
-        border: 'rgba(200, 133, 26, 0.28)',
+        border: "rgba(200, 133, 26, 0.28)",
       };
-    case 'teal':
+    case "teal":
       return {
         bg: tokens.color.tealLight,
         fg: tokens.color.tealDark,
         border: tokens.color.tealLight,
       };
-    case 'neutral':
+    case "neutral":
     default:
       return {
         bg: tokens.color.bg,
@@ -43,10 +47,10 @@ export function Chip({ variant, children }: ChipProps) {
   return (
     <span
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
+        display: "inline-flex",
+        alignItems: "center",
         gap: 6,
-        padding: '4px 10px',
+        padding: "4px 10px",
         background: bg,
         color: fg,
         border: `1px solid ${border}`,

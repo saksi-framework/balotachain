@@ -5,9 +5,8 @@ const loadBulletinMock = vi.fn();
 const verifyTrackingCodeMock = vi.fn();
 
 vi.mock("./lib/bulletin", async () => {
-  const actual = await vi.importActual<typeof import("./lib/bulletin")>(
-    "./lib/bulletin",
-  );
+  const actual =
+    await vi.importActual<typeof import("./lib/bulletin")>("./lib/bulletin");
   return {
     ...actual,
     loadBulletin: () => loadBulletinMock(),
@@ -68,9 +67,7 @@ describe("App", () => {
       expect(verifyTrackingCodeMock).toHaveBeenCalledWith("BC-CAFE-0001");
     });
     expect(await screen.findByText(/Vote verified/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/2026-06-08T21:14:00Z/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/2026-06-08T21:14:00Z/)).toBeInTheDocument();
   });
 
   it("shows the not-found error when verifyTrackingCode returns null", async () => {
@@ -150,8 +147,6 @@ describe("App", () => {
     const { default: App } = await import("./App");
     render(<App />);
 
-    expect(
-      await screen.findByText(/Tally pending/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/Tally pending/i)).toBeInTheDocument();
   });
 });

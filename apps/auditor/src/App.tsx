@@ -4,7 +4,7 @@ import {
   useState,
   type CSSProperties,
   type FormEvent,
-} from 'react';
+} from "react";
 import {
   tokens,
   PrimaryButton,
@@ -15,11 +15,11 @@ import {
   CheckIcon,
   CopyIcon,
   AlertIcon,
-} from '@balotachain/ui';
-import { Card } from './components/Card';
-import { Chip } from './components/Chip';
-import { ResultBar } from './components/ResultBar';
-import { StatCard } from './components/StatCard';
+} from "@balotachain/ui";
+import { Card } from "./components/Card";
+import { Chip } from "./components/Chip";
+import { ResultBar } from "./components/ResultBar";
+import { StatCard } from "./components/StatCard";
 import {
   RACES,
   TALLY_SHA256,
@@ -31,28 +31,28 @@ import {
   ENCRYPTION_SCHEME,
   type Race,
   type Candidate,
-} from './mocks/results';
+} from "./mocks/results";
 import {
   loadBulletin,
   verifyTrackingCode,
   type Bulletin,
   type Tally,
-} from './lib/bulletin';
+} from "./lib/bulletin";
 
 const TRACKING_CODE_RE = /^BC-[A-F0-9]{4}-[A-F0-9]{4}$/i;
 
 type VerifyState =
-  | { kind: 'idle' }
-  | { kind: 'success'; code: string; submittedAt: string }
-  | { kind: 'error' };
+  | { kind: "idle" }
+  | { kind: "success"; code: string; submittedAt: string }
+  | { kind: "error" };
 
 type TallyMode =
-  | { kind: 'mock' }
-  | { kind: 'pending' }
-  | { kind: 'real'; tally: Tally; ballotsCount: number };
+  | { kind: "mock" }
+  | { kind: "pending" }
+  | { kind: "real"; tally: Tally; ballotsCount: number };
 
 const pageWrap: CSSProperties = {
-  minHeight: '100vh',
+  minHeight: "100vh",
   background: tokens.color.bg,
   color: tokens.color.text1,
   fontFamily: tokens.type.fontFamily,
@@ -62,10 +62,10 @@ const pageWrap: CSSProperties = {
 
 const container: CSSProperties = {
   maxWidth: 1200,
-  margin: '0 auto',
+  margin: "0 auto",
   padding: `${tokens.space.md}px`,
-  display: 'flex',
-  flexDirection: 'column',
+  display: "flex",
+  flexDirection: "column",
   gap: tokens.space.lg,
 };
 
@@ -84,7 +84,7 @@ const labelStyle: CSSProperties = {
 };
 
 function formatNumber(n: number): string {
-  return n.toLocaleString('en-US');
+  return n.toLocaleString("en-US");
 }
 
 function percentOf(votes: number, total: number): number {
@@ -144,27 +144,34 @@ function CandidateRow({
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
+        display: "flex",
+        flexDirection: "column",
         gap: tokens.space.xs,
         opacity: dim ? 0.55 : 1,
       }}
     >
       <div
         style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
           gap: tokens.space.md,
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            minWidth: 0,
+          }}
+        >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              display: "flex",
+              alignItems: "center",
               gap: tokens.space.xs,
-              flexWrap: 'wrap',
+              flexWrap: "wrap",
             }}
           >
             <span style={{ color: tokens.color.text1, fontWeight: 600 }}>
@@ -172,14 +179,18 @@ function CandidateRow({
             </span>
             {candidate.elected ? <Chip variant="success">ELECTED</Chip> : null}
           </div>
-          <span style={{ fontSize: 13, color: tokens.color.text2 }}>{candidate.party}</span>
+          <span style={{ fontSize: 13, color: tokens.color.text2 }}>
+            {candidate.party}
+          </span>
         </div>
-        <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+        <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
           <div style={{ color: tokens.color.text1, fontWeight: 600 }}>
             {formatNumber(candidate.votes)}
           </div>
           {showPercent ? (
-            <div style={{ fontSize: 13, color: tokens.color.text2 }}>{pct.toFixed(1)}%</div>
+            <div style={{ fontSize: 13, color: tokens.color.text2 }}>
+              {pct.toFixed(1)}%
+            </div>
           ) : null}
         </div>
       </div>
@@ -196,18 +207,35 @@ function RaceCard({ race }: { race: Race }) {
 
   return (
     <Card>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.md }}>
-        <header style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <h3 style={{ ...sectionTitle, fontSize: tokens.type.h2 }}>{race.title}</h3>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: tokens.space.md,
+        }}
+      >
+        <header style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <h3 style={{ ...sectionTitle, fontSize: tokens.type.h2 }}>
+            {race.title}
+          </h3>
           {race.subtitle ? (
-            <span style={{ fontSize: 14, color: tokens.color.text2 }}>{race.subtitle}</span>
+            <span style={{ fontSize: 14, color: tokens.color.text2 }}>
+              {race.subtitle}
+            </span>
           ) : (
             <span style={{ fontSize: 13, color: tokens.color.text2 }}>
-              {formatNumber(race.ballotsTotal)} ballots cast — pick {race.pickLimit}
+              {formatNumber(race.ballotsTotal)} ballots cast — pick{" "}
+              {race.pickLimit}
             </span>
           )}
         </header>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.sm }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: tokens.space.sm,
+          }}
+        >
           {race.candidates.map((c) => (
             <CandidateRow
               key={c.name}
@@ -231,9 +259,9 @@ function Header() {
         height: 56,
         background: tokens.color.surface,
         borderBottom: `1px solid ${tokens.color.border}`,
-        display: 'flex',
-        alignItems: 'center',
-        position: 'sticky',
+        display: "flex",
+        alignItems: "center",
+        position: "sticky",
         top: 0,
         zIndex: 10,
       }}
@@ -241,24 +269,30 @@ function Header() {
       <div
         style={{
           maxWidth: 1200,
-          margin: '0 auto',
+          margin: "0 auto",
           padding: `0 ${tokens.space.md}px`,
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: tokens.space.md,
         }}
       >
-        <span style={{ fontSize: tokens.type.h2, fontWeight: 700, color: tokens.color.text1 }}>
+        <span
+          style={{
+            fontSize: tokens.type.h2,
+            fontWeight: 700,
+            color: tokens.color.text1,
+          }}
+        >
           BalotaChain — Bulletin Board
         </span>
         <span
           style={{
-            display: 'inline-flex',
-            alignItems: 'center',
+            display: "inline-flex",
+            alignItems: "center",
             gap: tokens.space.xs,
-            padding: '8px 16px',
+            padding: "8px 16px",
             background: tokens.color.bg,
             color: tokens.color.text1,
             border: `1px solid ${tokens.color.border}`,
@@ -285,20 +319,21 @@ function VerifiedBanner({
   return (
     <div
       style={{
-        background: 'rgba(46, 125, 91, 0.08)',
+        background: "rgba(46, 125, 91, 0.08)",
         border: `1px solid ${tokens.color.success}`,
         borderRadius: tokens.radius.card,
         padding: `${tokens.space.sm}px ${tokens.space.md}px`,
-        display: 'flex',
-        alignItems: 'center',
+        display: "flex",
+        alignItems: "center",
         gap: tokens.space.sm,
       }}
     >
-      <span style={{ color: tokens.color.success, display: 'inline-flex' }}>
+      <span style={{ color: tokens.color.success, display: "inline-flex" }}>
         <ShieldCheckIcon size={24} />
       </span>
       <span style={{ color: tokens.color.text1, fontWeight: 600 }}>
-        Tally verified — {trusteesSigned} of {trusteesTotal} trustees signed the decryption.
+        Tally verified — {trusteesSigned} of {trusteesTotal} trustees signed the
+        decryption.
       </span>
     </div>
   );
@@ -316,12 +351,14 @@ function IntegritySummary({
   closedAt: string;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.sm }}>
+    <div
+      style={{ display: "flex", flexDirection: "column", gap: tokens.space.sm }}
+    >
       <h2 style={sectionTitle}>Integrity summary</h2>
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: tokens.space.sm,
         }}
       >
@@ -337,7 +374,11 @@ function IntegritySummary({
           caption="threshold met"
           emphasize
         />
-        <StatCard label="Encryption" value={ENCRYPTION_SCHEME} caption="joint public key" />
+        <StatCard
+          label="Encryption"
+          value={ENCRYPTION_SCHEME}
+          caption="joint public key"
+        />
         <StatCard label="Closed" value={closedAt} caption="polls closed" />
       </div>
     </div>
@@ -367,22 +408,28 @@ function CryptoVerification({
 
   return (
     <Card>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.md }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: tokens.space.md,
+        }}
+      >
         <h2 style={sectionTitle}>Cryptographic verification</h2>
 
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(160px, 200px) 1fr',
+            display: "grid",
+            gridTemplateColumns: "minmax(160px, 200px) 1fr",
             gap: tokens.space.sm,
-            alignItems: 'start',
+            alignItems: "start",
           }}
         >
           <span style={labelStyle}>Tally fingerprint</span>
           <div
             style={{
-              display: 'flex',
-              alignItems: 'flex-start',
+              display: "flex",
+              alignItems: "flex-start",
               gap: tokens.space.xs,
               minWidth: 0,
             }}
@@ -396,7 +443,7 @@ function CryptoVerification({
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.button,
                 padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
-                wordBreak: 'break-all',
+                wordBreak: "break-all",
                 lineHeight: 1.45,
                 flex: 1,
                 minWidth: 0,
@@ -409,37 +456,47 @@ function CryptoVerification({
               onClick={copyFingerprint}
               aria-label="Copy tally fingerprint"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
+                display: "inline-flex",
+                alignItems: "center",
                 gap: tokens.space.xs,
                 background: tokens.color.surface,
                 border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.button,
                 padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
                 color: tokens.color.text1,
-                cursor: 'pointer',
+                cursor: "pointer",
                 fontSize: 13,
                 fontWeight: 600,
               }}
             >
               <CopyIcon size={16} />
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? "Copied" : "Copy"}
             </button>
           </div>
 
           <span style={labelStyle}>Trustee signatures</span>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: tokens.space.xs }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: tokens.space.xs,
+            }}
+          >
             <span style={{ color: tokens.color.text1, fontWeight: 600 }}>
               {trusteesSigned} of {trusteesTotal} trustees
             </span>
-            <span style={{ color: tokens.color.success, display: 'inline-flex' }}>
+            <span
+              style={{ color: tokens.color.success, display: "inline-flex" }}
+            >
               <ShieldCheckIcon size={16} />
             </span>
           </div>
 
           <span style={labelStyle}>Bulletin transcript</span>
           <div>
-            <TextButton onClick={() => console.log('Download bulletin transcript (JSON)')}>
+            <TextButton
+              onClick={() => console.log("Download bulletin transcript (JSON)")}
+            >
               Download (JSON)
             </TextButton>
           </div>
@@ -454,8 +511,8 @@ function VerifyVoteCard({
 }: {
   fallbackSubmittedAt: string;
 }) {
-  const [code, setCode] = useState('');
-  const [state, setState] = useState<VerifyState>({ kind: 'idle' });
+  const [code, setCode] = useState("");
+  const [state, setState] = useState<VerifyState>({ kind: "idle" });
   const [pending, setPending] = useState(false);
 
   async function onSubmit(e: FormEvent) {
@@ -463,7 +520,7 @@ function VerifyVoteCard({
     const trimmed = code.trim();
     if (trimmed.length === 0) return;
     if (!TRACKING_CODE_RE.test(trimmed)) {
-      setState({ kind: 'error' });
+      setState({ kind: "error" });
       return;
     }
     setPending(true);
@@ -471,15 +528,15 @@ function VerifyVoteCard({
       const result = await verifyTrackingCode(trimmed);
       if (result) {
         setState({
-          kind: 'success',
+          kind: "success",
           code: result.tracking_code,
           submittedAt: result.submitted_at || fallbackSubmittedAt,
         });
       } else {
-        setState({ kind: 'error' });
+        setState({ kind: "error" });
       }
     } catch {
-      setState({ kind: 'error' });
+      setState({ kind: "error" });
     } finally {
       setPending(false);
     }
@@ -487,8 +544,14 @@ function VerifyVoteCard({
 
   return (
     <Card>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.md }}>
-        <header style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: tokens.space.md,
+        }}
+      >
+        <header style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <h2 style={sectionTitle}>Verify your vote</h2>
           <span style={{ fontSize: 14, color: tokens.color.text2 }}>
             Enter your tracking code to confirm your ballot was recorded.
@@ -498,13 +561,13 @@ function VerifyVoteCard({
         <form
           onSubmit={onSubmit}
           style={{
-            display: 'flex',
+            display: "flex",
             gap: tokens.space.sm,
-            flexWrap: 'wrap',
-            alignItems: 'stretch',
+            flexWrap: "wrap",
+            alignItems: "stretch",
           }}
         >
-          <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+          <div style={{ flex: "1 1 280px", minWidth: 0 }}>
             <TextInput
               variant="mono"
               placeholder="BC-XXXX-XXXX"
@@ -513,30 +576,34 @@ function VerifyVoteCard({
               aria-label="Tracking code"
             />
           </div>
-          <div style={{ flex: '0 0 auto', minWidth: 160 }}>
+          <div style={{ flex: "0 0 auto", minWidth: 160 }}>
             <PrimaryButton type="submit" disabled={pending}>
-              {pending ? 'Verifying…' : 'Verify'}
+              {pending ? "Verifying…" : "Verify"}
             </PrimaryButton>
           </div>
         </form>
 
-        {state.kind === 'success' ? (
+        {state.kind === "success" ? (
           <div
             style={{
-              background: 'rgba(46, 125, 91, 0.08)',
+              background: "rgba(46, 125, 91, 0.08)",
               border: `1px solid ${tokens.color.success}`,
               borderRadius: tokens.radius.card,
               padding: tokens.space.md,
-              display: 'flex',
-              alignItems: 'flex-start',
+              display: "flex",
+              alignItems: "flex-start",
               gap: tokens.space.sm,
             }}
           >
-            <span style={{ color: tokens.color.success, display: 'inline-flex' }}>
+            <span
+              style={{ color: tokens.color.success, display: "inline-flex" }}
+            >
               <CheckIcon size={24} />
             </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ color: tokens.color.text1, fontWeight: 700 }}>Vote verified</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ color: tokens.color.text1, fontWeight: 700 }}>
+                Vote verified
+              </span>
               <span style={{ color: tokens.color.text2, fontSize: 14 }}>
                 Your ballot was recorded on {state.submittedAt}.
               </span>
@@ -554,22 +621,22 @@ function VerifyVoteCard({
           </div>
         ) : null}
 
-        {state.kind === 'error' ? (
+        {state.kind === "error" ? (
           <div
             style={{
-              background: 'rgba(192, 57, 43, 0.08)',
+              background: "rgba(192, 57, 43, 0.08)",
               border: `1px solid ${tokens.color.error}`,
               borderRadius: tokens.radius.card,
               padding: tokens.space.md,
-              display: 'flex',
-              alignItems: 'flex-start',
+              display: "flex",
+              alignItems: "flex-start",
               gap: tokens.space.sm,
             }}
           >
-            <span style={{ color: tokens.color.error, display: 'inline-flex' }}>
+            <span style={{ color: tokens.color.error, display: "inline-flex" }}>
               <AlertIcon size={24} />
             </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ color: tokens.color.text1, fontWeight: 700 }}>
                 Tracking code not found.
               </span>
@@ -587,7 +654,13 @@ function VerifyVoteCard({
 function TallyPendingNotice() {
   return (
     <Card>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.sm }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: tokens.space.sm,
+        }}
+      >
         <h2 style={sectionTitle}>Results</h2>
         <span style={{ color: tokens.color.text2 }}>
           Tally pending — trustees decrypting.
@@ -601,29 +674,30 @@ function Footer() {
   return (
     <footer
       style={{
-        textAlign: 'center',
+        textAlign: "center",
         color: tokens.color.text2,
         fontSize: 13,
         paddingTop: tokens.space.md,
         paddingBottom: tokens.space.md,
       }}
     >
-      BalotaChain v0.1 — staging demo. Public verifier powered by open-source Saksi.
+      BalotaChain v0.1 — staging demo. Public verifier powered by open-source
+      Saksi.
     </footer>
   );
 }
 
 function deriveTallyMode(bulletin: Bulletin | null): TallyMode {
-  if (!bulletin) return { kind: 'mock' };
+  if (!bulletin) return { kind: "mock" };
   if (bulletin.tally) {
     return {
-      kind: 'real',
+      kind: "real",
       tally: bulletin.tally,
       ballotsCount: bulletin.ballots.length,
     };
   }
-  if (bulletin.ballots.length > 0) return { kind: 'pending' };
-  return { kind: 'mock' };
+  if (bulletin.ballots.length > 0) return { kind: "pending" };
+  return { kind: "mock" };
 }
 
 function App() {
@@ -648,24 +722,23 @@ function App() {
   const mockRaces = useMemo(() => RACES, []);
 
   const realRaces = useMemo(() => {
-    if (mode.kind !== 'real') return null;
+    if (mode.kind !== "real") return null;
     return tallyToRaces(mode.tally, mode.ballotsCount);
   }, [mode]);
 
   const fingerprint =
-    mode.kind === 'real' ? mode.tally.fingerprint : `sha256:${TALLY_SHA256}`;
+    mode.kind === "real" ? mode.tally.fingerprint : `sha256:${TALLY_SHA256}`;
 
   const trusteesSigned =
-    mode.kind === 'real' ? mode.tally.trustees_signed : TRUSTEES_SIGNED;
+    mode.kind === "real" ? mode.tally.trustees_signed : TRUSTEES_SIGNED;
 
   const trusteesTotal =
-    mode.kind === 'real' ? mode.tally.trustees_total : TRUSTEES_TOTAL;
+    mode.kind === "real" ? mode.tally.trustees_total : TRUSTEES_TOTAL;
 
-  const ballotsCast =
-    mode.kind === 'real' ? mode.ballotsCount : BALLOTS_CAST;
+  const ballotsCast = mode.kind === "real" ? mode.ballotsCount : BALLOTS_CAST;
 
   const closedAt =
-    mode.kind === 'real' ? mode.tally.closed_at : POLLS_CLOSED_AT;
+    mode.kind === "real" ? mode.tally.closed_at : POLLS_CLOSED_AT;
 
   return (
     <div style={pageWrap}>
@@ -676,12 +749,26 @@ function App() {
           trusteesTotal={trusteesTotal}
         />
 
-        <section style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.md }}>
-          <h2 style={sectionTitle}>Final Results — Philippine National Elections 2028</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.md }}>
-            {mode.kind === 'pending' ? (
+        <section
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: tokens.space.md,
+          }}
+        >
+          <h2 style={sectionTitle}>
+            Final Results — Philippine National Elections 2028
+          </h2>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: tokens.space.md,
+            }}
+          >
+            {mode.kind === "pending" ? (
               <TallyPendingNotice />
-            ) : mode.kind === 'real' && realRaces ? (
+            ) : mode.kind === "real" && realRaces ? (
               realRaces.map((r) => <RaceCard key={r.title} race={r} />)
             ) : (
               mockRaces.map((r) => <RaceCard key={r.title} race={r} />)

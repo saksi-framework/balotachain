@@ -41,9 +41,7 @@ export function canonicalResultsJson(
   const parts: string[] = [];
   for (const key of sortedKeys) {
     const race = results[key];
-    parts.push(
-      JSON.stringify(key) + ":" + canonicalRaceJson(race),
-    );
+    parts.push(JSON.stringify(key) + ":" + canonicalRaceJson(race));
   }
   return "{" + parts.join(",") + "}";
 }
@@ -58,11 +56,20 @@ function canonicalCandidateJson(c: CandidateResult): string {
   // `crates/bulletin-store::CandidateResult`: id, name, party, votes, elected.
   return (
     "{" +
-    '"id":' + JSON.stringify(c.id) + "," +
-    '"name":' + JSON.stringify(c.name) + "," +
-    '"party":' + JSON.stringify(c.party) + "," +
-    '"votes":' + String(c.votes) + "," +
-    '"elected":' + String(c.elected) +
+    '"id":' +
+    JSON.stringify(c.id) +
+    "," +
+    '"name":' +
+    JSON.stringify(c.name) +
+    "," +
+    '"party":' +
+    JSON.stringify(c.party) +
+    "," +
+    '"votes":' +
+    String(c.votes) +
+    "," +
+    '"elected":' +
+    String(c.elected) +
     "}"
   );
 }

@@ -1,7 +1,7 @@
 // Typed adapter over the admin Tauri commands. Mirrors the
 // `bulletin-store` Rust schema (see docs/bulletin-store-schema.md).
 
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
 export type Ciphertext = {
   pad: string;
@@ -89,7 +89,7 @@ export type Bulletin = {
 };
 
 export function loadBulletin(): Promise<Bulletin> {
-  return invoke<Bulletin>('load_bulletin');
+  return invoke<Bulletin>("load_bulletin");
 }
 
 export function createElection(args: {
@@ -98,7 +98,7 @@ export function createElection(args: {
   closes: string;
   positions: Position[];
 }): Promise<Bulletin> {
-  return invoke<Bulletin>('create_election', args);
+  return invoke<Bulletin>("create_election", args);
 }
 
 export function registerVoter(args: {
@@ -106,9 +106,9 @@ export function registerVoter(args: {
   email: string;
   name: string;
 }): Promise<Bulletin> {
-  return invoke<Bulletin>('register_voter', args);
+  return invoke<Bulletin>("register_voter", args);
 }
 
 export function issueCredential(args: { voterId: string }): Promise<Bulletin> {
-  return invoke<Bulletin>('issue_credential', args);
+  return invoke<Bulletin>("issue_credential", args);
 }
