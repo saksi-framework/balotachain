@@ -169,12 +169,18 @@ jobs:
         run: cargo test
 
   fabric:
-    # Real Hyperledger Fabric bulletin board: bring up the test-network, deploy
-    # the saksi chaincode, and record one real ballot on-chain. Verifies the
-    # Fabric base (which can't run on the dev box — its path has a space that
-    # breaks fabric-samples). Heavy, so it skips PRs; runs on push to main and
-    # manual dispatch.
-    name: Fabric bulletin (real chaincode)
+    # Real Hyperledger Fabric bulletin board base: bring up the test-network and
+    # deploy the saksi chaincode on Linux (it can't run on the dev box — that
+    # path has a space that breaks fabric-samples). A successful deployCC proves
+    # the chaincode packages, installs, approves, and commits against a live
+    # network. Heavy, so it skips PRs; runs on push to main and manual dispatch.
+    #
+    # NOTE: a full on-chain ballot round-trip is NOT asserted here. The chaincode
+    # gates SubmitBallot on an existing, open election, but saksi's
+    # run-one-transaction.sh submits the golden ballot without first calling
+    # CreateElection (and there is no election test-vector yet). Wiring an
+    # election setup before the ballot is saksi-side follow-up work.
+    name: Fabric bulletin (chaincode deploy)
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
@@ -209,14 +215,6 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
           cd saksi/packages/saksi-bulletin/network
           ./network.sh all
-
-      - name: Record one real ballot on-chain
-        env:
-          FABRIC_SAMPLES: ${{ github.workspace }}/fabric-samples
-        run: |
-          export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
-          cd saksi/packages/saksi-bulletin/network
-          ./run-one-transaction.sh
 
       - name: Tear down network
         if: always()
