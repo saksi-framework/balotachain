@@ -2,14 +2,11 @@
 //! bulletin-store crate. The auditor app never mutates the bulletin; it only
 //! reads the published state and confirms a voter's tracking code is recorded.
 //!
-//! Plain `*_impl` functions take an injected bulletin path so they are testable
-//! without depending on `$HOME/.balotachain/bulletin.json`. The
-//! `#[tauri::command]` wrappers resolve `bulletin_store::default_path()` and
-//! delegate.
+//! Plain `*_impl` functions take an injected [`BulletinSource`] so they are
+//! testable and backend-agnostic (local file or containerized gateway). The
+//! `#[tauri::command]` wrappers resolve [`BulletinSource::from_env`] and delegate.
 
-use std::path::Path;
-
-use bulletin_store::{Bulletin, default_path, load};
+use bulletin_store::{Bulletin, BulletinSource};
 use serde::{Deserialize, Serialize};
 
 /// Result returned to the UI when a tracking code is found on the bulletin.
@@ -22,15 +19,15 @@ pub struct BallotVerification {
     pub ballot_index: usize,
 }
 
-pub fn load_bulletin_impl(path: &Path) -> Result<Bulletin, String> {
-    load(path).map_err(|e| e.to_string())
+pub fn load_bulletin_impl(store: &BulletinSource) -> Result<Bulletin, String> {
+    store.load().map_err(|e| e.to_string())
 }
 
 pub fn verify_tracking_code_impl(
-    path: &Path,
+    store: &BulletinSource,
     code: &str,
 ) -> Result<Option<BallotVerification>, String> {
-    let bulletin = load(path).map_err(|e| e.to_string())?;
+    let bulletin = store.load().map_err(|e| e.to_string())?;
     let found = bulletin
         .ballots
         .iter()
@@ -46,28 +43,25 @@ pub fn verify_tracking_code_impl(
 
 #[tauri::command]
 pub fn load_bulletin() -> Result<Bulletin, String> {
-    load_bulletin_impl(&default_path())
+    load_bulletin_impl(&BulletinSource::from_env())
 }
 
 #[tauri::command]
 pub fn verify_tracking_code(code: String) -> Result<Option<BallotVerification>, String> {
-    verify_tracking_code_impl(&default_path(), &code)
+    verify_tracking_code_impl(&BulletinSource::from_env(), &code)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bulletin_store::{
-        Ballot, Bulletin, Ciphertext, CandidateResult, RaceResult, Tally, save,
-    };
+    use bulletin_store::{Ballot, Bulletin, CandidateResult, Ciphertext, RaceResult, Tally};
     use std::collections::BTreeMap;
-    use std::path::PathBuf;
     use tempfile::TempDir;
 
-    fn tmp_path() -> (TempDir, PathBuf) {
+    fn tmp_store() -> (TempDir, BulletinSource) {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("bulletin.json");
-        (dir, path)
+        (dir, BulletinSource::File(path))
     }
 
     fn ballot(tracking: &str) -> Ballot {
@@ -84,32 +78,32 @@ mod tests {
 
     #[test]
     fn load_bulletin_impl_returns_empty_when_file_missing() {
-        let (_dir, path) = tmp_path();
-        let bulletin = load_bulletin_impl(&path).expect("load");
+        let (_dir, store) = tmp_store();
+        let bulletin = load_bulletin_impl(&store).expect("load");
         assert_eq!(bulletin, Bulletin::empty());
     }
 
     #[test]
     fn load_bulletin_impl_returns_persisted_state() {
-        let (_dir, path) = tmp_path();
+        let (_dir, store) = tmp_store();
         let mut b = Bulletin::empty();
         b.ballots.push(ballot("BC-AAAA-0001"));
-        save(&path, &b).unwrap();
+        store.save(&b).unwrap();
 
-        let loaded = load_bulletin_impl(&path).expect("load");
+        let loaded = load_bulletin_impl(&store).expect("load");
         assert_eq!(loaded.ballots.len(), 1);
         assert_eq!(loaded.ballots[0].tracking_code, "BC-AAAA-0001");
     }
 
     #[test]
     fn verify_tracking_code_impl_returns_some_for_matching_code() {
-        let (_dir, path) = tmp_path();
+        let (_dir, store) = tmp_store();
         let mut b = Bulletin::empty();
         b.ballots.push(ballot("BC-AAAA-0001"));
         b.ballots.push(ballot("BC-BBBB-0002"));
-        save(&path, &b).unwrap();
+        store.save(&b).unwrap();
 
-        let result = verify_tracking_code_impl(&path, "BC-BBBB-0002").expect("verify");
+        let result = verify_tracking_code_impl(&store, "BC-BBBB-0002").expect("verify");
         let found = result.expect("found");
         assert_eq!(found.tracking_code, "BC-BBBB-0002");
         assert_eq!(found.ballot_index, 1);
@@ -118,19 +112,19 @@ mod tests {
 
     #[test]
     fn verify_tracking_code_impl_returns_none_for_missing_code() {
-        let (_dir, path) = tmp_path();
+        let (_dir, store) = tmp_store();
         let mut b = Bulletin::empty();
         b.ballots.push(ballot("BC-AAAA-0001"));
-        save(&path, &b).unwrap();
+        store.save(&b).unwrap();
 
-        let result = verify_tracking_code_impl(&path, "BC-9999-9999").expect("verify");
+        let result = verify_tracking_code_impl(&store, "BC-9999-9999").expect("verify");
         assert!(result.is_none());
     }
 
     #[test]
     fn verify_tracking_code_impl_returns_none_for_empty_bulletin() {
-        let (_dir, path) = tmp_path();
-        let result = verify_tracking_code_impl(&path, "BC-AAAA-0001").expect("verify");
+        let (_dir, store) = tmp_store();
+        let result = verify_tracking_code_impl(&store, "BC-AAAA-0001").expect("verify");
         assert!(result.is_none());
     }
 
@@ -167,8 +161,7 @@ mod tests {
         );
         let fp = bulletin_store::results_fingerprint(&results);
         assert_eq!(
-            fp,
-            CROSS_LANG_FINGERPRINT,
+            fp, CROSS_LANG_FINGERPRINT,
             "Rust fingerprint must match the hard-coded value used in tally.test.ts"
         );
     }
@@ -177,7 +170,7 @@ mod tests {
     /// published (auditor still wants ballot lookup post-tally).
     #[test]
     fn verify_tracking_code_impl_works_with_tally_present() {
-        let (_dir, path) = tmp_path();
+        let (_dir, store) = tmp_store();
         let mut b = Bulletin::empty();
         b.ballots.push(ballot("BC-CAFE-0001"));
         b.tally = Some(Tally {
@@ -187,9 +180,9 @@ mod tests {
             trustees_total: 5,
             closed_at: "2026-06-08T23:59:00Z".into(),
         });
-        save(&path, &b).unwrap();
+        store.save(&b).unwrap();
 
-        let found = verify_tracking_code_impl(&path, "BC-CAFE-0001")
+        let found = verify_tracking_code_impl(&store, "BC-CAFE-0001")
             .expect("verify")
             .expect("found");
         assert_eq!(found.ballot_index, 0);

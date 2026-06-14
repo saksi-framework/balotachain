@@ -1,14 +1,11 @@
 //! Tauri commands that bridge the Trustee Console UI to the bulletin-store
 //! crate and the saksi-ffi-tauri Saksi crypto bridge.
 //!
-//! Plain functions (`*_impl`) take an injected bulletin path so they are
-//! testable without touching `$HOME/.balotachain/bulletin.json`. The
-//! `#[tauri::command]` wrappers just resolve `bulletin_store::default_path()`
-//! and delegate.
+//! Plain `*_impl` functions take an injected [`BulletinSource`] so they are
+//! testable and backend-agnostic (local file or containerized gateway). The
+//! `#[tauri::command]` wrappers resolve [`BulletinSource::from_env`] and delegate.
 
-use std::path::Path;
-
-use bulletin_store::{Bulletin, PartialDecryption, default_path, load, save};
+use bulletin_store::{Bulletin, BulletinSource, PartialDecryption};
 use saksi_ffi_tauri::commands::{CiphertextDto, partial_decrypt};
 
 fn now_rfc3339() -> String {
@@ -16,12 +13,12 @@ fn now_rfc3339() -> String {
 }
 
 pub fn submit_partial_decryption_impl(
-    path: &Path,
+    store: &BulletinSource,
     trustee_id: String,
     secret_share: u64,
     ballot_index: usize,
 ) -> Result<Bulletin, String> {
-    let mut bulletin = load(path).map_err(|e| e.to_string())?;
+    let mut bulletin = store.load().map_err(|e| e.to_string())?;
     let ballot = bulletin
         .ballots
         .get(ballot_index)
@@ -37,16 +34,16 @@ pub fn submit_partial_decryption_impl(
         share: partial.share,
         submitted_at: now_rfc3339(),
     });
-    save(path, &bulletin).map_err(|e| e.to_string())?;
+    store.save(&bulletin).map_err(|e| e.to_string())?;
     Ok(bulletin)
 }
 
 pub fn submit_all_partial_decryptions_impl(
-    path: &Path,
+    store: &BulletinSource,
     trustee_id: String,
     secret_share: u64,
 ) -> Result<Bulletin, String> {
-    let mut bulletin = load(path).map_err(|e| e.to_string())?;
+    let mut bulletin = store.load().map_err(|e| e.to_string())?;
     let mut new_partials: Vec<PartialDecryption> = Vec::with_capacity(bulletin.ballots.len());
     for (idx, ballot) in bulletin.ballots.iter().enumerate() {
         let dto = CiphertextDto {
@@ -62,18 +59,20 @@ pub fn submit_all_partial_decryptions_impl(
         });
     }
     bulletin.partial_decryptions.extend(new_partials);
-    save(path, &bulletin).map_err(|e| e.to_string())?;
+    store.save(&bulletin).map_err(|e| e.to_string())?;
     Ok(bulletin)
 }
 
 #[tauri::command]
 pub fn load_bulletin() -> Result<Bulletin, String> {
-    load(&default_path()).map_err(|e| e.to_string())
+    BulletinSource::from_env().load().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn save_bulletin(bulletin: Bulletin) -> Result<(), String> {
-    save(&default_path(), &bulletin).map_err(|e| e.to_string())
+    BulletinSource::from_env()
+        .save(&bulletin)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -82,7 +81,12 @@ pub fn submit_partial_decryption(
     secret_share: u64,
     ballot_index: usize,
 ) -> Result<Bulletin, String> {
-    submit_partial_decryption_impl(&default_path(), trustee_id, secret_share, ballot_index)
+    submit_partial_decryption_impl(
+        &BulletinSource::from_env(),
+        trustee_id,
+        secret_share,
+        ballot_index,
+    )
 }
 
 #[tauri::command]
@@ -90,7 +94,7 @@ pub fn submit_all_partial_decryptions(
     trustee_id: String,
     secret_share: u64,
 ) -> Result<Bulletin, String> {
-    submit_all_partial_decryptions_impl(&default_path(), trustee_id, secret_share)
+    submit_all_partial_decryptions_impl(&BulletinSource::from_env(), trustee_id, secret_share)
 }
 
 #[cfg(test)]
@@ -101,15 +105,13 @@ mod tests {
 
     // A 32-byte-hex compressed Ed25519 point known to be valid; lifted from
     // the saksi-ffi-tauri test vector to keep the math deterministic.
-    const VALID_PAD: &str =
-        "0e1d5b2771666dd340a8285c3d315e94f21c3b48be9c5d65352eb952541db019";
-    const DATA: &str =
-        "8af8a8933f35789af543aa4aeace1b033a03e87bb603bc77f8bb85e2b2bff92a";
+    const VALID_PAD: &str = "0e1d5b2771666dd340a8285c3d315e94f21c3b48be9c5d65352eb952541db019";
+    const DATA: &str = "8af8a8933f35789af543aa4aeace1b033a03e87bb603bc77f8bb85e2b2bff92a";
 
-    fn tmp_path() -> (TempDir, std::path::PathBuf) {
+    fn tmp_store() -> (TempDir, BulletinSource) {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("bulletin.json");
-        (dir, path)
+        (dir, BulletinSource::File(path))
     }
 
     fn ballot(tracking: &str) -> Ballot {
@@ -124,21 +126,21 @@ mod tests {
         }
     }
 
-    fn seed_with_ballots(path: &std::path::Path, n: usize) {
+    fn seed_with_ballots(store: &BulletinSource, n: usize) {
         let mut b = Bulletin::empty();
         for i in 0..n {
             b.ballots.push(ballot(&format!("b{:03}", i)));
         }
-        save(path, &b).unwrap();
+        store.save(&b).unwrap();
     }
 
     #[test]
     fn submit_partial_decryption_appends_one_entry_with_trustee_id() {
-        let (_dir, path) = tmp_path();
-        seed_with_ballots(&path, 1);
+        let (_dir, store) = tmp_store();
+        seed_with_ballots(&store, 1);
 
         let updated =
-            submit_partial_decryption_impl(&path, "t03".into(), 17, 0).expect("submits");
+            submit_partial_decryption_impl(&store, "t03".into(), 17, 0).expect("submits");
 
         assert_eq!(updated.partial_decryptions.len(), 1);
         let p = &updated.partial_decryptions[0];
@@ -150,11 +152,11 @@ mod tests {
 
     #[test]
     fn submit_all_partial_decryptions_appends_one_per_ballot() {
-        let (_dir, path) = tmp_path();
-        seed_with_ballots(&path, 3);
+        let (_dir, store) = tmp_store();
+        seed_with_ballots(&store, 3);
 
         let updated =
-            submit_all_partial_decryptions_impl(&path, "t03".into(), 17).expect("submits");
+            submit_all_partial_decryptions_impl(&store, "t03".into(), 17).expect("submits");
 
         assert_eq!(updated.partial_decryptions.len(), 3);
         for (i, p) in updated.partial_decryptions.iter().enumerate() {
@@ -166,22 +168,22 @@ mod tests {
 
     #[test]
     fn submit_partial_decryption_missing_ballot_index_errors() {
-        let (_dir, path) = tmp_path();
-        seed_with_ballots(&path, 1);
+        let (_dir, store) = tmp_store();
+        seed_with_ballots(&store, 1);
 
         let err =
-            submit_partial_decryption_impl(&path, "t03".into(), 17, 99).expect_err("should err");
+            submit_partial_decryption_impl(&store, "t03".into(), 17, 99).expect_err("should err");
         assert!(err.contains("out of range"), "got: {err}");
     }
 
     #[test]
     fn submit_persists_to_disk() {
-        let (_dir, path) = tmp_path();
-        seed_with_ballots(&path, 1);
+        let (_dir, store) = tmp_store();
+        seed_with_ballots(&store, 1);
 
-        submit_partial_decryption_impl(&path, "t03".into(), 17, 0).unwrap();
+        submit_partial_decryption_impl(&store, "t03".into(), 17, 0).unwrap();
 
-        let reloaded = load(&path).unwrap();
+        let reloaded = store.load().unwrap();
         assert_eq!(reloaded.partial_decryptions.len(), 1);
         assert_eq!(reloaded.partial_decryptions[0].trustee_id, "t03");
     }

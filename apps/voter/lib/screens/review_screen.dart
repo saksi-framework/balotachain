@@ -18,7 +18,7 @@ class ReviewScreen extends StatefulWidget {
 
   /// Optional injection points for tests / non-default binary paths.
   final EncryptService? encryptService;
-  final BulletinStore? bulletinStore;
+  final BulletinSource? bulletinStore;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -29,8 +29,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   String? _error;
 
   EncryptService get _service => widget.encryptService ?? EncryptService();
-  BulletinStore get _store =>
-      widget.bulletinStore ?? BulletinStore.atDefaultPath();
+  BulletinSource get _store => widget.bulletinStore ?? bulletinSourceFromEnv();
 
   /// Demo voter identity for the one-voter staging cycle. Multi-voter support
   /// lives in a later Saksi iteration.

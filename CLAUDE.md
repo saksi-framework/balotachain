@@ -4,10 +4,16 @@ Orientation for coding agents. Read this first, then the latest update doc, then
 
 ## Latest update
 
-- **2026-06-14:** Containerized backend (Stage 1) — `crates/bulletin-gateway` HTTP service +
-  `docker-compose.yml` + `.devcontainer`. `docker compose up` serves shared bulletin state on
-  `:8080`; verified building/running/persisting in Docker. `BulletinSource` (File|Http) added to
-  `bulletin-store` so clients flip to the gateway via `BALOTA_BULLETIN_URL`. See `docker/README.md`.
+- **2026-06-14:** Containerized backend (Stage 1) + client wiring (Stage 1.5). `crates/bulletin-gateway`
+  HTTP service + `docker-compose.yml` + `.devcontainer`; `docker compose up` serves shared bulletin
+  state on `:8080` (verified building/running/persisting). All clients flip to the gateway via
+  `BALOTA_BULLETIN_URL`: the 3 Tauri apps + `balota-encrypt` use `BulletinSource::from_env()`
+  (Rust), the voter Flutter read path uses `bulletinSourceFromEnv()` → `HttpBulletinStore`.
+  Verified live end-to-end (wired CLI records a real ElGamal ballot in the container). `e2e-runner`
+  stays file-only (offline driver). See `docker/README.md`. ⚠ The voter Flutter changes
+  (`bulletin_store.dart` HTTP store + `review_screen` wiring + `http_bulletin_store_test.dart`)
+  are UNVERIFIED on this box — Dart here is 3.9.2 but `apps/voter` needs Flutter 3.44.2 / Dart
+  ^3.11.4; run `flutter test` on that toolchain to confirm. Rust/gateway/live-E2E are verified.
 - **2026-06-14:** [Phase 0-3 shipped — one-voter staging demo](docs/updates/2026-06-14-phase-0-3-shipped.md)
   (UI for all 4 apps + real Saksi crypto + file-backed bulletin stand-in + E2E driver; 70 tests green).
 
@@ -53,29 +59,22 @@ pnpm; Rust + Go live in Saksi.
 
 Containerized backend (Stage 1) is in and verified. Resume options:
 
-1. **⚠ Recover the voter Flutter source.** `apps/voter/lib/` was NOT committed in the Phase 0-3
-   push — only `test/`, platform scaffolding, and `pubspec*` are in git. The voter app won't
-   build until `lib/` (design mirror + screens + services + data) is pushed from the device that
-   built it. Everything else (Rust crates, 3 Tauri apps, gateway) is present.
-2. **Wire clients to the gateway.** Swap the bare `load(path)`/`save(path, b)` calls in each
-   `apps/{trustee,admin,auditor}/src-tauri/src/balota.rs` and `crates/e2e-runner` to
-   `BulletinSource::from_env()` (already in `bulletin-store`, tested). Build each src-tauri to
-   verify. Then with `BALOTA_BULLETIN_URL=http://localhost:8080` all apps share the container.
-3. **Run the containerized backend**: `docker compose up -d --build` (see `docker/README.md`).
-4. **Run the demo locally** (file mode):
+1. **Run the containerized backend**: `docker compose up -d --build` (see `docker/README.md`),
+   then start any client with `BALOTA_BULLETIN_URL=http://localhost:8080` to share state.
+2. **Run the demo locally** (file mode):
    ```
    cargo install --path crates/balota-encrypt           # voter CLI on PATH
    cargo run --release -p e2e-runner -- ~/.balotachain/bulletin.json
    pnpm --filter trustee tauri dev    # in another shell, etc.
-   flutter run -d windows            # from apps/voter (once lib/ recovered)
+   flutter run -d windows            # from apps/voter
    ```
-5. **Stage 2 — real Fabric**: add Fabric test-network + saksi Go chaincode as compose services;
+3. **Stage 2 — real Fabric**: add Fabric test-network + saksi Go chaincode as compose services;
    gateway routes the ballot slice through `saksi-bulletin/client-sdk`. Gateway REST surface +
    schema unchanged, so clients don't change. (Go + Docker ARE installed on this box now.)
-6. **Real proofs**: finish Saksi side (CDS OR, Benaloh, credentials, Chaum-Pedersen, Schnorr —
+4. **Real proofs**: finish Saksi side (CDS OR, Benaloh, credentials, Chaum-Pedersen, Schnorr —
    all SHA-256 stubs). Note: saksi now exposes `partial_decrypt_v2` (Phase F); `partial_decrypt`
    is deprecated.
-7. **Real combine + tally**: replace `crates/e2e-runner/src/lib.rs::finalize_demo_tally` with
+5. **Real combine + tally**: replace `crates/e2e-runner/src/lib.rs::finalize_demo_tally` with
    real DKG combine + homomorphic tally decryption (Saksi work).
 
 ## Locked decisions

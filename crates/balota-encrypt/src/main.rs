@@ -13,9 +13,7 @@
 use std::collections::HashMap;
 use std::process::ExitCode;
 
-use balota_encrypt::{
-    EncryptArgs, SubmitArgs, cli_default_path, encrypt_impl, submit_ballot_impl,
-};
+use balota_encrypt::{EncryptArgs, SubmitArgs, cli_source, encrypt_impl, submit_ballot_impl};
 use serde_json::json;
 
 fn main() -> ExitCode {
@@ -77,9 +75,9 @@ fn run_submit(flags: &HashMap<String, String>) -> ExitCode {
         Err(e) => return print_err(&e),
     };
 
-    let path = cli_default_path();
+    let store = cli_source();
     match submit_ballot_impl(
-        &path,
+        &store,
         SubmitArgs {
             voter_id,
             token,

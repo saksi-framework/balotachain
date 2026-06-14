@@ -2,9 +2,9 @@
 //! TDD: these were written before the implementations existed.
 
 use bulletin_store::{
-    Ballot, Bulletin, Ciphertext, Credential, Election, Position, TrusteeEntry, Voter, save,
+    Ballot, Bulletin, BulletinSource, Ciphertext, Credential, Election, Position, TrusteeEntry,
+    Voter,
 };
-use std::path::Path;
 use tempfile::TempDir;
 
 use balota_encrypt::{EncryptArgs, SubmitArgs, encrypt_impl, submit_ballot_impl};
@@ -12,7 +12,13 @@ use balota_encrypt::{EncryptArgs, SubmitArgs, encrypt_impl, submit_ballot_impl};
 const DEMO_PK_HEX: &str = "e00af9c74d9edb8ebcc160ceec97d531cbd6e2956f9e9162b8e9eda260e82e43";
 // joint_public_key for keygen_from_scalar(42); computed via saksi-ffi-flutter.
 
-fn seed_bulletin_with_election(path: &Path, public_key: &str) -> Bulletin {
+fn tmp_store() -> (TempDir, BulletinSource) {
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("bulletin.json");
+    (dir, BulletinSource::File(path))
+}
+
+fn seed_bulletin_with_election(store: &BulletinSource, public_key: &str) -> Bulletin {
     let mut b = Bulletin::empty();
     b.election = Some(Election {
         id: "e-1".into(),
@@ -43,7 +49,7 @@ fn seed_bulletin_with_election(path: &Path, public_key: &str) -> Bulletin {
         token: "cd".repeat(16),
         issued_at: "2026-06-14T00:00:00Z".into(),
     });
-    save(path, &b).expect("seed save");
+    store.save(&b).expect("seed save");
     b
 }
 
@@ -74,11 +80,10 @@ fn encrypt_impl_errors_on_bad_public_key() {
 
 #[test]
 fn submit_ballot_errors_when_no_election() {
-    let dir = TempDir::new().unwrap();
-    let path = dir.path().join("bulletin.json");
-    save(&path, &Bulletin::empty()).unwrap();
+    let (_dir, store) = tmp_store();
+    store.save(&Bulletin::empty()).unwrap();
     let err = submit_ballot_impl(
-        &path,
+        &store,
         SubmitArgs {
             voter_id: "v-000001".into(),
             token: "cd".repeat(16),
@@ -94,11 +99,10 @@ fn submit_ballot_errors_when_no_election() {
 
 #[test]
 fn submit_ballot_errors_when_voter_unknown() {
-    let dir = TempDir::new().unwrap();
-    let path = dir.path().join("bulletin.json");
-    seed_bulletin_with_election(&path, DEMO_PK_HEX);
+    let (_dir, store) = tmp_store();
+    seed_bulletin_with_election(&store, DEMO_PK_HEX);
     let err = submit_ballot_impl(
-        &path,
+        &store,
         SubmitArgs {
             voter_id: "v-999999".into(),
             token: "cd".repeat(16),
@@ -114,11 +118,10 @@ fn submit_ballot_errors_when_voter_unknown() {
 
 #[test]
 fn submit_ballot_appends_one_ballot_on_happy_path() {
-    let dir = TempDir::new().unwrap();
-    let path = dir.path().join("bulletin.json");
-    seed_bulletin_with_election(&path, DEMO_PK_HEX);
+    let (_dir, store) = tmp_store();
+    seed_bulletin_with_election(&store, DEMO_PK_HEX);
     let result = submit_ballot_impl(
-        &path,
+        &store,
         SubmitArgs {
             voter_id: "v-000001".into(),
             token: "cd".repeat(16),
@@ -142,7 +145,7 @@ fn submit_ballot_appends_one_ballot_on_happy_path() {
         assert!(p.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
     }
 
-    let b = bulletin_store::load(&path).unwrap();
+    let b = store.load().unwrap();
     assert_eq!(b.ballots.len(), 1);
     assert_eq!(b.ballots[0].tracking_code, result.tracking_code);
     assert_eq!(b.ballots[0].nullifier, "ab".repeat(32));
@@ -153,9 +156,8 @@ fn submit_ballot_appends_one_ballot_on_happy_path() {
 
 #[test]
 fn submit_ballot_regenerates_tracking_code_on_collision() {
-    let dir = TempDir::new().unwrap();
-    let path = dir.path().join("bulletin.json");
-    let mut seed = seed_bulletin_with_election(&path, DEMO_PK_HEX);
+    let (_dir, store) = tmp_store();
+    let mut seed = seed_bulletin_with_election(&store, DEMO_PK_HEX);
 
     // Pre-seed the bulletin with every conceivable tracking code EXCEPT one
     // would be infeasible. Instead, we pre-seed with a small, deterministic
@@ -173,10 +175,10 @@ fn submit_ballot_regenerates_tracking_code_on_collision() {
         },
         submitted_at: "2026-06-14T00:00:00Z".into(),
     });
-    save(&path, &seed).unwrap();
+    store.save(&seed).unwrap();
 
     let result = submit_ballot_impl(
-        &path,
+        &store,
         SubmitArgs {
             voter_id: "v-000001".into(),
             token: "cd".repeat(16),
@@ -186,7 +188,7 @@ fn submit_ballot_regenerates_tracking_code_on_collision() {
     .expect("submit succeeds");
 
     assert_ne!(result.tracking_code, "BC-0000-0000");
-    let b = bulletin_store::load(&path).unwrap();
+    let b = store.load().unwrap();
     assert_eq!(b.ballots.len(), 2);
     assert!(b.ballots.iter().any(|x| x.tracking_code == "BC-0000-0000"));
     assert!(

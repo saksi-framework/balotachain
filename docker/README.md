@@ -42,19 +42,24 @@ semantics, so client adapters swap `load`/`save` for `GET`/`PUT` unchanged.
 
 ## Pointing clients at the gateway
 
-Clients (the Rust `bulletin-store` consumers — `e2e-runner` and each Tauri app's
-`src-tauri/src/balota.rs`) select their backend with one env var via
-`BulletinSource::from_env()`:
+Every client selects its backend with one env var — no code change, no rebuild
+needed to switch:
 
 ```bash
 export BALOTA_BULLETIN_URL=http://localhost:8080   # use the gateway
 # unset -> falls back to the local ~/.balotachain/bulletin.json file
 ```
 
-Wiring status: `BulletinSource` (File | Http) lives in `bulletin-store` and is
-tested. Swapping each `balota.rs` and `e2e-runner` from the bare `load(path)` /
-`save(path, b)` calls to `BulletinSource::from_env()` is the remaining client
-step (see the repo `CLAUDE.md` "where we left off").
+Wiring status: **done.** The three Tauri apps (`apps/{admin,trustee,auditor}/src-tauri/src/balota.rs`)
+and the voter's `balota-encrypt` CLI route through `BulletinSource::from_env()`
+(Rust). The voter Flutter read path uses `bulletinSourceFromEnv()` →
+`HttpBulletinStore` (`apps/voter/lib/data/bulletin_store.dart`); the CLI it shells
+out to inherits the same env var. Verified live: seeding an election via the
+gateway then running the wired CLI with `BALOTA_BULLETIN_URL` set records a real
+ElGamal ballot in the container.
+
+The `e2e-runner` stays file-only by design — it is the offline integration driver
+(it wipes + rebuilds a local bulletin each run).
 
 ## Reproducible dev environment
 

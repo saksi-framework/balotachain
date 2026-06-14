@@ -1,15 +1,14 @@
 //! Tauri commands for the Admin wizard. Bridges the React UI to the
-//! `bulletin-store` crate so each wizard step writes the real bulletin file.
+//! `bulletin-store` crate so each wizard step writes the real bulletin.
 //!
-//! Plain `*_impl` functions take an injected bulletin path so they are
-//! testable without touching `$HOME/.balotachain/bulletin.json`. The
-//! `#[tauri::command]` wrappers just resolve `bulletin_store::default_path()`
-//! and delegate.
-
-use std::path::Path;
+//! Plain `*_impl` functions take an injected [`BulletinSource`] so they are
+//! testable without touching real state, and so the same code works whether the
+//! backend is the local file or the containerized gateway. The
+//! `#[tauri::command]` wrappers resolve [`BulletinSource::from_env`] (file
+//! unless `BALOTA_BULLETIN_URL` is set) and delegate.
 
 use bulletin_store::{
-    Bulletin, Credential, Election, Position, TrusteeEntry, Voter, default_path, load, save,
+    Bulletin, BulletinSource, Credential, Election, Position, TrusteeEntry, Voter,
 };
 use rand::Rng;
 use sha2::{Digest, Sha256};
@@ -46,18 +45,18 @@ fn default_trustees(election_name: &str, opens: &str) -> Vec<TrusteeEntry> {
         .collect()
 }
 
-pub fn load_bulletin_impl(path: &Path) -> Result<Bulletin, String> {
-    load(path).map_err(|e| e.to_string())
+pub fn load_bulletin_impl(store: &BulletinSource) -> Result<Bulletin, String> {
+    store.load().map_err(|e| e.to_string())
 }
 
 pub fn create_election_impl(
-    path: &Path,
+    store: &BulletinSource,
     name: String,
     opens: String,
     closes: String,
     positions: Vec<Position>,
 ) -> Result<Bulletin, String> {
-    let mut bulletin = load(path).map_err(|e| e.to_string())?;
+    let mut bulletin = store.load().map_err(|e| e.to_string())?;
     let joint_public_key = sha_stub(&[&name, &opens]);
     let trustees = default_trustees(&name, &opens);
     bulletin.election = Some(Election {
@@ -70,28 +69,28 @@ pub fn create_election_impl(
         threshold: THRESHOLD,
         positions,
     });
-    save(path, &bulletin).map_err(|e| e.to_string())?;
+    store.save(&bulletin).map_err(|e| e.to_string())?;
     Ok(bulletin)
 }
 
 pub fn register_voter_impl(
-    path: &Path,
+    store: &BulletinSource,
     voter_id: String,
     email: String,
     name: String,
 ) -> Result<Bulletin, String> {
-    let mut bulletin = load(path).map_err(|e| e.to_string())?;
+    let mut bulletin = store.load().map_err(|e| e.to_string())?;
     bulletin.voters.push(Voter {
         id: voter_id,
         email,
         name,
     });
-    save(path, &bulletin).map_err(|e| e.to_string())?;
+    store.save(&bulletin).map_err(|e| e.to_string())?;
     Ok(bulletin)
 }
 
-pub fn issue_credential_impl(path: &Path, voter_id: String) -> Result<Bulletin, String> {
-    let mut bulletin = load(path).map_err(|e| e.to_string())?;
+pub fn issue_credential_impl(store: &BulletinSource, voter_id: String) -> Result<Bulletin, String> {
+    let mut bulletin = store.load().map_err(|e| e.to_string())?;
     if !bulletin.voters.iter().any(|v| v.id == voter_id) {
         return Err(format!("voter {} is not registered", voter_id));
     }
@@ -110,13 +109,13 @@ pub fn issue_credential_impl(path: &Path, voter_id: String) -> Result<Bulletin, 
         token,
         issued_at: now_rfc3339(),
     });
-    save(path, &bulletin).map_err(|e| e.to_string())?;
+    store.save(&bulletin).map_err(|e| e.to_string())?;
     Ok(bulletin)
 }
 
 #[tauri::command]
 pub fn load_bulletin() -> Result<Bulletin, String> {
-    load_bulletin_impl(&default_path())
+    load_bulletin_impl(&BulletinSource::from_env())
 }
 
 #[tauri::command]
@@ -126,21 +125,17 @@ pub fn create_election(
     closes: String,
     positions: Vec<Position>,
 ) -> Result<Bulletin, String> {
-    create_election_impl(&default_path(), name, opens, closes, positions)
+    create_election_impl(&BulletinSource::from_env(), name, opens, closes, positions)
 }
 
 #[tauri::command]
-pub fn register_voter(
-    voter_id: String,
-    email: String,
-    name: String,
-) -> Result<Bulletin, String> {
-    register_voter_impl(&default_path(), voter_id, email, name)
+pub fn register_voter(voter_id: String, email: String, name: String) -> Result<Bulletin, String> {
+    register_voter_impl(&BulletinSource::from_env(), voter_id, email, name)
 }
 
 #[tauri::command]
 pub fn issue_credential(voter_id: String) -> Result<Bulletin, String> {
-    issue_credential_impl(&default_path(), voter_id)
+    issue_credential_impl(&BulletinSource::from_env(), voter_id)
 }
 
 #[cfg(test)]
@@ -148,25 +143,19 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
-    fn tmp_path() -> (TempDir, std::path::PathBuf) {
+    fn tmp_store() -> (TempDir, BulletinSource) {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join("bulletin.json");
-        (dir, path)
+        (dir, BulletinSource::File(path))
     }
 
     #[test]
     fn create_election_writes_to_bulletin() {
-        let (_dir, path) = tmp_path();
-        let updated = create_election_impl(
-            &path,
-            "x".into(),
-            "y".into(),
-            "z".into(),
-            vec![],
-        )
-        .expect("creates");
+        let (_dir, store) = tmp_store();
+        let updated =
+            create_election_impl(&store, "x".into(), "y".into(), "z".into(), vec![]).expect("creates");
         assert!(updated.election.is_some());
-        let reloaded = load(&path).unwrap();
+        let reloaded = store.load().unwrap();
         assert!(reloaded.election.is_some());
         let e = reloaded.election.unwrap();
         assert_eq!(e.id, ELECTION_ID);
@@ -184,9 +173,9 @@ mod tests {
 
     #[test]
     fn register_voter_appends_one_voter() {
-        let (_dir, path) = tmp_path();
+        let (_dir, store) = tmp_store();
         let updated = register_voter_impl(
-            &path,
+            &store,
             "V-000001".into(),
             "voter1@wmsu.edu.ph".into(),
             "Demo Voter".into(),
@@ -196,30 +185,29 @@ mod tests {
         assert_eq!(updated.voters[0].id, "V-000001");
         assert_eq!(updated.voters[0].email, "voter1@wmsu.edu.ph");
         assert_eq!(updated.voters[0].name, "Demo Voter");
-        let reloaded = load(&path).unwrap();
+        let reloaded = store.load().unwrap();
         assert_eq!(reloaded.voters.len(), 1);
     }
 
     #[test]
     fn issue_credential_errors_when_voter_not_registered() {
-        let (_dir, path) = tmp_path();
-        let err = issue_credential_impl(&path, "V-NOPE".into())
+        let (_dir, store) = tmp_store();
+        let err = issue_credential_impl(&store, "V-NOPE".into())
             .expect_err("should error when voter is absent");
         assert!(err.contains("V-NOPE"), "got: {err}");
     }
 
     #[test]
     fn issue_credential_produces_nullifier_and_32_hex_token() {
-        let (_dir, path) = tmp_path();
+        let (_dir, store) = tmp_store();
         register_voter_impl(
-            &path,
+            &store,
             "V-000001".into(),
             "voter1@wmsu.edu.ph".into(),
             "Demo Voter".into(),
         )
         .unwrap();
-        let updated = issue_credential_impl(&path, "V-000001".into())
-            .expect("issues");
+        let updated = issue_credential_impl(&store, "V-000001".into()).expect("issues");
         assert_eq!(updated.credentials.len(), 1);
         let c = &updated.credentials[0];
         assert_eq!(c.voter_id, "V-000001");
