@@ -144,6 +144,12 @@ dist/
 build/
 out/
 lib/
+# Flutter projects use lib/ as source — un-ignore the voter app's source.
+!apps/voter/lib/
+!apps/voter/lib/**
+# Tauri React apps put adapter modules under src/lib/ — un-ignore those too.
+!apps/*/src/lib/
+!apps/*/src/lib/**
 .next/
 .nuxt/
 .svelte-kit/
