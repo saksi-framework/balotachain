@@ -12,8 +12,11 @@ permissions:
 env:
   # The Saksi cryptographic framework lives in its own repository
   # (github.com/saksi-framework/saksi) and is consumed as a dependency. This
-  # repository holds the BalotaChain application clients; its CI covers the
-  # TypeScript/Tauri workspaces. Rust and Go checks run in the Saksi repo.
+  # repository's CI covers the TypeScript/Tauri workspaces, the voter Flutter
+  # app, and the self-contained backend crates (bulletin-store, bulletin-gateway).
+  # Crates that depend on Saksi via a path dependency (balota-encrypt, e2e-runner,
+  # the Tauri src-tauri backends) are exercised in the Saksi-aware checkouts /
+  # locally; they need the sibling saksi repo to build.
   FORCE_COLOR: 1
 
 jobs:
@@ -103,6 +106,57 @@ jobs:
 
       - name: Test TypeScript workspaces
         run: pnpm test
+
+  flutter:
+    name: Voter app (Flutter)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+          cache: true
+
+      - name: Get Flutter dependencies
+        working-directory: apps/voter
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: apps/voter
+        run: flutter analyze
+
+      - name: Test
+        working-directory: apps/voter
+        run: flutter test
+
+  rust-core:
+    name: Backend crates (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            crates/bulletin-store
+            crates/bulletin-gateway
+
+      - name: Test bulletin-store
+        working-directory: crates/bulletin-store
+        run: cargo test
+
+      - name: Test bulletin-gateway
+        working-directory: crates/bulletin-gateway
+        run: cargo test
 
   build:
     name: Build (${{ matrix.os }})
