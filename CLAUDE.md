@@ -10,10 +10,12 @@ Orientation for coding agents. Read this first, then the latest update doc, then
   `BALOTA_BULLETIN_URL`: the 3 Tauri apps + `balota-encrypt` use `BulletinSource::from_env()`
   (Rust), the voter Flutter read path uses `bulletinSourceFromEnv()` → `HttpBulletinStore`.
   Verified live end-to-end (wired CLI records a real ElGamal ballot in the container). `e2e-runner`
-  stays file-only (offline driver). See `docker/README.md`. ⚠ The voter Flutter changes
-  (`bulletin_store.dart` HTTP store + `review_screen` wiring + `http_bulletin_store_test.dart`)
-  are UNVERIFIED on this box — Dart here is 3.9.2 but `apps/voter` needs Flutter 3.44.2 / Dart
-  ^3.11.4; run `flutter test` on that toolchain to confirm. Rust/gateway/live-E2E are verified.
+  stays file-only (offline driver). See `docker/README.md`.
+- **2026-06-14:** CI now verifies the voter Flutter app (Flutter 3.44.2) + the backend crates
+  (bulletin-store, bulletin-gateway) — both green. The voter Dart can't be built on this box
+  (Dart 3.9.2 < required 3.11.4), so CI is its verification path. ⚠ Pre-existing CI reds remain
+  in the TS jobs (lint/typecheck/test/security): `@balotachain/ui` isn't built before the apps
+  typecheck, and `pnpm audit` flags moderate advisories — separate from this work, still TODO.
 - **2026-06-14:** [Phase 0-3 shipped — one-voter staging demo](docs/updates/2026-06-14-phase-0-3-shipped.md)
   (UI for all 4 apps + real Saksi crypto + file-backed bulletin stand-in + E2E driver; 70 tests green).
 
