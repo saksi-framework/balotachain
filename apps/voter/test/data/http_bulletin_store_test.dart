@@ -15,7 +15,7 @@ void main() {
 
   setUp(() async {
     serverState = emptyBulletin();
-    server = await HttpServer.bind(InternetAddress.loopback, 0);
+    server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     baseUrl = 'http://127.0.0.1:${server.port}';
     unawaited(_serve(server, () => serverState, (b) => serverState = b));
   });
