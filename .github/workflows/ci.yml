@@ -248,8 +248,8 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
           cd saksi
-          ./tools/saksi-demo.sh gen
-          ./tools/saksi-demo.sh cycle
+          bash ./tools/saksi-demo.sh gen
+          bash ./tools/saksi-demo.sh cycle
 
       - name: Start adapter and assert GET /bulletin reflects the chain
         run: |
