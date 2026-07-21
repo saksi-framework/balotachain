@@ -95,14 +95,22 @@ Containerized backend (Stage 1) is in and verified. Resume options:
    credentials/DKG/presentation proofs end-to-end) — large, reverses the locked "stubs" decision.
    To actually point the auditor at real Fabric, run the adapter (needs a live network reachable;
    local Fabric needs a space-free path / WSL — the dev path's space breaks fabric-samples).
-4. **Real proofs**: finish Saksi side (CDS OR, Benaloh, credentials, Chaum-Pedersen, Schnorr —
-   all SHA-256 stubs). Note: saksi now exposes `partial_decrypt_v2` (Phase F); `partial_decrypt`
-   is deprecated.
+4. **Real proofs — DONE on the Saksi side (this note was stale; corrected 2026-07-21).** CDS OR,
+   Benaloh, credentials, Chaum-Pedersen, and Schnorr are **real ristretto255 implementations, not
+   SHA-256 stubs**: `saksi-crypto/src/nizk/cds.rs` is a genuine Chaum-Pedersen OR-proof with
+   Fiat-Shamir challenge splitting (simulated branches + forced true-branch challenge), and
+   `saksi-credentials` states "full implementations, not stubs". The chaincode verifies the CDS
+   proof on-chain at endorsement (ADR-0007). What remains is **balotachain-side**: this repo's
+   demo path still fabricates stub credentials, so balotachain-generated ballots are not
+   chaincode-valid — that is the write-path gap in item 3, not missing crypto in Saksi.
+   Note: saksi now exposes `partial_decrypt_v2` (Phase F); `partial_decrypt` is deprecated.
 5. **Real combine + tally**: replace `crates/e2e-runner/src/lib.rs::finalize_demo_tally` with
    real DKG combine + homomorphic tally decryption (Saksi work).
 
 ## Locked decisions
-- Use Saksi proof stubs as-is for the demo (real proofs = later Saksi work).
+- Use balotachain's stub **credentials** as-is for the demo. (Superseded in part: Saksi's *proofs*
+  are real — see item 4 above. What stays stubbed is balotachain's demo credential material, which
+  is why balotachain-generated ballots aren't chaincode-valid yet.)
 - Build all UIs on the real Saksi happy-path.
 - Designs are the UI source of truth; recreate pixel-faithful (tokens in the plan).
 
