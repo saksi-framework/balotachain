@@ -239,13 +239,39 @@ Also update `saksi/docs/plans/2026-07-15-research-campaign-suite.md` NOT-in-scop
 
 **M20 — expired-credential negative case (manuscript test T5, line 939).** The
 doc lists "invalid or **expired** credentials" as a rejection case; the v1
-credential model has **no expiry**. **Decision: add a credential expiry field +
-rejection test** (a real protocol change): add `valid_until` to the credential /
-presentation wire type, extend the issuer signature to cover it, verify it on
-the chaincode (against the Fabric tx timestamp via `GetTxTimestamp`) and in the
-auditor, and add the negative test. Touches `saksi-protocol` (proto + regen),
-`saksi-credentials`, chaincode `credverify`, and `saksi-auditor`. LARGE — the one
-genuinely new protocol feature the matrix forces.
+credential model has **no expiry**. **Decision: add credential expiry as a real
+protocol feature.**
+
+**Eng-review E1 — the expiry clock must NOT be the client tx timestamp.**
+`GetTxTimestamp` is set by the client in the signed proposal, so a malicious voter
+could backdate it to pass an expired credential. Instead bind expiry to an
+**on-chain election voting window** the client does not control:
+- `ElectionParameters` gains a voting window (`voting_close`, optionally
+  `voting_open`), stored at `CreateElection`.
+- The credential gains `valid_until`. At `SubmitBallot` the chaincode rejects if
+  `valid_until < voting_close` (the credential must cover the whole voting
+  period), comparing two on-chain values — deterministic across endorsers and
+  not voter-spoofable. A real boundary, not a hygiene check.
+
+**Eng-review E2 — this is a wire-breaking change with Rust↔Go byte-parity risk;
+sequence these steps explicitly (do not discover them mid-build):**
+1. Proto: add `valid_until` to the credential/presentation and the voting window
+   to `ElectionParameters`; regenerate Rust + Go (protoc/Docker — the known-fiddly
+   path; use the host vendored protoc fallback if Docker is down).
+2. `saksi-credentials`: extend the **issuer-signed message** to cover `valid_until`
+   (it MUST be inside the signature or a voter can edit it).
+3. `credverify` (Go): mirror the new signed scope **byte-for-byte** with the Rust
+   signer.
+4. **Re-pin the golden vectors** `credential-sig-v1.hex` and `ballot-v1.hex`
+   (the signature bytes change).
+5. A **Rust→Go signature-parity test** over the new scope (the chaincode gate and
+   the Rust signer must agree, else all ballots reject at endorsement).
+6. Then the chaincode expiry gate + auditor check + the negative test (expired
+   credential rejected) with its positive control (valid credential accepted).
+
+Touches `saksi-protocol` (proto + regen), `saksi-credentials`, chaincode
+(`credverify` + `contract`), `saksi-auditor`. LARGE — the one genuinely new
+protocol feature the matrix forces; the byte-parity step is the landmine.
 
 ### Spec / pseudocode artifact the doc says is released with the Saksi repo
 
@@ -278,6 +304,22 @@ credential issuance, nullifier derivation, tally decode incl. BSGS). Doc D2.
   records, 3 independent tallies matching seeded ground truth. Generate + document
   (already producible: `saksi-demo gen --voters 5 --positions 3`).
 
+### Integration-test scope (eng-review E3, M19)
+M19 claims a three-tier plan (unit / integration / system). The integration tier
+is scoped to **what exists**: app↔Saksi-library (FFI), Saksi-library↔chaincode
+(`saksi-demo` lifecycle), chaincode↔ledger, verifier↔ledger (`fabric-adapter`,
+CI-proven). The **app↔Fabric write** integration is explicitly **deferred** in
+both plan and manuscript (the voter/trustee/admin write path is LARGE and out of
+scope; apps write to a JSON store, not Fabric). Do not claim app↔Fabric write
+integration as passing.
+
+### Added test items (eng-review G4/G5)
+- **G4 (M12):** BSGS decode differentially tested against the linear scan across a
+  value range + boundaries (0, N, exactly the ≥50k threshold); the threshold is a
+  named constant.
+- **G5 (M23):** a test asserting the on-chain stored set equals the 9 classified
+  public items (no extra field that could create a voter↔ballot linkage).
+
 ### Already satisfied / manuscript-only
 M27 correctness ladder ✓ (proven at N=1000); M24 verifier's 10 checks = existing
 auditor findings (map them, incl. `ledger_digest` = append-only consistency); M2
@@ -294,11 +336,11 @@ I5/M17 + I4/I6/I7 in the campaign harness (network-gated).
 | Review | Trigger | Why | Runs | Status | Findings |
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | n/a | Panel-response triage; strategy set by adviser comments |
-| Codex Review | `/codex review` | Independent 2nd opinion | 0 | unavailable | codex not on this profile's PATH; Claude-subagent outside-voice declined by user |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | clean | 5 findings, all resolved: E1 I1 public-record-only (no ground_truth) + E=0 stays generator-side; E2 I2 linkage-attempt experiment; E3 I3 hand-maintained table (no extractor); E4 I4-I7 folded into the campaign plan (single harness owner); F5 I1 tamper matrix → 6 mutation classes |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | unavailable | codex not on this profile's PATH; subagent outside-voice previously declined |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | clean | Run 1 (I-items): 5 findings resolved (I1 public-record-only + E=0 gen-side; I2 linkage-attempt; I3 hand-maintained table; I4-I7 folded into campaign plan; I1 6-case tamper matrix). Run 2 (matrix §E): 5 findings resolved — E1 credential expiry bound to an on-chain voting window (not spoofable client tx timestamp); E2 explicit Rust↔Go byte-parity + golden-vector re-pin sequence for the wire-breaking M20 change; E3 M19 integration scoped to what exists (app↔Fabric write stays deferred); G4 BSGS differential+boundary test; G5 on-chain 9-item data-classification test |
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | n/a | No UI in this plan (tests + docs) |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | n/a | — |
 
-- **VERDICT:** ENG CLEARED — ready to implement. HIGH-priority offline items (I8, I3, I1, I2) can start now; I4–I7 live in the saksi campaign plan.
+- **VERDICT:** ENG CLEARED (run 2) — matrix obligations locked. Start order: M12 BSGS (safe, isolated) → M20 expiry (wire-breaking; follow the E2 parity sequence) → I8/I3/I1/I2. Manuscript should note (M8 epistemic status): credential expiry is enforced against the on-chain voting window; app↔Fabric write integration is deferred.
 
 NO UNRESOLVED DECISIONS
