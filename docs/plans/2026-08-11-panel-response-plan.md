@@ -215,6 +215,80 @@ Phase 2 measurement harness (network-gated). D6–D9 + framing land alongside.
 - Any manuscript prose beyond claim-scoping the code comments / report strings.
 - Making the 1M stress tier mandatory (#20 explicitly relaxes it).
 
+---
+
+## E. Matrix of Revisions — committed-manuscript obligations (2026-08-19)
+
+Source: `doc-spec-update/Matrix_of_Revisions.docx` (32 revisions the researchers
+have ALREADY written into `BalotaChain_LineNumbered.docx`) + the line-numbered
+manuscript body. Because these are *committed* claims, the code must now MATCH
+them. Investigation mapped all 32 rows to code obligations; the material ones:
+
+### Hard code-vs-doc mismatches (doc now claims what the code lacks)
+
+**M12 — BSGS tally decode at ≥50k voters (manuscript p.40 line 734).** The doc
+commits verbatim to "a linear scan at the smaller tiers and Shanks's baby-step
+giant-step method [29] at fifty thousand voters and above, with the search bound
+set to the number of ballots accepted." Current code is linear-only
+(`tally.rs` `for k in 0..=max`). **Decision: implement BSGS at ≥50k, keep linear
+below** (reverses this plan's earlier "BSGS not in scope"). ~40 lines
+(curve25519-dalek), bound = accepted-ballot count, exact + always terminates.
+Lands in `saksi-auditor::tally` (and the standalone `brute_force_decode`).
+Also update `saksi/docs/plans/2026-07-15-research-campaign-suite.md` NOT-in-scope
+(remove the BSGS exclusion).
+
+**M20 — expired-credential negative case (manuscript test T5, line 939).** The
+doc lists "invalid or **expired** credentials" as a rejection case; the v1
+credential model has **no expiry**. **Decision: add a credential expiry field +
+rejection test** (a real protocol change): add `valid_until` to the credential /
+presentation wire type, extend the issuer signature to cover it, verify it on
+the chaincode (against the Fabric tx timestamp via `GetTxTimestamp`) and in the
+auditor, and add the negative test. Touches `saksi-protocol` (proto + regen),
+`saksi-credentials`, chaincode `credverify`, and `saksi-auditor`. LARGE — the one
+genuinely new protocol feature the matrix forces.
+
+### Spec / pseudocode artifact the doc says is released with the Saksi repo
+
+**M11 (line 711) + M12 Algorithms.** `spec/protocol.md` already covers
+ristretto255 / 32-byte encodings / Merlin Fiat-Shamir / additive `m·G`. Add the
+doc's remaining specifics: 252-bit scalar field, OS CSPRNG via `getrandom`,
+explicit ciphertext structure, and **numbered pseudocode/Algorithms** matching
+the manuscript's "Algorithm N" references (Pedersen DKG, CDS prove/verify,
+credential issuance, nullifier derivation, tally decode incl. BSGS). Doc D2.
+
+### Experiments the doc commits to — run + record evidence (refine I1/I2/I5)
+
+- **M21 (line 902):** verifier runs on a **separate machine** from the public
+  record, reproduces the tally + accepts all proofs, then one record is modified
+  and it must detect the inconsistency ("software independence", Rivest). We now
+  literally have two boxes (Linux dev + Windows run) — run it cross-machine. This
+  is I1, upgraded from "clean process" to "separate machine".
+- **M32 (line 877):** Table 3.8 nine-column schema, 8 scenarios — the actual-
+  result + evidence-log columns are "completed during implementation": run the 8
+  scenarios, capture actual results + log references, archive with the repo. This
+  is the evidence layer over I3.
+- **M16 (line 920):** privacy unlinkability formalized as identifying a targeted
+  voter's ballot **better than random over the anonymity set** (Pfitzmann-Hansen),
+  bounded by 1/(anonymity-set size). Pins I2's success metric.
+- **M17 (line 1068):** **≥10 measured repetitions after 2 discarded warm-ups**,
+  failed runs excluded + failure rate reported, separate proof-gen / proof-verify
+  / aggregation / threshold-decryption timings, min/median/mean/p95/p99/stddev +
+  CPU/mem/disk/net. Pins the campaign-plan harness numbers (I5).
+- **M13 (line 768):** worked example — 3 positions × 5 voters → 15 accepted
+  records, 3 independent tallies matching seeded ground truth. Generate + document
+  (already producible: `saksi-demo gen --voters 5 --positions 3`).
+
+### Already satisfied / manuscript-only
+M27 correctness ladder ✓ (proven at N=1000); M24 verifier's 10 checks = existing
+auditor findings (map them, incl. `ledger_digest` = append-only consistency); M2
+baseline cross-study (campaign plan). ~18 rows are pure prose (captions, refs,
+DSRM table, terminology, cost, ethics, lit-synthesis) — manuscript, no code.
+
+### Revised implementation order (matrix-aware)
+Offline, verifiable on Windows: **M12 BSGS → M20 expiry → I8/I3 (+M32 evidence,
+M13 example) → I1/M21 (cross-machine) → I2/M16 → M11 spec/pseudocode**. Then
+I5/M17 + I4/I6/I7 in the campaign harness (network-gated).
+
 ## GSTACK REVIEW REPORT
 
 | Review | Trigger | Why | Runs | Status | Findings |
