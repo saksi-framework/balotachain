@@ -295,8 +295,12 @@ jobs:
           # before PublishTally lands.
           curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID" | jq -e '.sealed == true'
 
+          # Poll the PUBLIC endpoint (no operator param) — it only opens once
+          # PublishTally lands, so it's the real completion signal. (The
+          # operator view bypasses the seal and reads true from the first
+          # request, before any lifecycle event has committed.)
           for i in $(seq 1 60); do
-            OPEN=$(curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID?operator=1" | jq -r '.sealed == false' || echo false)
+            OPEN=$(curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID" | jq -r '.sealed == false' || echo false)
             [ "$OPEN" = "true" ] && break
             sleep 5
           done
