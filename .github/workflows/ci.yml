@@ -218,7 +218,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: saksi-framework/saksi
-          ref: spike/qscc-probe # THROWAWAY (QSCC spike) — revert to default branch
+          ref: onchain-audit-trail
           path: saksi
 
       - name: Set up Go
@@ -252,41 +252,63 @@ jobs:
           bash ./tools/saksi-demo.sh gen
           bash ./tools/saksi-demo.sh cycle
 
-      # THROWAWAY (QSCC spike): prove a committed ballot's ledger receipt
-      # (block number, tx id, block hash) is retrievable via qscc.
-      - name: QSCC spike — ledger receipt for a committed ballot
+      - name: Assert the on-chain audit trail end-to-end (gate + receipts)
         run: |
           set -euo pipefail
+          # Build the console, start it against the live network, drive one
+          # on-chain run over HTTP, and assert the gate + receipts.
           export PATH="$GITHUB_WORKSPACE/bin:$FABRIC_SAMPLES/bin:$PATH"
           ORG="$FABRIC_SAMPLES/test-network/organizations/peerOrganizations/org1.example.com"
           MSP="$ORG/users/User1@org1.example.com/msp"
-          CONN_ARGS=(
-            --peer-endpoint localhost:7051
-            --gateway-peer peer0.org1.example.com
-            --tls-cert "$ORG/peers/peer0.org1.example.com/tls/ca.crt"
-            --cert "$(find "$MSP/signcerts" -type f | head -n1)"
-            --key "$(find "$MSP/keystore" -type f | head -n1)"
-            --msp-id Org1MSP --channel saksi --chaincode saksi-bulletin
-          )
           cd saksi
-          # Own bundle with a distinct election-id so the demo-cycle election
-          # (and any fixture) never collides in this network.
-          cargo run --release -p saksi-demo -- gen --voters 1 --positions 1 --candidates 2 \
-            --trustees 3 --threshold 2 --election-id "qscc-spike-$GITHUB_RUN_ID" \
-            --election-name "QSCC spike" --trustee-names alice,bob,carol /tmp/qscc-bundle.json
-          cd packages/saksi-bulletin/client-sdk
-          go run ./cmd/saksi-console --bundle /tmp/qscc-bundle.json --setup-only "${CONN_ARGS[@]}"
-          if ! go run ./cmd/qscc-probe --bundle /tmp/qscc-bundle.json "${CONN_ARGS[@]}"; then
-            echo "::warning::gateway qscc evaluate failed — trying peer-CLI fallback to distinguish 'gateway no' from 'receipt unavailable'"
-            export FABRIC_CFG_PATH="$FABRIC_SAMPLES/config"
-            export CORE_PEER_TLS_ENABLED=true
-            export CORE_PEER_LOCALMSPID=Org1MSP
-            export CORE_PEER_TLS_ROOTCERT_FILE="$ORG/peers/peer0.org1.example.com/tls/ca.crt"
-            export CORE_PEER_MSPCONFIGPATH="$ORG/users/Admin@org1.example.com/msp"
-            export CORE_PEER_ADDRESS=localhost:7051
-            peer chaincode query -C saksi -n qscc -c '{"Args":["GetChainInfo","saksi"]}' | head -c 400
-            exit 1
-          fi
+          cargo build --release -p saksi-demo
+          cd packages/saksi-campaign
+          go build -o /tmp/saksi-campaign ./cmd/saksi-campaign
+          /tmp/saksi-campaign serve --addr 127.0.0.1:8090 \
+            --demo ../../target/release/saksi-demo --runs /tmp/runs \
+            --fabric-tls-cert "$ORG/peers/peer0.org1.example.com/tls/ca.crt" \
+            --fabric-cert "$(find "$MSP/signcerts" -type f | head -n1)" \
+            --fabric-key "$(find "$MSP/keystore" -type f | head -n1)" &
+          CONSOLE_PID=$!
+          trap 'kill $CONSOLE_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do curl -fsS 127.0.0.1:8090/ >/dev/null && break || sleep 1; done
+
+          RUN_ID=$(curl -fsS -X POST 127.0.0.1:8090/generate -H 'Content-Type: application/json' -d '{
+            "name":"ci-trail","trustees":[{"name":"a"},{"name":"b"},{"name":"c"}],"threshold":2,
+            "positions":1,"candidates":2,"voters":3,"distribution":"uniform","mode":"onchain"}' | jq -r .run_id)
+          echo "run id = $RUN_ID"
+
+          # /generate's demo-gen phase holds the run's single-phase lock in the
+          # background (202 Accepted, work continues after the response) — an
+          # immediate /submit can 409 while it's still running, so poll until free.
+          SUBMIT_STATUS=""
+          for i in $(seq 1 30); do
+            SUBMIT_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST 127.0.0.1:8090/submit \
+              -H 'Content-Type: application/json' -d "{\"run_id\":\"$RUN_ID\"}")
+            [ "$SUBMIT_STATUS" = "202" ] && break
+            sleep 2
+          done
+          [ "$SUBMIT_STATUS" = "202" ] || { echo "submit failed to start: HTTP $SUBMIT_STATUS" >&2; exit 1; }
+
+          # Mid-run probe: the lifecycle takes long enough that the first public
+          # (non-operator) read lands pre-tally, proving the gate is sealed
+          # before PublishTally lands.
+          curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID" | jq -e '.sealed == true'
+
+          for i in $(seq 1 60); do
+            OPEN=$(curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID?operator=1" | jq -r '.sealed == false' || echo false)
+            [ "$OPEN" = "true" ] && break
+            sleep 5
+          done
+          TRAIL=$(curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID?operator=1")
+          echo "$TRAIL" | jq .
+          echo "$TRAIL" | jq -e '.sealed == false'
+          echo "$TRAIL" | jq -e '.events | length >= 8' # create+dkg+3 ballots+close+2 partials+tally
+          echo "$TRAIL" | jq -e '[.events[].receipt.BlockNumber] as $b | $b == ($b | sort)' # monotonic blocks
+          test -f "/tmp/runs/$RUN_ID/receipts.csv"
+
+          # Public (non-operator) gate must be OPEN now that the tally is published:
+          curl -fsS "127.0.0.1:8090/api/trail/$RUN_ID" | jq -e '.sealed == false'
 
       - name: Start adapter and assert GET /bulletin reflects the chain
         run: |
