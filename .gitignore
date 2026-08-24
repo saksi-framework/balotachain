@@ -319,3 +319,6 @@ public/build/
 *.tgz
 *.7z
 *.rar
+
+# Generated presentation handouts (regenerate from docs/saksi/*.md)
+pdf-handouts/
