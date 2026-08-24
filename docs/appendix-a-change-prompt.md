@@ -107,6 +107,34 @@ deserves an accurate claim rather than none.
 If for any reason you prefer to keep the existing phrasing, the words
 "with a recorded seed" must still go, because no seed is recorded.
 
+## Change 5 — a third distribution profile now exists
+
+Appendix A defines two selection profiles, `uniform` and `skewed`. A third,
+**`realistic`**, has since been implemented and is the one used for the
+demonstration. Please add it wherever the two are enumerated.
+
+The reason it exists is worth one sentence, because it is a limitation of the
+original two:
+
+> `uniform` divides the electorate evenly across candidates, so every candidate
+> receives an identical count and no winner is determined. `skewed` gives the
+> leading candidate exactly half the vote but divides the remainder evenly, so
+> the losing candidates tie with one another at any population size. Neither can
+> decide a single-winner race outright or produce a clean cut for a multi-seat
+> one. `realistic` apportions each position by a weight curve whose steepness
+> varies by position, producing strictly decreasing vote counts that sum exactly
+> to the electorate, so every race is decided and each position carries a
+> distinct distribution.
+
+Keep `uniform` and `skewed` in the table — they remain the profiles the
+performance comparisons are run under, where an even distribution is a
+reasonable workload and the tie is irrelevant. Only add the third, and note that
+the correctness and demonstration runs use `realistic`.
+
+If Appendix A states or implies that the profiles produce comparable
+distributions across positions, that should be adjusted too: under `realistic`
+the three positions are deliberately different in shape.
+
 ## Also update, in the same pass
 
 - The `Election scales (voters)` row: the two largest tiers are now labelled

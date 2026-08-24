@@ -1,72 +1,80 @@
-# Prompt — fix the Appendix B mockup so it matches the implemented ballot model
+# Prompt — align Appendix B's bulletin board with the implemented ballot model
 
 Hand this over together with `docs/appendix-a-change-prompt.md`; both are
 manuscript edits in the same pass.
 
+> **This supersedes an earlier version of this prompt**, which asked for the
+> Senator race to be rewritten as single-winner because the generator could not
+> produce a multi-winner contest. The generator now can. The mockup's twelve
+> seats stay; what must be corrected is smaller, and different.
+
 ---
 
-I need one correction to **Appendix B: Software Design/Prototype** in my thesis
-manuscript. The Public Bulletin Board mockup shows an election the implemented
-system cannot produce, and a panelist comparing the screenshot against my
-generated data would catch it.
+I need two corrections to **Appendix B: Software Design/Prototype** in my thesis
+manuscript, so the Public Bulletin Board mockup matches what the implemented
+system produces.
 
-## The contradiction
+## What is already correct and must NOT change
 
-The Public Bulletin Board mockup currently shows a **Senator** race labelled
-**"12 seats"** and **"Top 12 of 37 candidates elected"**, listing several
-senators each marked `ELECTED`.
+The mockup shows a **Senator** race with **12 seats**, several candidates marked
+`ELECTED`. That is right. The implemented system elects the top *N* candidates in
+the Senate race, with *N* configurable, while President and Vice President remain
+single-winner. Keep the seat count, the `ELECTED` markers, the vote counts, the
+percentages, and the bar styling exactly as they are.
 
-That is a **multi-winner** contest with a **per-position candidate count**. The
-implemented generator supports neither:
+## Correction 1 — state the ballot model
 
-- Every position is **single-winner** — a voter selects exactly one candidate.
-- Every position has the **same** number of candidates, set by one parameter.
+The mockup does not say how a voter votes in a twelve-seat race, and the two
+possibilities are very different systems. The implemented one is:
 
-This is not an oversight in the generator. It is what the rest of the manuscript
-already says. Appendix A's generation parameters read *"three positions:
-President, Vice President, Senator, **single-winner each**"* and *"Fixed set of
-K candidates"*. The mockup is the only place claiming otherwise.
+> Each voter selects **one** senator. The twelve highest-polling candidates are
+> elected.
 
-Supporting a genuine 12-of-37 Senate race would require new cryptography, not a
-configuration change: the ballot well-formedness proof (CDS) proves each
-ciphertext encrypts zero or one, and the data-validation gate asserts that each
-position's ground-truth total equals its ballot count. A twelve-winner contest
-needs a proof that a voter's selections *sum to twelve*, plus a reworked gate
-and auditor. That is out of scope for this study.
+That is **Single Non-Transferable Vote (SNTV)**, a real multi-seat electoral
+system. It is *not* the current Philippine Senate method, in which a voter may
+mark up to twelve names — and the difference matters, because a panelist may
+reasonably assume the latter.
 
-## The change
+Please add a short line to the Senator column, or to the caption, making the
+ballot model explicit. Something like:
 
-Rewrite the Senator column of the Public Bulletin Board mockup as a
-**single-winner** race, consistent with President and Vice President:
+> Senator — 12 seats. One vote per voter; the twelve highest-polling candidates
+> are elected (single non-transferable vote).
 
-- Remove the **"12 seats"** label; make it **1 seat**, as the other two are.
-- Remove **"Top 12 of 37 candidates elected"** and the "Showing top 3 of 12
-  elected senators · View full ranking →" affordance.
-- Show a candidate list of the same length as the other positions, with exactly
-  **one** candidate marked `ELECTED` — the one with the highest count.
-- Keep the vote counts, percentages, and bar styling exactly as they are.
+## Correction 2 — the candidate count
 
-Everything else in Appendix B is accurate and should not change.
+The mockup says **"Top 12 of 37 candidates elected."** The implemented generator
+uses **one candidate count for every position**, so a run with 37 senators would
+also give 37 presidential candidates.
 
-## Also worth stating, if the manuscript does not already
+Either:
 
-Scope and Limitations does not currently note that the evaluated ballot model is
-single-winner with a uniform candidate count per position. Consider adding one
-sentence there, phrased as a stated limit rather than a defect — something like:
+- **(preferred)** change "37" to the same candidate count the other positions
+  show, so the figure is internally consistent; or
+- keep 37 and add a note that the figure illustrates a larger candidate list than
+  the evaluated configuration uses.
 
-> The evaluated ballot model assigns each position a single winner and an equal
-> number of candidates; multi-winner contests such as the twelve-seat Senate
-> race, and per-position candidate lists of differing length, are outside the
-> scope of this evaluation, as they require a ballot well-formedness proof over
-> a selection limit greater than one.
+## Also worth stating in Scope and Limitations
 
-That converts something a panelist could raise as a gap into something the study
-declares on its own terms.
+If the manuscript does not already say so, one sentence converts a question a
+panelist could raise into something the study declares on its own terms:
+
+> The evaluated ballot model allows each voter a single selection per position
+> and an equal number of candidates across positions. Multi-seat contests are
+> decided by plurality over those single selections; ballots on which a voter
+> marks several candidates for one position — as in the current Philippine
+> Senate election — are outside the scope of this evaluation, as they require a
+> ballot well-formedness proof over a selection limit greater than one.
+
+That sentence is accurate and worth keeping: supporting a twelve-mark ballot
+genuinely would require new cryptography, not a configuration change. The
+well-formedness proof shows each ciphertext encrypts zero or one and the
+validation gate asserts each position's total equals its ballot count; a
+twelve-mark ballot needs a proof that a voter's selections *sum to twelve*, plus
+a reworked gate, chaincode verifier, and auditor.
 
 ## Constraints
 
-- Do not change any claim in Chapters I–III beyond the optional Scope sentence
-  above.
-- Keep the mockup's existing visual style, colours, and layout — only the
-  Senator column's seat count, candidate count, and elected markers change.
+- Do not change any claim in Chapters I–III beyond the optional Scope sentence.
+- Keep the mockup's existing visual style, colours, and layout.
 - Do not touch Appendix A here; that is the separate prompt.

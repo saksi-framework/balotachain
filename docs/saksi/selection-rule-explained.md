@@ -1,16 +1,24 @@
-# The selection rule, explained line by line
+# The selection rules, explained
 
 How the generator decides which candidate each synthetic voter picks. Written
 for someone who wants to follow the arithmetic rather than take it on trust.
 
-The function lives at `packages/saksi-auditor/src/fixtures.rs` in the `saksi`
-repo. A runnable Python translation is in
-[`reference_generator.py`](reference_generator.py); every number in this file
-was produced by running it, not written from memory.
+The code lives at `packages/saksi-auditor/src/fixtures.rs`. A runnable Python
+translation is in `reference_generator.py`; every number here was produced by
+running it, not written from memory.
+
+There are three profiles. **Only one of them can decide an election**, and the
+reason the other two cannot is worth understanding before using them.
+
+| Profile | Shape | Decides a winner? |
+|---|---|---|
+| `uniform` | even split across all candidates | **No** — ties at rank one |
+| `skewed` | candidate 1 takes half, rest split the remainder evenly | Winner yes; **losers all tie** |
+| `realistic` | strictly decreasing, different shape per position | **Yes** |
 
 ---
 
-## The whole thing
+## Part 1 — the two round-robin profiles
 
 ```rust
 pub(crate) fn select_candidate(
@@ -35,239 +43,210 @@ pub(crate) fn select_candidate(
 }
 ```
 
-Eleven lines. The rest of this document is those eleven lines, slowly.
+Four inputs, one output — a 0-based candidate index. **Nothing else goes in:**
+no clock, no random number generator, no seed. That is what "pure function"
+means, and it is why the same four numbers always produce the same vote.
 
----
-
-## 1. The signature
-
-```rust
-fn select_candidate(profile, voter_idx, p, candidates) -> usize
-```
-
-Four inputs, one output. The output is a **candidate index**, 0-based — `0`
-means the first candidate on the ballot.
-
-| Input | Means | Example |
-|---|---|---|
-| `profile` | `Uniform` or `Skewed` | `Skewed` |
-| `voter_idx` | which voter, `0` to `voters - 1` | `5` = the 6th voter |
-| `p` | which position | `0` = President, `1` = VP, `2` = Senator |
-| `candidates` | how many candidates that position has | `4` |
-
-**Nothing else goes in.** No clock, no random number generator, no file, no
-seed. That is what "pure function" means, and it is why the same four numbers
-always produce the same vote.
-
-That property is not a stylistic preference — it is what lets the ground-truth
-CSV be trusted. The plaintext table and the encrypted ballots are produced by
-two different code paths; they agree because both call this function with the
-same arguments. Introduce randomness and they would silently describe different
-populations.
-
----
-
-## 2. The guard
+### The guard
 
 ```rust
-if candidates <= 1 {
-    return 0;
-}
+if candidates <= 1 { return 0; }
 ```
 
-Two jobs, one obvious and one not.
+Two jobs. The obvious one: a one-candidate contest has only one possible vote.
+The real one: the skewed branch divides by `candidates - 1`, so without this
+line a single-candidate contest would be **division by zero**. Guards that look
+redundant often are not.
 
-**The obvious one:** if a position has only one candidate, the only possible
-vote is candidate `0`.
-
-**The real reason it is there:** the skewed branch below divides by
-`candidates - 1`. If `candidates` were `1`, that is **division by zero** — a
-crash. This line makes that unreachable. Guards that look redundant often are
-not; this one is load-bearing.
-
----
-
-## 3. Uniform — walk the list
+### Uniform — walk the list
 
 ```rust
 (voter_idx + p) % candidates
 ```
 
-`%` is remainder: `7 % 4` is `3`, because 7 = 4 + 3.
-
-Ignore `+ p` for a moment. `voter_idx % candidates` counts around the ballot in
-a loop:
-
-| voter | `voter_idx % 4` |
-|---|---|
-| 0 | 0 |
-| 1 | 1 |
-| 2 | 2 |
-| 3 | 3 |
-| 4 | **0** — wraps |
-| 5 | 1 |
-
-Real output, 4 candidates, position 0:
+`%` is remainder, so this counts around the ballot in a loop:
 
 ```python
 >>> [select_candidate("uniform", v, 0, 4) for v in range(8)]
 [0, 1, 2, 3, 0, 1, 2, 3]
 ```
 
-Voter 0 picks candidate 0, voter 1 picks candidate 1, restarting every four
-voters. Across a million voters each candidate ends up with a near-exactly equal
-share. That is what *uniform* means.
+`+ p` rotates the starting point per position, so voter 0 does not pick the
+first candidate in every race.
 
-**What `+ p` does.** It shifts the starting point per position. The same voters
-at position 1:
+**Why it cannot decide anything.** Across 1000 voters and 4 candidates this
+gives 250, 250, 250, 250 — an exact four-way tie, every time. Not bad luck:
+dividing the electorate evenly is precisely what the profile does.
 
-```python
->>> [select_candidate("uniform", v, 1, 4) for v in range(8)]
-[1, 2, 3, 0, 1, 2, 3, 0]
-```
-
-Same cycle, rotated by one. Without it, voter 0 would pick the first candidate
-in every single race — obviously artificial.
-
----
-
-## 4. Skewed — the even/odd split
+### Skewed — half to the front-runner
 
 ```rust
-if voter_idx % 2 == 0 {
-    0
-}
+if voter_idx % 2 == 0 { 0 } else { 1 + ((voter_idx / 2 + p) % (candidates - 1)) }
 ```
 
-`voter_idx % 2` is `0` for even numbers and `1` for odd. So this reads: **every
-even-numbered voter picks candidate 0.**
-
-Voters 0, 2, 4, 6, 8 … are exactly half the electorate. That is how candidate 0
-ends up with precisely 50% — not approximately, structurally. At 3,524,078
-voters, candidate 0 receives exactly 1,762,039.
-
----
-
-## 5. Skewed — spreading the rest
-
-```rust
-1 + ((voter_idx / 2 + p) % (candidates - 1))
-```
-
-This runs only for **odd** voters — the other half of the electorate. They share
-candidates 1, 2 and 3; candidate 0 is spoken for. Read it inside-out.
-
-**`candidates - 1`** → `4 - 1 = 3`. Three candidates left to spread across.
-
-**`voter_idx / 2`** → integer division, which discards the remainder. The odd
-voters are 1, 3, 5, 7 …, and halving them gives 0, 1, 2, 3 …. It **renumbers the
-odd voters into a clean counting sequence**. Without it we would be counting
-1, 3, 5, 7 and skipping candidates.
-
-**`% (candidates - 1)`** → wraps that count around the three available slots:
-0, 1, 2, 0, 1, 2 …
-
-**`1 +`** → shifts the result from `0,1,2` up to `1,2,3`, stepping over
-candidate 0.
-
-Traced for real:
-
-| voter | `voter_idx / 2` | `% 3` | `1 +` | picks |
-|---|---|---|---|---|
-| 1 | 0 | 0 | **1** | candidate 1 |
-| 3 | 1 | 1 | **2** | candidate 2 |
-| 5 | 2 | 2 | **3** | candidate 3 |
-| 7 | 3 | **0** — wraps | **1** | candidate 1 |
-| 9 | 4 | 1 | **2** | candidate 2 |
-
-Interleaved with the even voters, position 0 gives:
+Every even-numbered voter picks candidate 0 — exactly half the electorate. The
+odd voters share the rest: `voter_idx / 2` renumbers them into a clean counting
+sequence (1, 3, 5, 7 → 0, 1, 2, 3), `% (candidates - 1)` wraps that across the
+remaining candidates, and `1 +` steps over candidate 0.
 
 ```python
 >>> [select_candidate("skewed", v, 0, 4) for v in range(8)]
 [0, 1, 0, 2, 0, 3, 0, 1]
 ```
 
-Candidate 0 every other slot; the rest taking turns in between.
+> **Translation hazard.** Rust's `/` on integers truncates; Python's produces a
+> float and must be written `//`. It is the one place this translation can go
+> wrong.
 
-> **Translation hazard.** This is the one line where the Python version can go
-> wrong. Rust's `/` on integers truncates, but Python's `/` produces a float —
-> it must be written `//`. Using `/` there fails on the following `%`.
+**Why it still cannot decide a multi-seat race.** It gives a clear winner, but
+the losers are split evenly among themselves. At 1000 voters and 12 candidates:
+500, then 46 repeated. At the 3,524,078 capstone tier: 1762039, then 160186
+repeated. A top-N cut lands in the middle of identical numbers **at every
+scale** — more voters does not help, because the remainder is divided evenly on
+purpose.
 
 ---
 
-## 6. How the result is used
+## Part 2 — `realistic`, the profile that decides
 
-The generator calls the function in a nested loop — every voter, every position:
+The goal: counts that **strictly decrease**, sum to exactly the voter count, and
+differ in shape from one position to the next.
+
+### Step 1 — the ladder floor
 
 ```rust
-for (voter_idx, credential) in credentials.iter().enumerate() {
-    for p in 0..positions {
-        let selected = select_candidate(profile, voter_idx, p, candidates);
-        selections.push((p, selected));      // ← recorded
-        // ... then encrypt `selected` under the election key
-    }
-}
+let ladder = c * (c - 1) / 2;
 ```
 
-Two separate things happen to `selected`: it is **recorded** in `selections`,
-and it is **encrypted** into a ballot.
+To give `C` candidates distinct non-negative counts, the smallest possible
+budget is `0 + 1 + … + (C-1)`. Below that, distinct counts are **arithmetically
+impossible**, not merely inconvenient — so that case falls back to funding the
+top ranks first, which still leaves the winner unambiguous.
 
-Afterwards the ground truth is counted from the recorded list:
+### Step 2 — a weight curve whose steepness depends on the position
 
 ```rust
-let ground_truth = tally_selections(&selections, contest_ids.len(), candidates);
+let s = 3 - (p % 3);                 // 3 = steep, 2 = moderate, 1 = linear
+let w: Vec<u128> = (0..c).map(|k| ((c - k) as u128).pow(s)).collect();
 ```
 
-**This separation is the point.** The ground truth is not accumulated inside the
-encryption loop. If the cryptography ever encrypted a different number than the
-voter selected, the decrypted tally and this list would disagree and `E = 0`
-would fail. If both were driven by one shared counter, they would carry the same
-wrong value and the check would pass while being wrong.
+`w_k = (C - k)^s`. A high exponent concentrates votes at the top; `s = 1` is a
+straight line. President gets the steep curve, Vice President moderate, Senator
+linear — flat enough that a multi-seat race is genuinely contested.
+
+### Step 3 — apportion the bulk, largest remainder
+
+```rust
+let mut a: Vec<usize> = w.iter().map(|&x| (bulk * x / total) as usize).collect();
+// … the leftover votes go to the largest fractional remainders
+```
+
+Standard largest-remainder apportionment, exactly as seats are allocated to
+parties under proportional representation.
+
+**All of it is integer arithmetic**, and that is deliberate. Floating point
+would be a reproducibility hazard: a last-bit difference between an x86 machine
+and an Apple Silicon one could flip a remainder comparison and produce a
+*different population on a different computer* — destroying the one property
+this generator exists to have.
+
+### Step 4 — sort, then add the ladder
+
+```rust
+a.sort_unstable_by(|x, y| y.cmp(x));
+(0..c).map(|k| a[k] + (c - 1 - k)).collect()
+```
+
+This is the trick. Sorting descending guarantees `a[k] >= a[k+1]`. Adding the
+descending ladder `(C-1-k)` then gives
+
+```
+q[k] - q[k+1] = (a[k] - a[k+1]) + 1  >=  1
+```
+
+so the counts are **strictly decreasing by construction, not by luck**. And
+since the ladder sums to exactly the amount subtracted from the budget in step
+1, the quotas sum to exactly the voter count — no vote invented, none lost.
+
+### What it produces
+
+```
+V=1000, C=4     President  639  270   81   10
+                Vice Pres  533  300  134   33
+                Senator    401  300  200   99
+
+V=3,524,078, C=12
+                President  1000914  770960  579235  422264  296571  198681 …
+                Vice Pres   780715  656018  542165  439154  346987  265662 …
+                Senator     542167  496986  451805  406625  361444  316263 …
+```
+
+Every race has one winner. Every rank is distinct, so a cut at any N is clean.
+And the three positions have visibly different shapes — a decisive presidential
+race, a closer VP race, a broad Senate field.
+
+### Step 5 — placing voters in the brackets
+
+Quotas say *how many* votes each candidate gets; the stride decides *which*
+voters cast them.
+
+```rust
+let r = (voter_idx.wrapping_mul(self.stride) + p) % self.voters;
+cum.partition_point(|&c| c <= r).min(self.candidates - 1)
+```
+
+The stride is coprime with the voter count, which makes multiplying by it a
+**permutation** — it reorders voters without ever colliding two onto one slot,
+so the realized counts equal the quotas exactly. Without it the first 639 rows
+of the export would all read `CAND_PRES_01` and the table would look like a
+sorted list rather than an electorate.
+
+```python
+>>> plan = SelectionPlan("realistic", 1000, 3, 4)
+>>> [plan.select(v, 0) for v in range(8)]
+[0, 0, 0, 1, 0, 0, 1, 0]
+>>> [plan.select(v, 2) for v in range(8)]
+[0, 1, 0, 2, 1, 0, 2, 0]
+```
+
+Position 0 leans heavily on candidate 0, as its steep curve should; position 2
+spreads. Both are the intended shapes, arriving voter by voter.
+
+### Why a plan object rather than a pure function
+
+`realistic` cannot answer "who does voter 7 pick?" without first computing the
+whole position's quotas. Doing that per voter would be `O(V·C log C)` — hopeless
+at 3.5M. `SelectionPlan` computes the brackets once and answers each voter with
+a binary search.
+
+Both generator paths — the cryptographic one and the plaintext one — build the
+same plan from the same parameters, which is what keeps their tables
+byte-identical.
 
 ---
 
-## 7. The weakness, now that the mechanics are visible
+## What this fixed
 
-`+ p` only **rotates** the assignment. It never changes how many votes each
-candidate receives — only which candidate receives which pile. So every position
-ends up with the same set of totals in a different order:
+Under the round-robin profiles, the position index only *rotated* the
+assignment, so every position carried the **same multiset of totals**. President
+and Vice President came out with identical numbers in a different order, and a
+component that confused one contest for another would still have satisfied
+`E = 0`.
 
-```
-PRESIDENT       1762039  587347  587346  587346
-VICE_PRESIDENT  1762039  587346  587347  587346
-SENATOR         1762039  587346  587346  587347
-```
+`realistic` gives each position a different weight curve, so the shapes genuinely
+differ and that gap closes. It needs enough voters to express the difference —
+measured, the boundary is around `C(C-1)/2 + 2C`: 12 voters at 4 candidates, 73
+at 12, 685 at 37. Below it there is only one way to distribute and all three
+curves land on it.
 
-If some component ever confused President's tally with Senator's, `E = 0` would
-still pass — the numbers are interchangeable.
-
-The legacy 6-voter fixture guards against exactly this. Its comment reads:
-*"picked so the tally is non-trivial and the two contests have different totals
-(catches off-by-one or contest-mixing bugs in the auditor)"*. The parameterized
-generator does not carry that property forward.
-
-This is a limitation of the **test data**, not of the protocol. Contest-mixing
-is not a failure mode this evaluation probes. It is written down here so it is
-declared rather than discovered.
-
----
-
-## Summary
-
-| Line | What it does |
-|---|---|
-| `if candidates <= 1 { return 0 }` | Trivial contest; also prevents divide-by-zero below |
-| `(voter_idx + p) % candidates` | Uniform: cycle through candidates, rotated per position |
-| `if voter_idx % 2 == 0 { 0 }` | Skewed: every even voter takes the front-runner — exactly half |
-| `voter_idx / 2` | Renumber the odd voters 0, 1, 2, 3 … |
-| `% (candidates - 1)` | Wrap across the remaining candidates |
-| `1 +` | Step over candidate 0 |
+`uniform` and `skewed` are unchanged, byte for byte. They back the manuscript's
+performance comparisons, where an even split is a perfectly reasonable load and
+the tie is irrelevant.
 
 ## Related
 
-- [`synthetic-data-generation.md`](synthetic-data-generation.md) — the full
-  pipeline: output schemas, the validation gate, reproducing any tier.
-- [`rust-python-cross-reference.md`](rust-python-cross-reference.md) — the same
-  function in both languages, side by side.
-- [`reference_generator.py`](reference_generator.py) — runnable; verified
-  byte-identical to the Rust generator.
+- `synthetic-data-generation.md` — the full pipeline: schemas, the validation
+  gate, reproducing any tier.
+- `rust-python-cross-reference.md` — both languages side by side.
+- `reference_generator.py` — runnable; verified byte-identical to the Rust
+  generator across all three profiles.
