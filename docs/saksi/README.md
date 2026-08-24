@@ -14,6 +14,7 @@ everything a reader needs without following a second repository.
 | [`rust-python-cross-reference.md`](rust-python-cross-reference.md) | The selection rule line by line in Rust and Python, with the one place the translation is delicate (64-bit wrapping). |
 | [`reference_generator.py`](reference_generator.py) | Runnable Python reference implementation. Reproduces any published ground-truth table without Rust — verified byte-identical to the real generator. |
 | [`wizard/`](wizard/README.md) | **What each step of the Election Wizard does** — one file per step: what runs, what it writes, and what it does not prove. Start at the index. |
+| [`onchain-quickstart.md`](onchain-quickstart.md) | **One command to bring up Hyperledger Fabric and the console together** (`./tools/up.sh`), how to verify a record really is on the ledger, and what permanence does and does not mean here. |
 | [`research-election-console-runbook.md`](research-election-console-runbook.md) | Building and running the Research Election Console. |
 
 ## Start here

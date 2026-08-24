@@ -12,11 +12,43 @@ Nothing in this stack is Windows-bound.
 
 ## 1. Paste this as the first message
 
+For the **offline** demo (no Docker, works anywhere):
+
 ```
 Read MACOS-SETUP.md in the repo root, then set this machine up end to end:
 verify the toolchains, build both binaries, start the Research Election
 Console, and give me the URL. Stop and tell me if any prerequisite is
 missing rather than guessing a workaround.
+```
+
+For the **full stack including Hyperledger Fabric** (on-chain mode live):
+
+```
+Read MACOS-SETUP.md and saksi/docs/onchain-quickstart.md, then bring up
+the complete stack on this Mac:
+
+1. Confirm Docker Desktop is running and both repos are cloned as siblings
+   under a path with NO SPACES (~/Code/saksi and ~/Code/balotachain).
+   fabric-samples breaks on a space and the error will not say so.
+2. From ~/Code/saksi run ./tools/up.sh — it installs Fabric if missing,
+   starts the network, deploys the chaincode, builds saksi-demo and the
+   console, and serves the wizard with on-chain mode enabled. The first
+   run pulls ~1GB of Fabric images; that is expected.
+3. Verify it is genuinely on-chain, do not assume:
+     curl -s localhost:8090/api/capabilities   -> must show "fabric":true
+   Then run one election in the wizard with mode = on-chain, 1000 voters,
+   3 positions, 12 candidates, distribution = realistic, 3 senate seats,
+   3 trustees with threshold 2.
+4. Confirm the Encrypt step shows real ledger receipts (block number, tx
+   id, block hash), that /trail/ lists the election as on chain, and that
+   Verify ends with E = 0.
+5. Report exactly what worked and what did not. If ./tools/up.sh fails,
+   read its error — it is written to say what to do — and fix the cause
+   rather than working around it. Do not fall back to offline mode
+   silently; on-chain mode failing is a result I need to know about.
+
+Useful: ./tools/up.sh status says whether on-chain is actually enabled,
+and ./tools/up.sh down stops the network.
 ```
 
 That is the whole bootstrap. Everything below is what the session reads.
@@ -165,13 +197,32 @@ manuscript describes.
 - **Offline** and **ground-truth** modes are fully self-contained here. They
   need no network and no Docker. Everything needed for the presentation works
   in offline mode.
-- **On-chain** mode additionally needs a reachable Fabric peer. Point
-  `--fabric-peer`, `--fabric-cert`, `--fabric-key`, and `--fabric-tls-cert` at
-  the host desktop. Without those flags the console starts in offline mode and
-  says so on startup.
+- **On-chain** mode needs a Fabric network. There is now a one-command path
+  that brings the whole stack up locally:
 
-Do not stand up Fabric locally on the Mac to "make it work" — that is a
-detour, and the wizard is designed to demonstrate in offline mode.
+  ```bash
+  cd ~/Code/saksi
+  ./tools/up.sh
+  ```
+
+  It installs Fabric if missing, starts the network, deploys the chaincode,
+  builds both binaries, and runs the console wired to the ledger — then prints
+  the URL with on-chain mode enabled. `./tools/up.sh down` stops it;
+  `./tools/up.sh status` says whether on-chain is actually live.
+
+  Full detail, including how to verify a record really is on the ledger:
+  `saksi/docs/onchain-quickstart.md` (mirrored at
+  `docs/saksi/onchain-quickstart.md`).
+
+  Two requirements it checks for you: **Docker must be running**, and the repo
+  path must contain **no spaces** — `fabric-samples` breaks on a space, which is
+  exactly why the Windows box cannot run Fabric locally. `~/Code/saksi` is fine.
+
+  Alternatively point the console at a Fabric peer hosted elsewhere with
+  `--fabric-peer`, `--fabric-cert`, `--fabric-key` and `--fabric-tls-cert`.
+
+Everything demonstrable works in **offline** mode with no Docker at all, so
+bringing Fabric up is optional rather than a prerequisite for the demo.
 
 ## 9. Things that will cost an hour if unknown
 
