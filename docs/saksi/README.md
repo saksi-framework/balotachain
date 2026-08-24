@@ -10,6 +10,8 @@ everything a reader needs without following a second repository.
 | File | What it covers |
 |---|---|
 | [`synthetic-data-generation.md`](synthetic-data-generation.md) | How the synthetic voter populations are produced — the selection rule, contest indexing, output schemas, the validation gate, and how to reproduce any tier. Backs **Appendix A**. |
+| [`rust-python-cross-reference.md`](rust-python-cross-reference.md) | The selection rule line by line in Rust and Python, with the one place the translation is delicate (64-bit wrapping). |
+| [`reference_generator.py`](reference_generator.py) | Runnable Python reference implementation. Reproduces any published ground-truth table without Rust — verified byte-identical to the real generator. |
 | [`research-election-console-runbook.md`](research-election-console-runbook.md) | Building and running the Research Election Console. |
 
 ## Start here
