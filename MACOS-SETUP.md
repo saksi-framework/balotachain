@@ -1,8 +1,7 @@
 # macOS setup — start a Claude Code session here
 
 Bootstrap file for a **fresh Claude Code session on the MacBook**. It carries
-the context a new session does not have: where the code lives, which branches
-matter, what to build, and the handful of things that will waste an hour if
+the context a new session does not have: where the code lives, what to build, and the handful of things that will waste an hour if
 they are not known up front.
 
 Verified before writing: the console cross-builds for `darwin/arm64` and
@@ -24,21 +23,18 @@ That is the whole bootstrap. Everything below is what the session reads.
 
 ---
 
-## 2. Before leaving the Windows box — push, or none of this exists
+## 2. Everything is on `main`
 
-Both repos are **ahead of origin**. The wizard, the trustee ceremony, the
-validation gate, the ground-truth export, and every document referenced here
-live only in local commits. A fresh Mac clone will not contain them.
+Both repos have been fast-forwarded, so `main` carries all of it: the wizard,
+the trustee ceremony, the validation gate, the ground-truth export, the paper
+PDF, and every document referenced here. No feature branch to hunt for and
+nothing left unpushed.
+
+On an existing clone, one command is enough:
 
 ```bash
-# in saksi/
-git push origin onchain-audit-trail
-
-# in balotachain/
-git push origin ci/audit-trail
+git checkout main && git pull origin main
 ```
-
-Confirm with `git status -sb` — the `[ahead N]` marker must be gone.
 
 ---
 
@@ -49,16 +45,14 @@ Two repos, cloned as **siblings**. `balotachain` expects to find `saksi` at
 
 ```
 ~/Code/
-├── saksi/         branch: onchain-audit-trail    <- crypto, chaincode, console
-└── balotachain/   branch: ci/audit-trail         <- thesis repo, apps, docs
+├── saksi/         branch: main    <- crypto, chaincode, console
+└── balotachain/   branch: main    <- thesis repo, apps, docs
 ```
 
 ```bash
 mkdir -p ~/Code && cd ~/Code
 git clone https://github.com/saksi-framework/saksi.git
 git clone https://github.com/saksi-framework/balotachain.git
-cd saksi && git switch onchain-audit-trail
-cd ../balotachain && git switch ci/audit-trail
 ```
 
 The thing being demonstrated — the **Research Election Console** — lives in
@@ -224,6 +218,7 @@ decisions and the current project state.
   `docs/appendix-a-replacement-draft.md`. The sample values in the Appendix A
   draft predate the last selection-rule change and should be regenerated before
   the appendix is pasted in.
-- PRs open and unreviewed: saksi #34, balotachain #52.
+- PRs #33/#34 (saksi) and #52 (balotachain) are closed; their content landed
+  on `main` directly and was never formally reviewed.
 - The wizard has been walked end to end in **offline** mode only. The on-chain
   walkthrough against the Fabric host has not been done.
