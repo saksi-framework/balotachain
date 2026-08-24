@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Reference implementation of the Saksi synthetic-vote selection rule.
 
-This is a line-for-line Python translation of `select_candidate` and its `mix`
-helper from `packages/saksi-auditor/src/fixtures.rs`. It exists so the rule can
-be read, run, and checked without a Rust toolchain — and so anyone can
-independently reproduce a published ground-truth table.
+This is a line-for-line Python translation of `select_candidate` from
+`packages/saksi-auditor/src/fixtures.rs`. It exists so the rule can be read,
+run, and checked without a Rust toolchain — and so anyone can independently
+reproduce a published ground-truth table.
 
 Run it to regenerate any tier:
 
@@ -13,62 +13,42 @@ Run it to regenerate any tier:
 
 Verified byte-identical to the Rust generator's output.
 
-THE ONE THING THAT MATTERS IN THIS TRANSLATION
-----------------------------------------------
-Rust's u64 arithmetic wraps at 64 bits. Python integers are arbitrary
-precision and never overflow, so every multiply and add must be masked back
-down to 64 bits by hand. Miss a single mask and the numbers diverge silently
-after the first multiplication. That is what MASK64 is for.
+The translation is direct: the rule is integer addition, floor division, and
+remainder, which behave identically in both languages for non-negative values.
+There is nothing subtle to get wrong.
 """
 
 import argparse
 import sys
 from collections import Counter
 
-MASK64 = (1 << 64) - 1  # Rust's u64 wraps here; Python's int does not.
-
-
-def mix(voter_idx: int, p: int) -> int:
-    """Scramble (voter_idx, position) into a well-spread pseudorandom number.
-
-    This is the SplitMix64 finalizer. It is deterministic — the same voter and
-    position always give the same result — but the output has no visible
-    pattern, so the vote counts look like a real election instead of a
-    round-robin.
-
-    No seed, no state. That is what lets a population be reproduced from its
-    parameters alone.
-    """
-    # Combine the two indices into one value first, so position genuinely
-    # changes the result rather than merely shifting it.
-    x = ((voter_idx * 0x9E3779B97F4A7C15) & MASK64) ^ ((p + 1) & MASK64)
-    x ^= x >> 30
-    x = (x * 0xBF58476D1CE4E5B9) & MASK64
-    x ^= x >> 27
-    x = (x * 0x94D049BB133111EB) & MASK64
-    return x ^ (x >> 31)
-
 
 def select_candidate(profile: str, voter_idx: int, p: int, candidates: int) -> int:
     """Which candidate voter `voter_idx` picks for position `p`.
 
     Returns a 0-based candidate index. `profile` is "uniform" or "skewed".
+
+    Deterministic: the same voter and position always give the same vote, with
+    no seed and no state. That is what lets a population be reproduced from its
+    four parameters alone, and what makes the two generator paths agree.
+
+    KNOWN LIMIT: this is a round-robin, so each position ends up with a
+    near-identical set of totals — permutations of one another. A component that
+    confused one contest for another would still satisfy E = 0. Contest-mixing
+    is not a failure mode this test data probes.
     """
     if candidates <= 1:
         return 0
 
-    h = mix(voter_idx, p)
-
     if profile == "uniform":
-        # Every candidate equally likely.
-        return h % candidates
+        # Walk the candidate list; the +p offset rotates the assignment per
+        # position so the positions are not literally identical.
+        return (voter_idx + p) % candidates
 
-    # Skewed: candidate 0 takes roughly half; the rest share what remains.
-    # Two independent slices of the same hash answer the two questions, so the
-    # front-runner's share and the spread behind it do not correlate.
-    if h & 1 == 0:
+    # Skewed: half the voters pick candidate 0; the rest spread over 1..C.
+    if voter_idx % 2 == 0:
         return 0
-    return 1 + ((h >> 8) % (candidates - 1))
+    return 1 + ((voter_idx // 2 + p) % (candidates - 1))
 
 
 # ---------------------------------------------------------------------------

@@ -19,85 +19,29 @@ diff ./py/ground-truth-ballots.csv ./rust/ground-truth-ballots.csv   # no output
 
 ---
 
-## The one real difference between the languages
+## Does anything translate awkwardly?
 
-Rust's `u64` **wraps** at 64 bits — that is what `wrapping_mul` means. Python's
-integers are arbitrary precision and never overflow, so every multiplication
-and addition must be masked back down by hand:
+No. The rule is integer addition, floor division, and remainder — all of which
+behave identically in Rust and Python for non-negative values. There are no
+overflow concerns (nothing is multiplied), no sign concerns (nothing is
+negative), and no type concerns beyond Rust needing its integers to match.
 
-```python
-MASK64 = (1 << 64) - 1
-```
-
-Miss a single mask and the two implementations agree for the first few
-operations and then diverge silently. Everything else below is a direct
-transliteration.
-
-Right shifts are safe in both: `>>` on an unsigned Rust integer and on a
-non-negative Python integer are the same operation.
+The one cosmetic difference: Rust's `/` on integers already truncates, so it is
+written `voter_idx / 2`; Python's `/` produces a float, so it must be written
+`voter_idx // 2`. Using `/` there would silently produce a `TypeError` on the
+subsequent `%` — the only way to get this translation wrong.
 
 ---
 
-## `mix` — scramble (voter, position) into a spread-out number
-
-This is the SplitMix64 finalizer. Deterministic, stateless, seedless.
-
-| # | Rust | Python | Note |
-|---|---|---|---|
-| 1 | `fn mix(voter_idx: usize, p: usize) -> u64 {` | `def mix(voter_idx: int, p: int) -> int:` | Python has one integer type; the u64 behaviour is enforced by masking, not by the type |
-| 2 | `let mut x = (voter_idx as u64)` `.wrapping_mul(0x9e37_79b9_7f4a_7c15)` `^ (p as u64).wrapping_add(1);` | `x = ((voter_idx * 0x9E3779B97F4A7C15) & MASK64)` `^ ((p + 1) & MASK64)` | The multiply **must** be masked. `0x9E37…` is the golden-ratio constant; `p + 1` avoids position 0 contributing nothing |
-| 3 | `x ^= x >> 30;` | `x ^= x >> 30` | Identical. Shift-xor mixes the high bits down |
-| 4 | `x = x.wrapping_mul(0xbf58_476d_1ce4_e5b9);` | `x = (x * 0xBF58476D1CE4E5B9) & MASK64` | Mask required |
-| 5 | `x ^= x >> 27;` | `x ^= x >> 27` | Identical |
-| 6 | `x = x.wrapping_mul(0x94d0_49bb_1331_11eb);` | `x = (x * 0x94D049BB133111EB) & MASK64` | Mask required |
-| 7 | `x ^ (x >> 31)` | `return x ^ (x >> 31)` | Rust returns the last expression; Python needs `return`. No mask needed — xor of two ≤64-bit values cannot exceed 64 bits |
-
-**Side by side:**
-
-```rust
-fn mix(voter_idx: usize, p: usize) -> u64 {
-    let mut x = (voter_idx as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15) ^ (p as u64).wrapping_add(1);
-    x ^= x >> 30;
-    x = x.wrapping_mul(0xbf58_476d_1ce4_e5b9);
-    x ^= x >> 27;
-    x = x.wrapping_mul(0x94d0_49bb_1331_11eb);
-    x ^ (x >> 31)
-}
-```
-
-```python
-def mix(voter_idx: int, p: int) -> int:
-    x = ((voter_idx * 0x9E3779B97F4A7C15) & MASK64) ^ ((p + 1) & MASK64)
-    x ^= x >> 30
-    x = (x * 0xBF58476D1CE4E5B9) & MASK64
-    x ^= x >> 27
-    x = (x * 0x94D049BB133111EB) & MASK64
-    return x ^ (x >> 31)
-```
-
-### What each step is doing
-
-The pattern is **multiply, shift-xor, multiply, shift-xor** — a standard
-avalanche construction. The multiplications spread influence from low bits to
-high bits; the shift-xors fold high bits back down over the low ones. After the
-full sequence, flipping any single input bit changes about half the output bits.
-
-That is the whole point: `voter_idx` and `voter_idx + 1` are adjacent numbers,
-but their mixed values are unrelated, so consecutive voters do not vote in a
-predictable sequence.
-
----
-
-## `select_candidate` — turn that number into a vote
+## `select_candidate` — which candidate a voter picks
 
 | # | Rust | Python | Note |
 |---|---|---|---|
 | 1 | `pub(crate) fn select_candidate(` `profile: SelectionProfile, voter_idx: usize,` `p: usize, candidates: usize) -> usize {` | `def select_candidate(profile: str, voter_idx: int,` `p: int, candidates: int) -> int:` | Rust uses an enum for the profile; Python uses a string. Same two values |
-| 2 | `if candidates <= 1 { return 0; }` | `if candidates <= 1: return 0` | Guard: a one-candidate contest has only one possible vote, and it also stops the `candidates - 1` below from being zero |
-| 3 | `let h = mix(voter_idx, p);` | `h = mix(voter_idx, p)` | Identical |
-| 4 | `SelectionProfile::Uniform =>` `(h % candidates as u64) as usize` | `if profile == "uniform":` `return h % candidates` | Rust needs the cast because `%` requires matching types; Python does not |
-| 5 | `if h & 1 == 0 { 0 }` | `if h & 1 == 0: return 0` | Skewed: the lowest bit is a coin flip. Heads → candidate 0 |
-| 6 | `else { 1 + ((h >> 8) % (candidates as u64 - 1)) as usize }` | `return 1 + ((h >> 8) % (candidates - 1))` | Tails → spread over candidates 1..C using a **different** slice of the same hash |
+| 2 | `if candidates <= 1 { return 0; }` | `if candidates <= 1: return 0` | A one-candidate contest has only one possible vote. This also stops `candidates - 1` below from being zero |
+| 3 | `SelectionProfile::Uniform =>` `(voter_idx + p) % candidates` | `if profile == "uniform":` `return (voter_idx + p) % candidates` | Walk the candidate list in order; `+ p` rotates the starting point per position |
+| 4 | `if voter_idx % 2 == 0 { 0 }` | `if voter_idx % 2 == 0: return 0` | Skewed: every even-numbered voter picks the front-runner — exactly half of them |
+| 5 | `else { 1 + ((voter_idx / 2 + p)` `% (candidates - 1)) }` | `return 1 + ((voter_idx // 2 + p)` `% (candidates - 1))` | The odd voters walk candidates 1..C. **`/` in Rust, `//` in Python** — the one place a careless translation breaks |
 
 **Side by side:**
 
@@ -111,14 +55,14 @@ pub(crate) fn select_candidate(
     if candidates <= 1 {
         return 0;
     }
-    let h = mix(voter_idx, p);
     match profile {
-        SelectionProfile::Uniform => (h % candidates as u64) as usize,
+        SelectionProfile::Uniform => (voter_idx + p) % candidates,
+        // Half the voters pick candidate 0; the rest spread over 1..C.
         SelectionProfile::Skewed => {
-            if h & 1 == 0 {
+            if voter_idx % 2 == 0 {
                 0
             } else {
-                1 + ((h >> 8) % (candidates as u64 - 1)) as usize
+                1 + ((voter_idx / 2 + p) % (candidates - 1))
             }
         }
     }
@@ -130,66 +74,70 @@ def select_candidate(profile: str, voter_idx: int, p: int, candidates: int) -> i
     if candidates <= 1:
         return 0
 
-    h = mix(voter_idx, p)
-
     if profile == "uniform":
-        return h % candidates
+        return (voter_idx + p) % candidates
 
-    if h & 1 == 0:
+    # Skewed: half the voters pick candidate 0; the rest spread over 1..C.
+    if voter_idx % 2 == 0:
         return 0
-    return 1 + ((h >> 8) % (candidates - 1))
+    return 1 + ((voter_idx // 2 + p) % (candidates - 1))
 ```
-
-### Why `h >> 8` and not `h` again
-
-The skewed branch asks two questions of one hash: *does this voter pick the
-front-runner?* (bit 0) and *if not, which of the others?* (bits 8 and up).
-
-Using `h` for both would correlate the answers — the same bits deciding the
-coin flip would also steer the spread. Shifting by 8 takes a fresh region of the
-hash, so the two decisions are independent.
 
 ---
 
 ## Worked example
 
-Voter 0, position 0 (President), 4 candidates — real output, not illustrative:
+Real output, 4 candidates. Candidate indices are 0-based here; the CSV labels
+them 1-based (`CAND_PRES_01` is index 0).
 
 ```python
->>> from reference_generator import mix, select_candidate
->>> h = mix(0, 0)
->>> h
-6238072747940578789
->>> h % 4                    # uniform → candidate index 1 → CAND_PRES_02
-1
->>> h & 1                    # skewed: odd, so NOT the front-runner
-1
->>> 1 + ((h >> 8) % 3)       # skewed → candidate index 1 → CAND_PRES_02
-1
+>>> from reference_generator import select_candidate as sc
+>>> [sc("uniform", v, 0, 4) for v in range(6)]
+[0, 1, 2, 3, 0, 1]
+>>> [sc("skewed", v, 0, 4) for v in range(6)]
+[0, 1, 0, 2, 0, 3]
+>>> [sc("skewed", v, 1, 4) for v in range(6)]
+[0, 2, 0, 3, 0, 1]
 ```
 
-Here both profiles happen to land on the same candidate; they diverge on other
-inputs. Three consecutive cases, showing how little the inputs resemble the
-outputs:
+Reading those:
 
-| voter | position | `mix(voter, position)` | uniform | skewed |
-|---|---|---|---|---|
-| 0 | 0 | `6238072747940578789` | `CAND_PRES_02` | `CAND_PRES_02` |
-| 1 | 0 | `16490336266968443936` | `CAND_PRES_01` | `CAND_PRES_01` |
-| 0 | 1 | `15839785061582574730` | `CAND_VICE_03` | `CAND_VICE_01` |
+- **uniform** cycles `0,1,2,3,0,1,…` — every candidate gets an equal share.
+- **skewed** alternates: every even voter takes candidate 0, and the odd voters
+  walk `1,2,3,1,2,3,…`. Candidate 0 therefore gets exactly half.
+- Changing the position from `0` to `1` **rotates** the odd voters' walk
+  (`1,2,3` becomes `2,3,1`) but leaves candidate 0's half untouched.
 
-Two things to notice. Voters 0 and 1 are adjacent integers but their mixed
-values share no structure — that is the avalanche doing its job. And the same
-voter at positions 0 and 1 gets unrelated values, which is why per-position
-totals come out distinct rather than as rotations of one another.
-
-Note also that `voter_idx = 0` still produces a large mixed value: the
-`^ (p + 1)` term stops the all-zeros input collapsing to zero, which a plain
-multiply would.
+That last point is the source of the limitation below.
 
 ---
 
-## The properties this preserves
+## A known limit of this rule
+
+Because the position only *rotates* the assignment, every position ends up with
+the same multiset of totals — permutations of one another, differing by a vote
+or two at scale:
+
+```
+PRESIDENT       1762039  587347  587346  587346
+VICE_PRESIDENT  1762039  587346  587347  587346
+SENATOR         1762039  587346  587346  587347
+```
+
+Totals that interchangeable mean the accuracy check cannot discriminate between
+contests: a component that confused one contest for another would still satisfy
+`E = 0`. The legacy 6-voter fixture avoids this deliberately — its comment says
+its values were *"picked so the tally is non-trivial and the two contests have
+different totals (catches off-by-one or contest-mixing bugs in the auditor)"* —
+but the parameterized generator does not carry the property forward.
+
+This is a limit of the **test data**, not of the protocol. Contest-mixing is not
+a failure mode this evaluation probes, and it is recorded here so it is declared
+rather than discovered.
+
+---
+
+## The properties this rule does preserve
 
 Both implementations, being pure functions of their four arguments:
 
