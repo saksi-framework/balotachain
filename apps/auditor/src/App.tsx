@@ -1005,9 +1005,10 @@ function App() {
           />
         </Section>
 
-        <Section title="Verify your vote">
+        {/* The mockup's verify card carries its own heading — no section head. */}
+        <div style={{ marginBottom: 38 }}>
           <VerifyVoteCard fallbackSubmittedAt={SAMPLE_VOTE_RECORDED_AT} />
-        </Section>
+        </div>
       </main>
 
       <Footer />
