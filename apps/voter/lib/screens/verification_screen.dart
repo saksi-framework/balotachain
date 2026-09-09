@@ -5,6 +5,9 @@ final RegExp _trackingRegex = RegExp(r'^BC-[0-9A-F]{4}-[0-9A-F]{4}$');
 
 enum _VerifyState { idle, success, error }
 
+/// Verification — paste a tracking code, confirm the ballot was counted.
+/// The code never reveals the choice, so the result card is a plain success
+/// panel.
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key, this.initialCode});
 
@@ -17,8 +20,6 @@ class VerificationScreen extends StatefulWidget {
 class _VerificationScreenState extends State<VerificationScreen> {
   late final TextEditingController _controller;
   _VerifyState _state = _VerifyState.idle;
-  String _verifiedCode = '';
-  String _verifiedTimestamp = '';
 
   @override
   void initState() {
@@ -40,24 +41,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
     super.dispose();
   }
 
-  String _formatNow() {
-    final now = DateTime.now();
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${now.year}-${two(now.month)}-${two(now.day)} '
-        '${two(now.hour)}:${two(now.minute)}';
-  }
-
   void _verify() {
     final code = _controller.text.trim().toUpperCase();
-    final ok = _trackingRegex.hasMatch(code);
     setState(() {
-      if (ok) {
-        _state = _VerifyState.success;
-        _verifiedCode = code;
-        _verifiedTimestamp = _formatNow();
-      } else {
-        _state = _VerifyState.error;
-      }
+      _state = _trackingRegex.hasMatch(code)
+          ? _VerifyState.success
+          : _VerifyState.error;
     });
   }
 
@@ -69,120 +58,119 @@ class _VerificationScreenState extends State<VerificationScreen> {
         title: 'Verify your vote',
         onBack: () => Navigator.of(context).pop(),
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(BcSpace.md),
-          children: [
-            const Text(
-              'Enter your tracking code.',
-              style: TextStyle(
-                fontSize: BcType.body,
-                color: BcColors.text2,
-                height: BcType.lineHeight,
-              ),
+      body: BcBody(
+        padTop: 2,
+        children: [
+          const Text(
+            'Enter your tracking code to confirm your vote was counted.',
+            style: TextStyle(
+              fontSize: 15,
+              color: BcColors.text2,
+              height: 1.55,
             ),
-            const SizedBox(height: BcSpace.md),
-            BcTextInput(
-              controller: _controller,
-              hint: 'BC-XXXX-XXXX',
-              mono: true,
-            ),
-            if (_state == _VerifyState.error) ...[
-              const SizedBox(height: BcSpace.xs),
-              const Text(
-                'Tracking code not found.',
-                style: TextStyle(
-                  fontSize: BcType.body,
-                  color: BcColors.error,
-                  height: BcType.lineHeight,
-                ),
-              ),
-            ],
-            const SizedBox(height: BcSpace.md),
-            BcPrimaryButton(
-              label: 'Verify',
-              fullWidth: true,
-              onPressed: _verify,
-            ),
-            if (_state == _VerifyState.success) ...[
-              const SizedBox(height: BcSpace.md),
-              _SuccessCard(
-                code: _verifiedCode,
-                timestamp: _verifiedTimestamp,
-              ),
-            ],
+          ),
+          const SizedBox(height: 22),
+          BcTextInput(
+            controller: _controller,
+            label: 'Tracking code',
+            hint: 'BC-XXXX-XXXX',
+            mono: true,
+          ),
+          const SizedBox(height: 18),
+          BcPrimaryButton(label: 'Verify', onPressed: _verify),
+          if (_state == _VerifyState.success) ...[
+            const SizedBox(height: 26),
+            const BcRise(key: ValueKey('verified'), child: _VerifiedCard()),
           ],
-        ),
+          if (_state == _VerifyState.error) ...[
+            const SizedBox(height: 26),
+            const BcRise(key: ValueKey('unverified'), child: _NotFoundCard()),
+          ],
+          const SizedBox(height: 30),
+        ],
       ),
     );
   }
 }
 
-class _SuccessCard extends StatelessWidget {
-  const _SuccessCard({required this.code, required this.timestamp});
-
-  final String code;
-  final String timestamp;
+class _VerifiedCard extends StatelessWidget {
+  const _VerifiedCard();
 
   @override
   Widget build(BuildContext context) {
-    return BcCard(
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: BcColors.successLight,
+        borderRadius: BorderRadius.circular(BcRadii.card),
+        border: Border.all(color: BcColors.successBorder, width: 1),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: BcColors.success,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  bcCheck,
-                  size: 24,
-                  color: BcColors.surface,
-                ),
-              ),
-              const SizedBox(width: BcSpace.sm),
-              const Expanded(
-                child: Text(
-                  'Vote verified',
-                  style: TextStyle(
-                    fontSize: BcType.h2,
-                    fontWeight: FontWeight.w700,
-                    color: BcColors.text1,
-                    height: BcType.lineHeight,
-                  ),
-                ),
-              ),
-            ],
+          Container(
+            width: 56,
+            height: 56,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: BcColors.success,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(bcCheck, size: 30, color: BcColors.surface),
           ),
-          const SizedBox(height: BcSpace.sm),
-          Text(
-            'Your ballot was recorded on $timestamp',
-            style: const TextStyle(
-              fontSize: BcType.body,
+          const SizedBox(height: 14),
+          const Text(
+            'Your vote is recorded and counted',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: BcColors.successText,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: BcSpace.xs),
+          const Text(
+            'Verified on the public bulletin board.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.5,
               color: BcColors.text2,
               height: BcType.lineHeight,
             ),
           ),
-          const SizedBox(height: BcSpace.xs),
-          Text(
-            code,
-            style: const TextStyle(
-              fontSize: BcType.body,
-              fontWeight: FontWeight.w700,
-              color: BcColors.text1,
-              height: BcType.lineHeight,
-              fontFamily: 'monospace',
-              fontFamilyFallback: <String>[
-                'Menlo',
-                'Courier New',
-                'monospace',
-              ],
-              letterSpacing: 1,
+        ],
+      ),
+    );
+  }
+}
+
+class _NotFoundCard extends StatelessWidget {
+  const _NotFoundCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(BcSpace.sm, 14, BcSpace.sm, 14),
+      decoration: BoxDecoration(
+        color: BcColors.warnLight,
+        borderRadius: BorderRadius.circular(BcRadii.button),
+        border: Border.all(color: BcColors.warnBorder, width: 1),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(bcAlert, size: 20, color: BcColors.warn),
+          SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              "That code isn't in the expected format. Check your receipt and "
+              'try again.',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: BcColors.warnText,
+                height: 1.4,
+              ),
             ),
           ),
         ],

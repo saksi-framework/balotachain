@@ -20,17 +20,22 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
     const merged: CSSProperties = {
       display: "block",
       width: "100%",
-      padding: tokens.space.sm,
+      minHeight: 54,
+      padding: `0 ${tokens.space.sm}px`,
       background: tokens.color.surface,
-      border: `1px solid ${focused ? tokens.color.teal : tokens.color.border}`,
+      border: focused
+        ? `2px solid ${tokens.color.teal}`
+        : `1.5px solid ${tokens.color.border}`,
       borderRadius: tokens.radius.button,
       color: tokens.color.text1,
       fontSize: tokens.type.body,
+      fontWeight: variant === "mono" ? 600 : 400,
+      letterSpacing: variant === "mono" ? 1 : 0,
       fontFamily:
         variant === "mono" ? tokens.type.mono : tokens.type.fontFamily,
       lineHeight: tokens.type.lineHeight,
       outline: "none",
-      transition: "border-color 120ms ease",
+      transition: "border-color 150ms ease",
       ...style,
     };
 

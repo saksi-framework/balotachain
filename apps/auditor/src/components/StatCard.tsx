@@ -1,55 +1,48 @@
 import type { ReactNode } from "react";
-import { tokens } from "@balotachain/ui";
+import { Card, tokens } from "@balotachain/ui";
 
 export type StatCardProps = {
   label: string;
   value: ReactNode;
   caption: string;
-  emphasize?: boolean;
+  /** Renders the number in success green, as on the "Verified" tile. */
+  ok?: boolean;
+  /** Small glyph shown before the label. */
+  icon?: ReactNode;
 };
 
-export function StatCard({
-  label,
-  value,
-  caption,
-  emphasize = false,
-}: StatCardProps) {
+export function StatCard({ label, value, caption, ok, icon }: StatCardProps) {
   return (
-    <div
-      style={{
-        background: tokens.color.surface,
-        border: `1px solid ${tokens.color.border}`,
-        borderRadius: tokens.radius.card,
-        padding: tokens.space.md,
-        display: "flex",
-        flexDirection: "column",
-        gap: tokens.space.xs,
-        minWidth: 0,
-      }}
-    >
+    <Card style={{ padding: "20px 22px", minWidth: 0 }}>
       <div
         style={{
-          fontSize: 12,
-          fontWeight: 600,
-          letterSpacing: 0.4,
-          textTransform: "uppercase",
+          fontSize: tokens.type.small,
           color: tokens.color.text2,
+          fontWeight: 500,
+          marginBottom: 9,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
         }}
       >
+        {icon}
         {label}
       </div>
       <div
         style={{
-          fontSize: emphasize ? tokens.type.h1 : tokens.type.body + 2,
-          fontWeight: emphasize ? 700 : 600,
-          color: tokens.color.text1,
-          lineHeight: 1.2,
+          fontSize: 30,
+          fontWeight: 700,
+          letterSpacing: -0.4,
+          lineHeight: 1,
+          color: ok ? tokens.color.success : tokens.color.text1,
           wordBreak: "break-word",
         }}
       >
         {value}
       </div>
-      <div style={{ fontSize: 13, color: tokens.color.text2 }}>{caption}</div>
-    </div>
+      <div style={{ fontSize: 12.5, color: tokens.color.text2, marginTop: 7 }}>
+        {caption}
+      </div>
+    </Card>
   );
 }

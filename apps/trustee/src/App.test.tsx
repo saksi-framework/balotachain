@@ -53,8 +53,10 @@ describe("App", () => {
   it("renders the console header without crashing", async () => {
     loadBulletinMock.mockResolvedValue(emptyBulletin());
     render(<App />);
+    // The brand splits "BalotaChain" and "— Trustee Console" into two spans.
+    expect(screen.getByText(/— Trustee Console/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/BalotaChain — Trustee Console/i),
+      screen.getByRole("heading", { level: 1, name: /Decryption Ceremony/i }),
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(loadBulletinMock).toHaveBeenCalled();
@@ -68,10 +70,10 @@ describe("App", () => {
       expect(loadBulletinMock).toHaveBeenCalled();
     });
     fireEvent.click(
-      screen.getByRole("button", { name: /submit my partial decryption/i }),
+      screen.getByRole("button", { name: /submit partial decryption/i }),
     );
     expect(
-      screen.getByRole("button", { name: /confirm submission/i }),
+      screen.getByRole("button", { name: /yes, submit my share/i }),
     ).toBeInTheDocument();
   });
 
@@ -101,10 +103,10 @@ describe("App", () => {
       expect(loadBulletinMock).toHaveBeenCalled();
     });
     fireEvent.click(
-      screen.getByRole("button", { name: /submit my partial decryption/i }),
+      screen.getByRole("button", { name: /submit partial decryption/i }),
     );
     fireEvent.click(
-      screen.getByRole("button", { name: /confirm submission/i }),
+      screen.getByRole("button", { name: /yes, submit my share/i }),
     );
 
     await waitFor(() => {
@@ -113,7 +115,7 @@ describe("App", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Partial decryption submitted\./i),
+        screen.getByText(/Partial decryption submitted/i),
       ).toBeInTheDocument();
     });
   });

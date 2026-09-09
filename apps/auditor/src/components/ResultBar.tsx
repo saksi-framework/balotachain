@@ -2,6 +2,7 @@ import { tokens } from "@balotachain/ui";
 
 export type ResultBarProps = {
   percent: number;
+  /** Leading candidates get the solid teal bar; the rest get the muted one. */
   dimmed?: boolean;
 };
 
@@ -12,10 +13,9 @@ export function ResultBar({ percent, dimmed = false }: ResultBarProps) {
       style={{
         width: "100%",
         height: 8,
-        background: tokens.color.tealLight,
+        background: tokens.color.neutralFill,
         borderRadius: tokens.radius.pill,
         overflow: "hidden",
-        opacity: dimmed ? 0.5 : 1,
       }}
       role="progressbar"
       aria-valuenow={clamped}
@@ -26,7 +26,7 @@ export function ResultBar({ percent, dimmed = false }: ResultBarProps) {
         style={{
           width: `${clamped}%`,
           height: "100%",
-          background: tokens.color.teal,
+          background: dimmed ? tokens.color.neutralBar : tokens.color.teal,
           borderRadius: tokens.radius.pill,
           transition: "width 240ms ease",
         }}

@@ -3,6 +3,12 @@ export type { Tokens } from "./tokens.js";
 
 export { cn } from "./cn.js";
 
+export { Card } from "./components/Card.js";
+export type { CardProps } from "./components/Card.js";
+
+export { CopyButton } from "./components/CopyButton.js";
+export type { CopyButtonProps } from "./components/CopyButton.js";
+
 export { PrimaryButton } from "./components/PrimaryButton.js";
 export type { PrimaryButtonProps } from "./components/PrimaryButton.js";
 
@@ -34,5 +40,9 @@ export {
   ChevronIcon,
   ClockIcon,
   AlertIcon,
+  UsersIcon,
+  HashIcon,
+  DownloadIcon,
+  CodeIcon,
 } from "./components/Icon.js";
 export type { IconProps } from "./components/Icon.js";

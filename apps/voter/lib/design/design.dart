@@ -9,3 +9,5 @@ export 'widgets/top_bar.dart';
 export 'widgets/page_dots.dart';
 export 'widgets/icons.dart';
 export 'widgets/card.dart';
+export 'widgets/layout.dart';
+export 'widgets/motion.dart';

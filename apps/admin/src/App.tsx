@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   tokens,
+  Card,
   PrimaryButton,
   SecondaryButton,
   TextInput,
@@ -15,7 +16,6 @@ import {
   CopyIcon,
   AlertIcon,
 } from "@balotachain/ui";
-import { Card } from "./components/Card";
 import { Chip } from "./components/Chip";
 import { Stepper } from "./components/Stepper";
 import {

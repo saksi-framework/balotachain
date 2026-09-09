@@ -1,15 +1,28 @@
 :root {
-  --bc-color-teal: #0F6E6E;
-  --bc-color-teal-dark: #0A5252;
-  --bc-color-teal-light: #E3F1F1;
-  --bc-color-bg: #FAFAF8;
-  --bc-color-surface: #FFFFFF;
-  --bc-color-text-1: #1A2526;
-  --bc-color-text-2: #5C6B6B;
-  --bc-color-success: #2E7D5B;
-  --bc-color-warn: #C8851A;
-  --bc-color-error: #C0392B;
-  --bc-color-border: #E0E4E3;
+  --bc-color-teal: #0f6e6e;
+  --bc-color-teal-dark: #0a5252;
+  --bc-color-teal-light: #e3f1f1;
+  --bc-color-teal-border: #c5e0e0;
+  --bc-color-bg: #fafaf8;
+  --bc-color-surface: #ffffff;
+  --bc-color-text-1: #1a2526;
+  --bc-color-text-2: #5c6b6b;
+  --bc-color-success: #2e7d5b;
+  --bc-color-success-light: #e6f2ec;
+  --bc-color-success-border: #c2e1d1;
+  --bc-color-success-text: #1e5a40;
+  --bc-color-success-body: #2e5c49;
+  --bc-color-warn: #c8851a;
+  --bc-color-warn-light: #fbf3e2;
+  --bc-color-warn-border: #efd9a9;
+  --bc-color-warn-text: #835b12;
+  --bc-color-error: #c0392b;
+  --bc-color-error-light: #f7e8e6;
+  --bc-color-border: #e0e4e3;
+  --bc-color-border-hover: #c9d0ce;
+  --bc-color-neutral-fill: #eef1f0;
+  --bc-color-neutral-bar: #9fbfbf;
+  --bc-color-muted: #9aa6a5;
 
   --bc-radius-card: 16px;
   --bc-radius-button: 12px;
@@ -23,12 +36,18 @@
   --bc-type-body: 16px;
   --bc-type-h1: 28px;
   --bc-type-h2: 24px;
+  --bc-type-h3: 20px;
+  --bc-type-eyebrow: 13px;
+  --bc-type-small: 13px;
   --bc-type-button: 18px;
   --bc-line-height: 1.5;
-  --bc-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --bc-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --bc-font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --bc-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --bc-shadow-card: 0 1px 2px rgba(26, 37, 38, 0.06), 0 1px 8px rgba(26, 37, 38, 0.04);
+  --bc-shadow-card: 0 2px 10px -4px rgba(26, 37, 38, 0.1);
+  --bc-shadow-subtle: 0 1px 2px rgba(26, 37, 38, 0.04);
+  --bc-shadow-button: 0 6px 16px -6px rgba(15, 110, 110, 0.5);
 
   --bc-min-button-height: 56px;
 }
@@ -57,4 +76,53 @@ body {
 
 button {
   font-family: inherit;
+}
+
+.bc-mono {
+  font-family: var(--bc-font-mono);
+}
+
+/* Live "secure session" indicator — expanding ring behind a solid dot. */
+.bc-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--bc-radius-pill);
+  border: 2px solid currentColor;
+  opacity: 0.4;
+  animation: bc-ping 2s ease-out infinite;
+}
+
+@keyframes bc-ping {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* New audit-log rows drop in from above. */
+.bc-log-in {
+  animation: bc-log-in 0.4s cubic-bezier(0.33, 0, 0.2, 1);
+}
+
+@keyframes bc-log-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-pulse::after,
+  .bc-log-in {
+    animation: none;
+  }
 }

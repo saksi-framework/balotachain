@@ -5,8 +5,9 @@ export type ProgressBarProps = {
   max: number;
 };
 
+/** The quorum meter: 10px neutral track with a teal fill. */
 export function ProgressBar({ value, max }: ProgressBarProps) {
-  const pct = Math.max(0, Math.min(1, value / max));
+  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   return (
     <div
       role="progressbar"
@@ -15,8 +16,8 @@ export function ProgressBar({ value, max }: ProgressBarProps) {
       aria-valuenow={value}
       style={{
         width: "100%",
-        height: 12,
-        background: tokens.color.tealLight,
+        height: 10,
+        background: tokens.color.neutralFill,
         borderRadius: tokens.radius.pill,
         overflow: "hidden",
       }}
@@ -27,7 +28,7 @@ export function ProgressBar({ value, max }: ProgressBarProps) {
           height: "100%",
           background: tokens.color.teal,
           borderRadius: tokens.radius.pill,
-          transition: "width 240ms ease-out",
+          transition: "width 500ms cubic-bezier(.33,0,.2,1)",
         }}
       />
     </div>

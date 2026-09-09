@@ -322,3 +322,6 @@ public/build/
 
 # Generated presentation handouts (regenerate from docs/saksi/*.md)
 pdf-handouts/
+
+# Design mockups fetched from Claude Design (reference only, not committed)
+.design-src/

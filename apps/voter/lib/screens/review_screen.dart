@@ -6,6 +6,8 @@ import 'package:voter/screens/vote_submitted_screen.dart';
 import 'package:voter/services/encrypt_service.dart';
 import 'package:voter/state/ballot.dart';
 
+/// Review & confirm — one block per position, then the irreversibility warning
+/// and the submit CTA. Submitting runs the real `balota-encrypt` shell-out.
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
     super.key,
@@ -63,8 +65,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
       }
 
       final choice = packChoice(
-        presidentIndex:
-            _indexOrZero(mockPresidents, widget.selections.president),
+        presidentIndex: _indexOrZero(
+          mockPresidents,
+          widget.selections.president,
+        ),
         vpIndex: _indexOrZero(mockVicePresidents, widget.selections.vp),
         senatorCount: widget.selections.senators.length,
       );
@@ -78,8 +82,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       if (!mounted) return;
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              VoteSubmittedScreen(trackingCode: result.trackingCode),
+          builder: (_) => VoteSubmittedScreen(trackingCode: result.trackingCode),
         ),
       );
     } on EncryptServiceException catch (e) {
@@ -109,68 +112,228 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final president = widget.selections.president;
+    final vp = widget.selections.vp;
+    final senators = widget.selections.senators;
+
     return Scaffold(
       backgroundColor: BcColors.bg,
       appBar: BcTopBar(
-        title: 'Review',
+        title: 'Review your vote',
         onBack: () => Navigator.of(context).pop(),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(BcSpace.md),
-                children: [
-                  if (_error != null) ...[
-                    _ErrorBanner(message: _error!),
-                    const SizedBox(height: BcSpace.sm),
-                  ],
-                  const _FinalityBanner(),
-                  const SizedBox(height: BcSpace.md),
-                  _SectionCard(
-                    title: 'President',
-                    entries: <Candidate>[
-                      if (widget.selections.president != null)
-                        widget.selections.president!,
-                    ],
+      body: Column(
+        children: [
+          Expanded(
+            child: BcBody(
+              padTop: 2,
+              children: [
+                const Text(
+                  'Confirm your choices before submitting.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: BcColors.text2,
+                    height: BcType.lineHeight,
                   ),
+                ),
+                const SizedBox(height: 18),
+                if (_error != null) ...[
+                  _ErrorBanner(message: _error!),
                   const SizedBox(height: BcSpace.sm),
-                  _SectionCard(
-                    title: 'Vice President',
-                    entries: <Candidate>[
-                      if (widget.selections.vp != null)
-                        widget.selections.vp!,
-                    ],
-                  ),
-                  const SizedBox(height: BcSpace.sm),
-                  _SectionCard(
-                    title: 'Senators',
-                    entries: widget.selections.senators,
-                  ),
                 ],
+                if (president != null)
+                  _ReviewBlock(
+                    label: 'PRESIDENT',
+                    children: [_ReviewRow(candidate: president, big: true)],
+                  ),
+                if (vp != null)
+                  _ReviewBlock(
+                    label: 'VICE PRESIDENT',
+                    children: [_ReviewRow(candidate: vp, big: true)],
+                  ),
+                _ReviewBlock(
+                  label: 'SENATORS',
+                  count: '${senators.length} of ${BallotSelections.senatorsMax}',
+                  children: senators.isEmpty
+                      ? const [
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              'No senators selected',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: BcColors.text2,
+                              ),
+                            ),
+                          ),
+                        ]
+                      : [
+                          for (var i = 0; i < senators.length; i++)
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: i == 0
+                                    ? null
+                                    : const Border(
+                                        top: BorderSide(
+                                          color: BcColors.border,
+                                        ),
+                                      ),
+                              ),
+                              child: _ReviewRow(candidate: senators[i]),
+                            ),
+                        ],
+                ),
+                const SizedBox(height: 6),
+                const _FinalityBanner(),
+                const SizedBox(height: BcSpace.xs),
+              ],
+            ),
+          ),
+          BcFooter(
+            child: Column(
+              children: [
+                BcPrimaryButton(
+                  label: _submitting ? 'Submitting…' : 'Submit Vote',
+                  onPressed: _submitting ? null : _onSubmit,
+                ),
+                const SizedBox(height: 12),
+                BcSecondaryButton(
+                  label: 'Go back',
+                  onPressed: _submitting
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One position's confirmed picks, under an uppercase label.
+class _ReviewBlock extends StatelessWidget {
+  const _ReviewBlock({
+    required this.label,
+    required this.children,
+    this.count,
+  });
+
+  final String label;
+  final List<Widget> children;
+  final String? count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: BcSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: BcType.eyebrow,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: BcColors.text2,
+                  height: 1.2,
+                ),
+              ),
+              if (count != null)
+                Text(
+                  count!,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: BcColors.text2,
+                    height: 1.2,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: BcSpace.xs),
+          BcCard(
+            flat: true,
+            padding: const EdgeInsets.symmetric(
+              horizontal: BcSpace.sm,
+              vertical: BcSpace.xs,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewRow extends StatelessWidget {
+  const _ReviewRow({required this.candidate, this.big = false});
+
+  final Candidate candidate;
+  final bool big;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = big ? 46.0 : 38.0;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: big ? 2 : 9),
+      child: Row(
+        children: [
+          Container(
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: BcColors.teal,
+              borderRadius: BorderRadius.circular(big ? 14 : 11),
+            ),
+            child: Text(
+              bcInitials(candidate.name),
+              style: TextStyle(
+                fontSize: big ? 16 : 14,
+                fontWeight: FontWeight.w600,
+                color: BcColors.surface,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(BcSpace.md),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  BcSecondaryButton(
-                    label: 'Edit',
-                    onPressed: _submitting
-                        ? null
-                        : () => Navigator.of(context).pop(),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  candidate.name,
+                  style: TextStyle(
+                    fontSize: big ? 17 : 15.5,
+                    fontWeight: FontWeight.w600,
+                    color: BcColors.text1,
+                    height: 1.3,
                   ),
-                  BcPrimaryButton(
-                    label: _submitting ? 'Submitting...' : 'Submit my ballot',
-                    onPressed: _submitting ? null : _onSubmit,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  candidate.party,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    color: BcColors.text2,
+                    height: 1.3,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -178,27 +341,28 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
 class _ErrorBanner extends StatelessWidget {
   const _ErrorBanner({required this.message});
+
   final String message;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(BcSpace.sm),
+      padding: const EdgeInsets.fromLTRB(BcSpace.sm, 14, BcSpace.sm, 14),
       decoration: BoxDecoration(
-        color: BcColors.error.withValues(alpha: 0.08),
+        color: BcColors.errorLight,
         border: Border.all(color: BcColors.error, width: 1),
-        borderRadius: BorderRadius.circular(BcRadii.card),
+        borderRadius: BorderRadius.circular(BcRadii.button),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(bcAlert, size: 20, color: BcColors.error),
-          const SizedBox(width: BcSpace.sm),
+          const Icon(bcAlert, size: 22, color: BcColors.error),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
               style: const TextStyle(
-                fontSize: BcType.body,
+                fontSize: 14.5,
                 color: BcColors.error,
                 fontWeight: FontWeight.w600,
                 height: BcType.lineHeight,
@@ -217,94 +381,27 @@ class _FinalityBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(BcSpace.sm),
+      padding: const EdgeInsets.fromLTRB(BcSpace.sm, 14, BcSpace.sm, 14),
       decoration: BoxDecoration(
-        color: BcColors.warn.withValues(alpha: 0.08),
-        border: Border.all(color: BcColors.warn, width: 1),
-        borderRadius: BorderRadius.circular(BcRadii.card),
+        color: BcColors.warnLight,
+        border: Border.all(color: BcColors.warnBorder, width: 1),
+        borderRadius: BorderRadius.circular(BcRadii.button),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Icon(bcAlert, size: 20, color: BcColors.warn),
-          SizedBox(width: BcSpace.sm),
-          Expanded(
-            child: Text(
-              'Once submitted, your ballot cannot be changed.',
-              style: TextStyle(
-                fontSize: BcType.body,
-                color: BcColors.warn,
-                fontWeight: FontWeight.w600,
-                height: BcType.lineHeight,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.entries});
-
-  final String title;
-  final List<Candidate> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    return BcCard(
-      child: Column(
+      child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: BcType.body,
-              fontWeight: FontWeight.w700,
-              color: BcColors.text1,
-              height: BcType.lineHeight,
-            ),
-          ),
-          const SizedBox(height: BcSpace.xs),
-          if (entries.isEmpty)
-            const Text(
-              'No selection',
+          Icon(bcAlert, size: 22, color: BcColors.warn),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Once submitted, your vote is final and cannot be changed.',
               style: TextStyle(
-                fontSize: BcType.body,
-                color: BcColors.text2,
+                fontSize: 14.5,
+                color: BcColors.warnText,
                 height: BcType.lineHeight,
               ),
-            )
-          else
-            for (final c in entries)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        c.name,
-                        style: const TextStyle(
-                          fontSize: BcType.body,
-                          fontWeight: FontWeight.w600,
-                          color: BcColors.text1,
-                          height: BcType.lineHeight,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      c.party,
-                      style: const TextStyle(
-                        fontSize: BcType.body,
-                        color: BcColors.text2,
-                        height: BcType.lineHeight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            ),
+          ),
         ],
       ),
     );

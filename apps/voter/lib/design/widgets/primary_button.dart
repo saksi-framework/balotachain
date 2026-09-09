@@ -1,53 +1,91 @@
 import 'package:flutter/material.dart';
 import '../tokens.dart';
 
-class BcPrimaryButton extends StatelessWidget {
+/// Full-width pill CTA. Mirrors the mockup `PrimaryButton`: 56px min height,
+/// teal fill, white 18/600 label and a lifted shadow. Disabled falls back to
+/// the neutral fill with muted text and no shadow.
+class BcPrimaryButton extends StatefulWidget {
   const BcPrimaryButton({
     super.key,
     required this.label,
     required this.onPressed,
-    this.fullWidth = false,
+    this.icon,
   });
 
   final String label;
   final VoidCallback? onPressed;
-  final bool fullWidth;
+
+  /// Optional leading glyph (mockup shows one on the trustee-style CTA).
+  final IconData? icon;
+
+  @override
+  State<BcPrimaryButton> createState() => _BcPrimaryButtonState();
+}
+
+class _BcPrimaryButtonState extends State<BcPrimaryButton> {
+  bool _down = false;
+
+  void _setDown(bool value) {
+    if (_down != value) setState(() => _down = value);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-    final button = Opacity(
-      opacity: enabled ? 1.0 : 0.5,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: bcMinButtonHeight),
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: BcColors.teal,
-            foregroundColor: BcColors.surface,
-            disabledBackgroundColor: BcColors.teal,
-            disabledForegroundColor: BcColors.surface,
-            elevation: 0,
-            shadowColor: Colors.transparent,
-            minimumSize: const Size(0, bcMinButtonHeight),
+    final enabled = widget.onPressed != null;
+    final fg = enabled ? BcColors.surface : BcColors.text2;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: widget.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onPressed,
+        onTapDown: enabled ? (_) => _setDown(true) : null,
+        onTapUp: enabled ? (_) => _setDown(false) : null,
+        onTapCancel: enabled ? () => _setDown(false) : null,
+        child: AnimatedScale(
+          scale: _down ? 0.978 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: bcMinButtonHeight),
             padding: const EdgeInsets.symmetric(
               horizontal: BcSpace.md,
-              vertical: BcSpace.sm,
+              vertical: 14,
             ),
-            shape: const StadiumBorder(),
-            textStyle: const TextStyle(
-              fontSize: BcType.button,
-              fontWeight: FontWeight.w600,
+            decoration: BoxDecoration(
+              color: enabled ? BcColors.teal : BcColors.neutralFill,
+              borderRadius: BorderRadius.circular(BcRadii.pill),
+              boxShadow: enabled ? BcShadows.button : const <BoxShadow>[],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(widget.icon, size: 20, color: fg),
+                  const SizedBox(width: 10),
+                ],
+                Flexible(
+                  child: Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: BcType.button,
+                      fontWeight: FontWeight.w600,
+                      color: fg,
+                      letterSpacing: 0.1,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Text(label),
         ),
       ),
     );
-
-    if (fullWidth) {
-      return SizedBox(width: double.infinity, child: button);
-    }
-    return button;
   }
 }
