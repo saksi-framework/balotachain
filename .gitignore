@@ -325,3 +325,6 @@ pdf-handouts/
 
 # Design mockups fetched from Claude Design (reference only, not committed)
 .design-src/
+
+# Assembled browser bundles served by the saksi-campaign console (tools/build-web.*)
+dist-web/

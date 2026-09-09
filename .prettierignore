@@ -11,3 +11,4 @@ apps/voter/android/
 apps/voter/macos/
 apps/voter/linux/
 apps/voter/windows/
+dist-web/

@@ -6,6 +6,8 @@ export default [
     ignores: [
       "**/node_modules/**",
       "**/dist/**",
+      // Assembled bundles the saksi-campaign console serves (tools/build-web.*).
+      "**/dist-web/**",
       "**/target/**",
       "**/coverage/**",
       "**/.dart_tool/**",

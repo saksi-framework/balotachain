@@ -1,6 +1,6 @@
 import {
+  useCallback,
   useEffect,
-  useMemo,
   useState,
   type CSSProperties,
   type FormEvent,
@@ -24,41 +24,39 @@ import { Chip } from "./components/Chip";
 import { ResultBar } from "./components/ResultBar";
 import { StatCard } from "./components/StatCard";
 import {
-  RACES,
-  TALLY_SHA256,
-  BALLOTS_CAST,
-  BALLOTS_VERIFIED,
-  BALLOTS_REJECTED,
-  TURNOUT,
-  REGISTERED_VOTERS,
-  PRECINCTS,
-  TRUSTEES_SIGNED,
-  TRUSTEES_TOTAL,
-  ELECTION_NAME,
-  POLLS_CLOSED_AT,
-  TALLY_PUBLISHED_AT,
-  SAMPLE_VOTE_RECORDED_AT,
-  type Race,
-  type Candidate,
-} from "./mocks/results";
-import {
-  loadBulletin,
+  listRuns,
+  loadBoard,
   verifyTrackingCode,
-  type Bulletin,
-  type Tally,
+  exportUrl,
+  verifierUrl,
+  type Board,
+  type BoardCandidate,
+  type BoardContest,
+  type RunView,
 } from "./lib/bulletin";
 
-const TRACKING_CODE_RE = /^BC-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
+/**
+ * A tracking code is the first eight HEX characters of a ballot's nullifier, so
+ * anything outside [A-F0-9] can never match a real record. Rejecting it here
+ * saves a request and gives the voter the real reason.
+ */
+const TRACKING_CODE_RE = /^BC-[A-F0-9]{4}-[A-F0-9]{4}$/i;
+
+/** Ballots are one per voter per position, so a run's ballot count is that product. */
+const POLL_MS = 4000;
 
 type VerifyState =
   | { kind: "idle" }
-  | { kind: "success"; code: string; submittedAt: string }
-  | { kind: "error" };
+  | { kind: "found"; code: string; position: string; recordedAt?: string }
+  | { kind: "missing" }
+  | { kind: "ambiguous" }
+  | { kind: "malformed" };
 
-type TallyMode =
-  | { kind: "mock" }
-  | { kind: "pending" }
-  | { kind: "real"; tally: Tally; ballotsCount: number };
+type Load =
+  | { kind: "loading" }
+  | { kind: "empty" }
+  | { kind: "error"; message: string }
+  | { kind: "ready"; board: Board };
 
 const wrap: CSSProperties = {
   maxWidth: 1180,
@@ -84,44 +82,48 @@ const sectionHeading: CSSProperties = {
   margin: 0,
 };
 
+const noteText: CSSProperties = {
+  fontSize: 13,
+  color: tokens.color.text2,
+  lineHeight: 1.5,
+  margin: "12px 0 0",
+};
+
 function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-function percentOf(votes: number, total: number): number {
-  if (total <= 0) return 0;
-  return (votes / total) * 100;
+/** ISO timestamp -> a readable local date, or "" for a missing one. */
+function formatStamp(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function runIdFromUrl(): string | null {
+  const q = new URLSearchParams(window.location.search);
+  return q.get("run") ?? q.get("election");
+}
+
+function setRunInUrl(runId: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("run", runId);
+  window.history.replaceState(null, "", url);
 }
 
 /**
- * Map a real bulletin tally into the same Race[] shape the UI already renders.
- * The mock races carry handcrafted seat counts and subtitles; real positions
- * only give us an id, so we title-case it and describe the ballot volume.
+ * Ground-truth runs produce plaintext tables and no ciphertexts, so they have
+ * no ceremony, no tally and nothing for a bulletin board to show.
  */
-function tallyToRaces(tally: Tally, ballotsCount: number): Race[] {
-  return Object.keys(tally.results)
-    .sort()
-    .map((id) => {
-      const candidates: Candidate[] = tally.results[id].candidates.map((c) => ({
-        name: c.name,
-        party: c.party,
-        votes: c.votes,
-        elected: c.elected,
-      }));
-      return {
-        title: titleCase(id),
-        seatLabel: "1 seat",
-        subtitle: `${formatNumber(ballotsCount)} votes counted`,
-        pickLimit: 1,
-        ballotsTotal: ballotsCount,
-        candidates,
-      };
-    });
-}
-
-function titleCase(id: string): string {
-  if (id.length === 0) return id;
-  return id.charAt(0).toUpperCase() + id.slice(1);
+function isTalliable(run: RunView): boolean {
+  return run.config.mode !== "groundtruth";
 }
 
 function Section({
@@ -158,20 +160,15 @@ function Section({
 
 function CandidateRow({
   candidate,
-  denominator,
   barMax,
-  rank,
   showPercent,
   first,
 }: {
-  candidate: Candidate;
-  denominator: number;
+  candidate: BoardCandidate;
   barMax: number;
-  rank?: string;
   showPercent: boolean;
   first: boolean;
 }) {
-  const pct = percentOf(candidate.votes, denominator);
   const barPct = barMax > 0 ? (candidate.votes / barMax) * 100 : 0;
 
   return (
@@ -201,18 +198,7 @@ function CandidateRow({
             flexWrap: "wrap",
           }}
         >
-          {candidate.name}
-          {candidate.party ? (
-            <span
-              style={{
-                fontWeight: 400,
-                color: tokens.color.text2,
-                fontSize: 13,
-              }}
-            >
-              · {candidate.party}
-            </span>
-          ) : null}
+          {candidate.label}
           {candidate.elected ? (
             <Chip variant="success" size="sm">
               ELECTED
@@ -236,20 +222,23 @@ function CandidateRow({
               fontSize: 13,
             }}
           >
-            {showPercent ? `${pct.toFixed(1)}%` : rank}
+            {showPercent
+              ? `${candidate.share.toFixed(1)}%`
+              : `#${candidate.rank}`}
           </span>
         </div>
       </div>
-      <ResultBar percent={barPct} dimmed={candidate.elected !== true} />
+      <ResultBar percent={barPct} dimmed={!candidate.elected} />
     </div>
   );
 }
 
-function RaceCard({ race }: { race: Race }) {
-  const isMultiSeat = race.pickLimit > 1;
+function RaceCard({ race }: { race: BoardContest }) {
+  const isMultiSeat = race.seats > 1;
   const barMax = isMultiSeat
-    ? Math.max(...race.candidates.map((c) => c.votes))
-    : race.ballotsTotal;
+    ? Math.max(...race.candidates.map((c) => c.votes), 1)
+    : race.total_votes;
+  const elected = race.candidates.filter((c) => c.elected).length;
 
   return (
     <Card style={{ padding: "22px 22px 8px" }}>
@@ -263,10 +252,10 @@ function RaceCard({ race }: { race: Race }) {
         }}
       >
         <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>
-          {race.title}
+          {race.label}
         </h3>
         <span style={{ fontSize: 12.5, color: tokens.color.text2 }}>
-          {race.seatLabel}
+          {race.seats === 1 ? "1 seat" : `${race.seats} seats`}
         </span>
       </div>
       <p
@@ -276,20 +265,22 @@ function RaceCard({ race }: { race: Race }) {
           margin: "0 0 16px",
         }}
       >
-        {race.subtitle}
+        {formatNumber(race.total_votes)} votes counted
+        {isMultiSeat && !race.contested
+          ? ` · ${elected} of ${race.candidates.length} elected`
+          : ""}
+        {race.contested ? " · the cut is not decided" : ""}
       </p>
       {race.candidates.map((c, i) => (
         <CandidateRow
-          key={c.name}
+          key={c.id}
           candidate={c}
-          denominator={race.ballotsTotal}
           barMax={barMax}
-          rank={c.rank}
           showPercent={!isMultiSeat}
           first={i === 0}
         />
       ))}
-      {race.footnote ? (
+      {race.contested ? (
         <div
           style={{
             fontSize: 12.5,
@@ -298,7 +289,9 @@ function RaceCard({ race }: { race: Race }) {
             borderTop: `1px solid ${tokens.color.border}`,
           }}
         >
-          {race.footnote}
+          More candidates are level at the last elected place than there are
+          seats left, so this race awards nothing. The result is reported as it
+          stands rather than resolved.
         </div>
       ) : null}
     </Card>
@@ -326,7 +319,17 @@ function BrandMark() {
   );
 }
 
-function TopBar() {
+function TopBar({
+  runs,
+  runId,
+  onPick,
+  status,
+}: {
+  runs: RunView[];
+  runId: string | null;
+  onPick: (id: string) => void;
+  status: ReactNode;
+}) {
   return (
     <header
       style={{
@@ -344,7 +347,8 @@ function TopBar() {
           alignItems: "center",
           justifyContent: "space-between",
           gap: tokens.space.sm,
-          height: 68,
+          minHeight: 68,
+          flexWrap: "wrap",
         }}
       >
         <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
@@ -353,9 +357,32 @@ function TopBar() {
             BalotaChain — Bulletin Board
           </span>
         </span>
-        <Chip variant="teal" dot>
-          Election Closed
-        </Chip>
+        <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {runs.length > 1 ? (
+            <select
+              aria-label="Election"
+              value={runId ?? ""}
+              onChange={(e) => onPick(e.currentTarget.value)}
+              style={{
+                fontFamily: "inherit",
+                fontSize: 13.5,
+                padding: "7px 10px",
+                borderRadius: tokens.radius.button,
+                border: `1px solid ${tokens.color.border}`,
+                background: tokens.color.surface,
+                color: tokens.color.text1,
+                maxWidth: 340,
+              }}
+            >
+              {runs.map((r) => (
+                <option key={r.run_id} value={r.run_id}>
+                  {r.config.name} — {formatStamp(r.created_at)}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          {status}
+        </span>
       </div>
     </header>
   );
@@ -417,11 +444,47 @@ function VerifiedBanner({
             lineHeight: 1.5,
           }}
         >
-          The complete tally has been cryptographically confirmed and
-          independently reproduced by {trusteesSigned} of {trusteesTotal}{" "}
-          trustees. No ballots were added, removed, or altered.
+          An independent verifier re-derived every total from the published
+          record and matched it exactly. Decryption required {trusteesSigned} of{" "}
+          {trusteesTotal} trustees. No ballots were added, removed, or altered.
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Published, but the independent audit has not been run (or did not pass). */
+function UnauditedBanner({ verified }: { verified: boolean }) {
+  if (verified) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        background: tokens.color.warnLight,
+        border: `1px solid ${tokens.color.warnBorder}`,
+        borderRadius: tokens.radius.card,
+        padding: "18px 22px",
+        marginBottom: 30,
+      }}
+    >
+      <span
+        style={{ color: tokens.color.warn, flexShrink: 0, display: "flex" }}
+      >
+        <AlertIcon size={24} strokeWidth={1.8} />
+      </span>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 14.5,
+          color: tokens.color.warnText,
+          lineHeight: 1.5,
+        }}
+      >
+        These totals have been published but not independently verified yet. The
+        checks below say exactly which ones have and have not run.
+      </p>
     </div>
   );
 }
@@ -482,15 +545,66 @@ function CryptoItem({
   );
 }
 
-function CryptoVerification({
-  fingerprint,
-  trusteesSigned,
-  trusteesTotal,
-}: {
-  fingerprint: string;
-  trusteesSigned: number;
-  trusteesTotal: number;
-}) {
+function Fingerprint({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        display: "flex",
+        alignItems: "center",
+        gap: 13,
+        padding: tokens.space.sm,
+        background: tokens.color.bg,
+        border: `1px solid ${tokens.color.border}`,
+        borderRadius: tokens.radius.button,
+        flexWrap: "wrap",
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 10,
+          background: tokens.color.tealLight,
+          color: tokens.color.teal,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <HashIcon size={20} strokeWidth={1.7} />
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3 style={{ margin: "0 0 5px", fontSize: 15, fontWeight: 600 }}>
+          {label}
+        </h3>
+        <div
+          className="bc-mono"
+          style={{
+            fontSize: 14,
+            color: tokens.color.tealDark,
+            wordBreak: "break-all",
+          }}
+        >
+          {value}
+        </div>
+      </div>
+      <CopyButton value={value} label={`Copy ${label.toLowerCase()}`} />
+    </div>
+  );
+}
+
+function CryptoVerification({ board }: { board: Board }) {
+  const { crypto } = board;
+  const tallyFingerprint = crypto.tally_sha256
+    ? `sha256:${crypto.tally_sha256}`
+    : "";
+  const ballotsFingerprint = crypto.ballots_sha256
+    ? `sha256:${crypto.ballots_sha256}`
+    : "";
+
   return (
     <Card style={{ padding: 26 }}>
       <div
@@ -501,82 +615,129 @@ function CryptoVerification({
         }}
       >
         <CryptoItem
-          icon={<CheckIcon size={20} strokeWidth={2} />}
+          icon={
+            crypto.tally_proof_verified ? (
+              <CheckIcon size={20} strokeWidth={2} />
+            ) : (
+              <AlertIcon size={20} strokeWidth={1.8} />
+            )
+          }
           title={
             <>
               Tally proof:{" "}
-              <span style={{ color: tokens.color.success, fontWeight: 600 }}>
-                verified ✓
+              <span
+                style={{
+                  color: crypto.tally_proof_verified
+                    ? tokens.color.success
+                    : tokens.color.warn,
+                  fontWeight: 600,
+                }}
+              >
+                {crypto.tally_proof_verified
+                  ? "verified ✓"
+                  : "not yet verified"}
               </span>
             </>
           }
         >
-          A zero-knowledge proof confirms the published totals match the
-          encrypted ballots — without decrypting any single vote.
+          The totals were recovered from the homomorphic aggregate by threshold
+          decryption — no individual ballot was ever decrypted.
         </CryptoItem>
         <CryptoItem
           icon={<UsersIcon size={20} strokeWidth={1.7} />}
-          title={`${trusteesSigned} of ${trusteesTotal} trustees participated`}
+          title={`${crypto.trustees_submitted} of ${crypto.trustees_total} trustees participated`}
         >
-          Decryption required a threshold of independent trustees, so no single
-          party could read or alter the results alone.
+          Decryption needed {crypto.threshold} of {crypto.trustees_total}, so no
+          single party could read or alter the result alone.
         </CryptoItem>
+        {tallyFingerprint ? (
+          <Fingerprint
+            label="Final tally fingerprint"
+            value={tallyFingerprint}
+          />
+        ) : null}
+        {ballotsFingerprint ? (
+          <Fingerprint
+            label="Ballot set fingerprint"
+            value={ballotsFingerprint}
+          />
+        ) : null}
+        {board.on_chain && crypto.tip_hash ? (
+          <Fingerprint
+            label={`Ledger tip at block ${crypto.chain_height ?? 0}`}
+            value={crypto.tip_hash}
+          />
+        ) : null}
+      </div>
+      <p style={noteText}>
+        The published tally is the election's seeded result; the ceremony gates
+        when it becomes readable, and the independent verifier is what proves
+        enough trustees contributed. The threshold itself is enforced by the
+        console, not by the ledger.
+      </p>
+    </Card>
+  );
+}
+
+function CheckList({ checks }: { checks: Board["checks"] }) {
+  return (
+    <Card style={{ padding: "8px 22px" }}>
+      {checks.map((c, i) => (
         <div
+          key={c.name}
           style={{
-            gridColumn: "1 / -1",
             display: "flex",
-            alignItems: "center",
-            gap: 13,
-            padding: tokens.space.sm,
-            background: tokens.color.bg,
-            border: `1px solid ${tokens.color.border}`,
-            borderRadius: tokens.radius.button,
-            flexWrap: "wrap",
+            gap: 12,
+            alignItems: "flex-start",
+            padding: "14px 0",
+            borderTop: i === 0 ? "none" : `1px solid ${tokens.color.border}`,
           }}
         >
           <span
             aria-hidden
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 10,
-              background: tokens.color.tealLight,
-              color: tokens.color.teal,
               display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
               flexShrink: 0,
+              marginTop: 1,
+              color: c.pass ? tokens.color.success : tokens.color.warn,
             }}
           >
-            <HashIcon size={20} strokeWidth={1.7} />
+            {c.pass ? (
+              <CheckIcon size={19} strokeWidth={2.4} />
+            ) : (
+              <AlertIcon size={19} strokeWidth={1.9} />
+            )}
           </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ margin: "0 0 5px", fontSize: 15, fontWeight: 600 }}>
-              Final tally fingerprint
-            </h3>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>
+              {c.name}{" "}
+              <Chip variant={c.pass ? "success" : "warn"} size="sm">
+                {c.pass ? "PASS" : "NOT YET"}
+              </Chip>
+            </div>
             <div
-              className="bc-mono"
               style={{
-                fontSize: 14,
-                color: tokens.color.tealDark,
-                wordBreak: "break-all",
+                fontSize: 13.5,
+                color: tokens.color.text2,
+                marginTop: 3,
+                wordBreak: "break-word",
               }}
             >
-              {fingerprint}
+              {c.detail}
             </div>
           </div>
-          <CopyButton value={fingerprint} label="Copy tally fingerprint" />
         </div>
-      </div>
+      ))}
+      <p style={{ ...noteText, paddingBottom: 14 }}>
+        This list is the console's summary of the artifacts this election
+        produced. It is not the independent auditor's own findings list, which
+        the audit tool does not currently publish in machine-readable form.
+      </p>
     </Card>
   );
 }
 
-function VerifyVoteCard({
-  fallbackSubmittedAt,
-}: {
-  fallbackSubmittedAt: string;
-}) {
+function VerifyVoteCard({ runId }: { runId: string }) {
   const [code, setCode] = useState("");
   const [state, setState] = useState<VerifyState>({ kind: "idle" });
   const [pending, setPending] = useState(false);
@@ -586,27 +747,57 @@ function VerifyVoteCard({
     const trimmed = code.trim();
     if (trimmed.length === 0) return;
     if (!TRACKING_CODE_RE.test(trimmed)) {
-      setState({ kind: "error" });
+      setState({ kind: "malformed" });
       return;
     }
     setPending(true);
     try {
-      const result = await verifyTrackingCode(trimmed);
-      if (result) {
+      const outcome = await verifyTrackingCode(runId, trimmed);
+      if (outcome.kind === "found") {
         setState({
-          kind: "success",
-          code: result.tracking_code,
-          submittedAt: result.submitted_at || fallbackSubmittedAt,
+          kind: "found",
+          code: outcome.record.tracking_code,
+          position: outcome.record.position_label ?? "this election",
+          recordedAt: outcome.record.recorded_at,
         });
       } else {
-        setState({ kind: "error" });
+        setState({ kind: outcome.kind });
       }
     } catch {
-      setState({ kind: "error" });
+      setState({ kind: "missing" });
     } finally {
       setPending(false);
     }
   }
+
+  const notice = (() => {
+    switch (state.kind) {
+      case "found":
+        return {
+          ok: true,
+          text: state.recordedAt
+            ? `Found — ballot ${state.code} for ${state.position} was committed on ${formatStamp(state.recordedAt)} and is included in the count.`
+            : `Found — ballot ${state.code} for ${state.position} is in this election's record and included in the count. (Offline run: there is no ledger timestamp to show.)`,
+        };
+      case "missing":
+        return {
+          ok: false,
+          text: "No ballot record in this election starts with that code. Check the code on your receipt, and that you are looking at the right election.",
+        };
+      case "ambiguous":
+        return {
+          ok: false,
+          text: "More than one ballot record starts with that code. A code is only the first eight characters of a nullifier, so this can happen — ask for the full nullifier to resolve it.",
+        };
+      case "malformed":
+        return {
+          ok: false,
+          text: "That is not a tracking code. They look like BC-XXXX-XXXX, using the digits 0-9 and the letters A-F.",
+        };
+      default:
+        return null;
+    }
+  })();
 
   return (
     <Card
@@ -639,7 +830,9 @@ function VerifyVoteCard({
           }}
         >
           Paste the tracking code from your receipt to confirm your ballot was
-          included in the final tally — without revealing your choice.
+          included in the final tally — without revealing your choice. The code
+          is part of your ballot's nullifier, which is unlinkable to how you
+          voted. You have one code per position.
         </p>
       </div>
 
@@ -649,7 +842,7 @@ function VerifyVoteCard({
       >
         <TextInput
           variant="mono"
-          placeholder="e.g. BC-7F3A-92K1"
+          placeholder="e.g. BC-7F3A-92C1"
           autoComplete="off"
           value={code}
           onChange={(e) => setCode(e.currentTarget.value)}
@@ -663,7 +856,7 @@ function VerifyVoteCard({
           {pending ? "Verifying…" : "Verify"}
         </PrimaryButton>
 
-        {state.kind === "success" ? (
+        {notice ? (
           <div
             style={{
               marginTop: 2,
@@ -672,53 +865,37 @@ function VerifyVoteCard({
               gap: 11,
               padding: "13px 16px",
               borderRadius: tokens.radius.button,
-              background: tokens.color.successLight,
-              border: `1px solid ${tokens.color.successBorder}`,
+              background: notice.ok
+                ? tokens.color.successLight
+                : tokens.color.warnLight,
+              border: `1px solid ${
+                notice.ok ? tokens.color.successBorder : tokens.color.warnBorder
+              }`,
             }}
           >
-            <span style={{ color: tokens.color.success, flexShrink: 0 }}>
-              <CheckIcon size={20} strokeWidth={2.4} />
+            <span
+              style={{
+                color: notice.ok ? tokens.color.success : tokens.color.warn,
+                flexShrink: 0,
+              }}
+            >
+              {notice.ok ? (
+                <CheckIcon size={20} strokeWidth={2.4} />
+              ) : (
+                <AlertIcon size={20} strokeWidth={1.7} />
+              )}
             </span>
             <span
               style={{
                 fontSize: 14,
-                color: tokens.color.successText,
+                color: notice.ok
+                  ? tokens.color.successText
+                  : tokens.color.warnText,
                 fontWeight: 600,
                 lineHeight: 1.4,
               }}
             >
-              Vote verified — ballot {state.code} was recorded on{" "}
-              {state.submittedAt} and included in the verified tally.
-            </span>
-          </div>
-        ) : null}
-
-        {state.kind === "error" ? (
-          <div
-            style={{
-              marginTop: 2,
-              display: "flex",
-              alignItems: "center",
-              gap: 11,
-              padding: "13px 16px",
-              borderRadius: tokens.radius.button,
-              background: tokens.color.warnLight,
-              border: `1px solid ${tokens.color.warnBorder}`,
-            }}
-          >
-            <span style={{ color: tokens.color.warn, flexShrink: 0 }}>
-              <AlertIcon size={20} strokeWidth={1.7} />
-            </span>
-            <span
-              style={{
-                fontSize: 14,
-                color: tokens.color.warnText,
-                fontWeight: 600,
-                lineHeight: 1.4,
-              }}
-            >
-              Tracking code not found. Check the format BC-XXXX-XXXX on your
-              receipt and try again.
+              {notice.text}
             </span>
           </div>
         ) : null}
@@ -727,31 +904,53 @@ function VerifyVoteCard({
   );
 }
 
-function TallyPendingNotice() {
+function TallyPendingNotice({ board }: { board: Board }) {
+  const { crypto } = board;
   return (
     <Card>
       <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700 }}>
         Tally pending
       </h3>
       <p style={{ margin: 0, color: tokens.color.text2, fontSize: 15 }}>
-        Ballots are sealed and the trustees are decrypting. Final results appear
-        here once the threshold is met.
+        The ballots are sealed. The result stays unreadable until{" "}
+        {crypto.threshold} of {crypto.trustees_total} trustees have contributed
+        their share — {crypto.trustees_submitted}{" "}
+        {crypto.trustees_submitted === 1 ? "has" : "have"} so far.
       </p>
     </Card>
   );
 }
 
+function Notice({ children }: { children: ReactNode }) {
+  return (
+    <main style={{ ...wrap, padding: "60px 28px" }}>
+      <Card>
+        <p style={{ margin: 0, fontSize: 15, color: tokens.color.text2 }}>
+          {children}
+        </p>
+      </Card>
+    </main>
+  );
+}
+
 function FooterLink({
   children,
+  href,
   solid = false,
+  download = false,
 }: {
   children: ReactNode;
+  href: string;
   solid?: boolean;
+  download?: boolean;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <a
-      href="#"
+      href={href}
+      download={download || undefined}
+      target={download ? undefined : "_blank"}
+      rel="noreferrer"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -790,7 +989,14 @@ function FooterLink({
   );
 }
 
-function Footer() {
+function Footer({ board }: { board: Board }) {
+  // The evidence set, in the console's own display order. Linking every
+  // artifact beats one dead "download" button.
+  const primary = ["correctness.csv", "election.csv", "ballots.csv"].filter(
+    (a) => board.artifacts.includes(a),
+  );
+  const download = primary[0] ?? board.artifacts[0];
+
   return (
     <footer
       style={{
@@ -809,26 +1015,45 @@ function Footer() {
           flexWrap: "wrap",
         }}
       >
-        <p
-          style={{
-            fontSize: 13.5,
-            color: tokens.color.text2,
-            maxWidth: 560,
-            lineHeight: 1.55,
-            margin: 0,
-          }}
-        >
-          The BalotaChain bulletin board and verifier are fully open-source.
-          Anyone can download the encrypted ballot record and independently
-          re-run every check on their own machine — no trust in the operator
-          required.
-        </p>
+        <div style={{ maxWidth: 560 }}>
+          <p
+            style={{
+              fontSize: 13.5,
+              color: tokens.color.text2,
+              lineHeight: 1.55,
+              margin: 0,
+            }}
+          >
+            The BalotaChain bulletin board and verifier are fully open-source.
+            Anyone can download the encrypted ballot record and independently
+            re-run every check on their own machine — no trust in the operator
+            required.
+          </p>
+          {board.artifacts.length > 0 ? (
+            <p style={{ ...noteText, marginTop: 10 }}>
+              {board.artifacts.map((a, i) => (
+                <span key={a}>
+                  {i > 0 ? " · " : ""}
+                  <a
+                    href={exportUrl(board.election_id, a)}
+                    download
+                    style={{ color: tokens.color.tealDark }}
+                  >
+                    {a}
+                  </a>
+                </span>
+              ))}
+            </p>
+          ) : null}
+        </div>
         <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-          <FooterLink>
-            <DownloadIcon size={16} strokeWidth={1.8} />
-            Download verification data
-          </FooterLink>
-          <FooterLink solid>
+          {download ? (
+            <FooterLink href={exportUrl(board.election_id, download)} download>
+              <DownloadIcon size={16} strokeWidth={1.8} />
+              Download verification data
+            </FooterLink>
+          ) : null}
+          <FooterLink href={verifierUrl(board.election_id)} solid>
             <CodeIcon size={16} strokeWidth={1.8} />
             Open verifier
           </FooterLink>
@@ -838,60 +1063,82 @@ function Footer() {
   );
 }
 
-function deriveTallyMode(bulletin: Bulletin | null): TallyMode {
-  if (!bulletin) return { kind: "mock" };
-  if (bulletin.tally) {
-    return {
-      kind: "real",
-      tally: bulletin.tally,
-      ballotsCount: bulletin.ballots.length,
-    };
-  }
-  if (bulletin.ballots.length > 0) return { kind: "pending" };
-  return { kind: "mock" };
-}
-
 function App() {
-  const [bulletin, setBulletin] = useState<Bulletin | null>(null);
+  const [runs, setRuns] = useState<RunView[]>([]);
+  const [runId, setRunId] = useState<string | null>(runIdFromUrl());
+  const [load, setLoad] = useState<Load>({ kind: "loading" });
 
+  // Pick a run: the URL wins, otherwise the newest talliable one. /runs is
+  // already sorted newest-first by the console.
   useEffect(() => {
-    let cancelled = false;
-    loadBulletin()
-      .then((b) => {
-        if (!cancelled) setBulletin(b);
+    const ctrl = new AbortController();
+    listRuns(ctrl.signal)
+      .then((all) => {
+        const usable = all.filter(isTalliable);
+        setRuns(usable);
+        if (runId) return;
+        if (usable.length === 0) {
+          setLoad({ kind: "empty" });
+          return;
+        }
+        setRunId(usable[0].run_id);
+        setRunInUrl(usable[0].run_id);
       })
-      .catch(() => {
-        // Tauri unavailable (browser dev / test); fall back to mocked UI.
+      .catch((e: Error) => {
+        if (ctrl.signal.aborted) return;
+        setLoad({ kind: "error", message: e.message });
       });
+    return () => ctrl.abort();
+    // Re-runs when the selection changes, which costs one cheap filesystem
+    // listing and keeps the picker's own labels current. It terminates: once
+    // runId is set the effect returns before touching it again.
+  }, [runId]);
+
+  const refresh = useCallback(
+    (signal?: AbortSignal) => {
+      if (!runId) return;
+      loadBoard(runId, signal)
+        .then((board) => setLoad({ kind: "ready", board }))
+        .catch((e: Error) => {
+          if (signal?.aborted) return;
+          setLoad({ kind: "error", message: e.message });
+        });
+    },
+    [runId],
+  );
+
+  // Poll so a board left open flips from pending to published on its own —
+  // which is the whole point of watching the ceremony from here.
+  useEffect(() => {
+    if (!runId) return;
+    const ctrl = new AbortController();
+    setLoad({ kind: "loading" });
+    refresh(ctrl.signal);
+    const timer = window.setInterval(() => refresh(), POLL_MS);
     return () => {
-      cancelled = true;
+      ctrl.abort();
+      window.clearInterval(timer);
     };
-  }, []);
+  }, [runId, refresh]);
 
-  const mode = useMemo(() => deriveTallyMode(bulletin), [bulletin]);
+  function pick(id: string) {
+    setRunId(id);
+    setRunInUrl(id);
+  }
 
-  const realRaces = useMemo(() => {
-    if (mode.kind !== "real") return null;
-    return tallyToRaces(mode.tally, mode.ballotsCount);
-  }, [mode]);
-
-  const fingerprint =
-    mode.kind === "real" ? mode.tally.fingerprint : `sha256:${TALLY_SHA256}`;
-  const trusteesSigned =
-    mode.kind === "real" ? mode.tally.trustees_signed : TRUSTEES_SIGNED;
-  const trusteesTotal =
-    mode.kind === "real" ? mode.tally.trustees_total : TRUSTEES_TOTAL;
-  const ballotsCast = mode.kind === "real" ? mode.ballotsCount : BALLOTS_CAST;
-  const closedAt =
-    mode.kind === "real" ? mode.tally.closed_at : POLLS_CLOSED_AT;
-  const electionName =
-    mode.kind === "real"
-      ? (bulletin?.election?.name ?? ELECTION_NAME)
-      : ELECTION_NAME;
-
-  const races = realRaces ?? RACES;
-  const verifiedPct =
-    ballotsCast > 0 ? (BALLOTS_VERIFIED / ballotsCast) * 100 : 0;
+  const board = load.kind === "ready" ? load.board : null;
+  const statusChip = board ? (
+    <Chip
+      variant={board.sealed ? "warn" : board.verified ? "success" : "teal"}
+      dot
+    >
+      {board.sealed
+        ? "Tally sealed"
+        : board.verified
+          ? "Verified"
+          : "Tally published"}
+    </Chip>
+  ) : null;
 
   return (
     <div
@@ -904,114 +1151,177 @@ function App() {
         lineHeight: tokens.type.lineHeight,
       }}
     >
-      <TopBar />
+      <TopBar runs={runs} runId={runId} onPick={pick} status={statusChip} />
 
-      <main style={wrap}>
-        <div style={{ padding: "34px 0 26px" }}>
-          <div style={eyebrow}>Public Bulletin Board</div>
-          <h1
-            style={{
-              fontSize: tokens.type.h1,
-              fontWeight: 700,
-              margin: "10px 0 8px",
-              letterSpacing: 0.1,
-              lineHeight: 1.25,
-            }}
-          >
-            {electionName}
-          </h1>
-          <div style={{ color: tokens.color.text2, fontSize: 15 }}>
-            Polls closed <strong>{closedAt}</strong> &nbsp;·&nbsp; Tally
-            published{" "}
-            <span className="bc-mono" style={{ fontSize: 14 }}>
-              {TALLY_PUBLISHED_AT}
-            </span>
-          </div>
-        </div>
+      {load.kind === "loading" ? (
+        <Notice>Loading the bulletin board…</Notice>
+      ) : null}
+      {load.kind === "empty" ? (
+        <Notice>
+          No elections have been run on this console yet. Run one from the
+          console's wizard, then reload this page.
+        </Notice>
+      ) : null}
+      {load.kind === "error" ? (
+        <Notice>Could not reach the election console — {load.message}</Notice>
+      ) : null}
 
-        {mode.kind === "pending" ? null : (
-          <VerifiedBanner
-            trusteesSigned={trusteesSigned}
-            trusteesTotal={trusteesTotal}
-          />
-        )}
-
-        <Section
-          title="Final Results"
-          note={`${races.length} positions · 100% of precincts reporting`}
-        >
-          {mode.kind === "pending" ? (
-            <TallyPendingNotice />
-          ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                gap: 20,
-              }}
-            >
-              {races.map((r) => (
-                <RaceCard key={r.title} race={r} />
-              ))}
+      {board ? (
+        <>
+          <main style={wrap}>
+            <div style={{ padding: "34px 0 26px" }}>
+              <div style={eyebrow}>Public Bulletin Board</div>
+              <h1
+                style={{
+                  fontSize: tokens.type.h1,
+                  fontWeight: 700,
+                  margin: "10px 0 8px",
+                  letterSpacing: 0.1,
+                  lineHeight: 1.25,
+                }}
+              >
+                {board.name}
+              </h1>
+              <div style={{ color: tokens.color.text2, fontSize: 15 }}>
+                Opened <strong>{formatStamp(board.opened_at)}</strong>
+                {board.closed_at ? (
+                  <>
+                    {" "}
+                    &nbsp;·&nbsp; Closed{" "}
+                    <strong>{formatStamp(board.closed_at)}</strong>
+                  </>
+                ) : null}
+                {board.published_at ? (
+                  <>
+                    {" "}
+                    &nbsp;·&nbsp; Tally published{" "}
+                    <span className="bc-mono" style={{ fontSize: 14 }}>
+                      {formatStamp(board.published_at)}
+                    </span>
+                  </>
+                ) : null}
+              </div>
+              <div
+                className="bc-mono"
+                style={{
+                  color: tokens.color.text2,
+                  fontSize: 13,
+                  marginTop: 6,
+                }}
+              >
+                {board.election_id} · {board.mode}
+                {board.on_chain && board.status
+                  ? ` · on-chain (${board.status})`
+                  : ""}
+              </div>
             </div>
-          )}
-        </Section>
 
-        <Section title="Integrity Summary">
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 18,
-            }}
-          >
-            <StatCard
-              label="Total ballots cast"
-              value={formatNumber(ballotsCast)}
-              caption={`across ${formatNumber(PRECINCTS)} precincts`}
-            />
-            <StatCard
-              label="Verified"
-              icon={
-                <span style={{ color: tokens.color.success, display: "flex" }}>
-                  <CheckIcon size={15} strokeWidth={2.4} />
-                </span>
+            {board.partial ? (
+              <p style={{ ...noteText, marginBottom: 20 }}>
+                Some live data could not be read: {board.partial_reason}.
+              </p>
+            ) : null}
+
+            {board.sealed ? null : board.verified ? (
+              <VerifiedBanner
+                trusteesSigned={board.crypto.trustees_submitted}
+                trusteesTotal={board.crypto.trustees_total}
+              />
+            ) : (
+              <UnauditedBanner verified={board.verified} />
+            )}
+
+            <Section
+              title="Final Results"
+              note={
+                board.sealed
+                  ? "sealed until the trustees decrypt"
+                  : `${board.contests?.length ?? 0} positions · ${formatNumber(board.integrity.ballot_records)} ballot records`
               }
-              value={formatNumber(BALLOTS_VERIFIED)}
-              caption={`${verifiedPct.toFixed(2)}% of all ballots`}
-              ok
-            />
-            <StatCard
-              label="Rejected"
-              value={formatNumber(BALLOTS_REJECTED)}
-              caption="duplicate or malformed"
-            />
-            <StatCard
-              label="Voter turnout"
-              value={`${TURNOUT.toFixed(1)}%`}
-              caption={`of ${formatNumber(REGISTERED_VOTERS)} registered`}
-            />
-          </div>
-        </Section>
+            >
+              {board.sealed || !board.contests?.length ? (
+                <TallyPendingNotice board={board} />
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                    gap: 20,
+                  }}
+                >
+                  {board.contests.map((r) => (
+                    <RaceCard key={r.id} race={r} />
+                  ))}
+                </div>
+              )}
+            </Section>
 
-        <Section
-          title="Cryptographic Verification"
-          note="Anyone can reproduce these checks with the open verifier"
-        >
-          <CryptoVerification
-            fingerprint={fingerprint}
-            trusteesSigned={trusteesSigned}
-            trusteesTotal={trusteesTotal}
-          />
-        </Section>
+            <Section title="Integrity Summary">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: 18,
+                }}
+              >
+                <StatCard
+                  label="Total ballots cast"
+                  value={formatNumber(board.integrity.ballot_records)}
+                  caption={`${formatNumber(board.integrity.voters)} voters × ${board.integrity.positions} positions`}
+                />
+                <StatCard
+                  label="Verified"
+                  icon={
+                    board.integrity.verified > 0 ? (
+                      <span
+                        style={{ color: tokens.color.success, display: "flex" }}
+                      >
+                        <CheckIcon size={15} strokeWidth={2.4} />
+                      </span>
+                    ) : undefined
+                  }
+                  value={formatNumber(board.integrity.verified)}
+                  caption={
+                    board.verified
+                      ? "every ballot re-verified by the auditor"
+                      : "not audited yet"
+                  }
+                  ok={board.verified}
+                />
+                <StatCard
+                  label="Tampered ballots refused"
+                  value={formatNumber(board.integrity.rejected)}
+                  caption={board.integrity.rejected_note ?? "negative tests"}
+                />
+                <StatCard
+                  label="Voter turnout"
+                  value={`${board.integrity.turnout_pct.toFixed(1)}%`}
+                  caption={`of ${formatNumber(board.integrity.voters)} generated voters`}
+                />
+              </div>
+              <p style={noteText}>{board.integrity.turnout_note}</p>
+            </Section>
 
-        {/* The mockup's verify card carries its own heading — no section head. */}
-        <div style={{ marginBottom: 38 }}>
-          <VerifyVoteCard fallbackSubmittedAt={SAMPLE_VOTE_RECORDED_AT} />
-        </div>
-      </main>
+            <Section
+              title="Cryptographic Verification"
+              note="Anyone can reproduce these checks with the open verifier"
+            >
+              <CryptoVerification board={board} />
+            </Section>
 
-      <Footer />
+            <Section title="Verifier Checks">
+              <CheckList checks={board.checks} />
+            </Section>
+
+            {/* The mockup's verify card carries its own heading — no section head. */}
+            <div style={{ marginBottom: 38 }}>
+              <VerifyVoteCard runId={board.election_id} />
+            </div>
+          </main>
+
+          <Footer board={board} />
+        </>
+      ) : null}
     </div>
   );
 }
