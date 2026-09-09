@@ -60,7 +60,7 @@ class BcTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
           ],
         ),
       ),

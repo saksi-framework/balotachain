@@ -57,10 +57,12 @@ class _VoteSubmittedScreenState extends State<VoteSubmittedScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Center(
+                // ConstrainedBox has no const constructor, so this subtree
+                // stops at the Text.
+                Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 290),
-                    child: Text(
+                    constraints: const BoxConstraints(maxWidth: 290),
+                    child: const Text(
                       'Your vote has been securely recorded.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
