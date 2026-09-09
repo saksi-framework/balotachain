@@ -16,7 +16,7 @@ export const PrimaryButton = forwardRef<HTMLButtonElement, PrimaryButtonProps>(
     const [hover, setHover] = useState(false);
 
     const bg = disabled
-      ? tokens.color.teal
+      ? tokens.color.neutralFill
       : hover
         ? tokens.color.tealDark
         : tokens.color.teal;
@@ -25,19 +25,21 @@ export const PrimaryButton = forwardRef<HTMLButtonElement, PrimaryButtonProps>(
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
+      gap: 10,
       minHeight: tokens.minButtonHeight,
-      padding: `${tokens.space.sm}px ${tokens.space.md}px`,
+      padding: `0 34px`,
       borderRadius: tokens.radius.pill,
       border: "none",
       background: bg,
-      color: tokens.color.surface,
+      color: disabled ? tokens.color.text2 : tokens.color.surface,
       fontSize: tokens.type.button,
       fontWeight: 600,
       fontFamily: tokens.type.fontFamily,
+      letterSpacing: 0.1,
       lineHeight: 1,
-      cursor: disabled ? "not-allowed" : "pointer",
-      opacity: disabled ? 0.5 : 1,
-      transition: "background 120ms ease",
+      cursor: disabled ? "default" : "pointer",
+      boxShadow: disabled ? "none" : tokens.shadow.button,
+      transition: "background 160ms ease, transform 120ms ease",
       ...style,
     };
 

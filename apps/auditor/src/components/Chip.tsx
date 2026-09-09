@@ -1,66 +1,100 @@
 import type { ReactNode } from "react";
 import { tokens } from "@balotachain/ui";
 
-export type ChipVariant = "success" | "warn" | "error" | "neutral";
+export type ChipVariant = "success" | "warn" | "error" | "neutral" | "teal";
 
 export type ChipProps = {
   variant: ChipVariant;
   children: ReactNode;
+  /** Leading status dot, as on the bulletin board's "Election Closed" badge. */
+  dot?: boolean;
+  /** The compact 11px "ELECTED" tag used inside result rows. */
+  size?: "sm" | "md";
 };
 
 function palette(variant: ChipVariant): {
   bg: string;
   fg: string;
   border: string;
+  dot: string;
 } {
   switch (variant) {
     case "success":
       return {
-        bg: "rgba(46, 125, 91, 0.12)",
+        bg: tokens.color.successLight,
         fg: tokens.color.success,
-        border: "rgba(46, 125, 91, 0.24)",
+        border: tokens.color.successBorder,
+        dot: tokens.color.success,
       };
     case "warn":
       return {
-        bg: "rgba(200, 133, 26, 0.12)",
-        fg: tokens.color.warn,
-        border: "rgba(200, 133, 26, 0.28)",
+        bg: tokens.color.warnLight,
+        fg: tokens.color.warnText,
+        border: tokens.color.warnBorder,
+        dot: tokens.color.warn,
       };
     case "error":
       return {
-        bg: "rgba(192, 57, 43, 0.10)",
+        bg: tokens.color.errorLight,
         fg: tokens.color.error,
-        border: "rgba(192, 57, 43, 0.24)",
+        border: tokens.color.errorLight,
+        dot: tokens.color.error,
+      };
+    case "teal":
+      return {
+        bg: tokens.color.tealLight,
+        fg: tokens.color.tealDark,
+        border: tokens.color.tealBorder,
+        dot: tokens.color.teal,
       };
     case "neutral":
     default:
       return {
-        bg: tokens.color.bg,
+        bg: "#F0F2F1",
         fg: tokens.color.text2,
         border: tokens.color.border,
+        dot: tokens.color.muted,
       };
   }
 }
 
-export function Chip({ variant, children }: ChipProps) {
-  const { bg, fg, border } = palette(variant);
+export function Chip({
+  variant,
+  children,
+  dot = false,
+  size = "md",
+}: ChipProps) {
+  const c = palette(variant);
+  const sm = size === "sm";
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
-        padding: "4px 12px",
-        background: bg,
-        color: fg,
-        border: `1px solid ${border}`,
+        gap: 8,
+        padding: sm ? "2px 8px" : "8px 16px",
+        background: c.bg,
+        color: c.fg,
+        border: `1px solid ${c.border}`,
         borderRadius: tokens.radius.pill,
-        fontSize: 12,
-        fontWeight: 600,
-        lineHeight: 1,
-        letterSpacing: 0.2,
+        fontSize: sm ? 11 : 14,
+        fontWeight: sm ? 700 : 600,
+        letterSpacing: sm ? 0.4 : 0,
+        whiteSpace: "nowrap",
+        flexShrink: 0,
       }}
     >
+      {dot ? (
+        <span
+          aria-hidden
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: tokens.radius.pill,
+            background: c.dot,
+          }}
+        />
+      ) : null}
       {children}
     </span>
   );

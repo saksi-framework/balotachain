@@ -116,13 +116,61 @@ export const ClockIcon = forwardRef<SVGSVGElement, GlyphProps>(
   },
 );
 
+/** Circled exclamation — matches the mockups' warning glyph. */
 export const AlertIcon = forwardRef<SVGSVGElement, GlyphProps>(
   function AlertIcon(props, ref) {
     return (
       <Base ref={ref} {...props}>
-        <path d="M10 3 2.5 16.5h15L10 3Z" />
-        <path d="M10 8.5v3.5" />
-        <path d="M10 14.5h.01" />
+        <circle cx="10" cy="10" r="7.5" />
+        <path d="M10 6v4.5" />
+        <circle cx="10" cy="13.5" r="0.9" fill="currentColor" stroke="none" />
+      </Base>
+    );
+  },
+);
+
+/** Two people — the trustee-threshold glyph on the auditor crypto panel. */
+export const UsersIcon = forwardRef<SVGSVGElement, GlyphProps>(
+  function UsersIcon(props, ref) {
+    return (
+      <Base ref={ref} {...props}>
+        <circle cx="7.5" cy="6.5" r="2.7" />
+        <path d="M3 16c0-2.5 2-4.2 4.5-4.2S12 13.5 12 16" />
+        <path d="M13.3 5.2a2.5 2.5 0 0 1 0 5M15 16c0-1.8-1-3.3-2.5-3.8" />
+      </Base>
+    );
+  },
+);
+
+/** Hash / fingerprint glyph. */
+export const HashIcon = forwardRef<SVGSVGElement, GlyphProps>(
+  function HashIcon(props, ref) {
+    return (
+      <Base ref={ref} {...props}>
+        <path d="M7.5 3.3 6 16.7M14.2 3.3l-1.7 13.4M3.3 7.5h13.4M2.5 12.5h13.4" />
+      </Base>
+    );
+  },
+);
+
+/** Download arrow onto a baseline. */
+export const DownloadIcon = forwardRef<SVGSVGElement, GlyphProps>(
+  function DownloadIcon(props, ref) {
+    return (
+      <Base ref={ref} {...props}>
+        <path d="M10 3.3v9.2m0 0-3.3-3.3M10 12.5l3.3-3.3" />
+        <path d="M4.2 15.8h11.6" />
+      </Base>
+    );
+  },
+);
+
+/** Angle brackets — "open verifier" / source-code glyph. */
+export const CodeIcon = forwardRef<SVGSVGElement, GlyphProps>(
+  function CodeIcon(props, ref) {
+    return (
+      <Base ref={ref} {...props}>
+        <path d="M6.7 5 2.5 10l4.2 5M13.3 5l4.2 5-4.2 5" />
       </Base>
     );
   },

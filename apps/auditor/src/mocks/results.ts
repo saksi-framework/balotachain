@@ -1,93 +1,95 @@
+// Demo data for the bulletin board, mirroring the Claude Design mockup
+// (`.design-src/bulletin-board.html`). Replaced at runtime by the real tally
+// as soon as `loadBulletin()` returns one.
+
 export type Candidate = {
   name: string;
-  party: string;
+  party?: string;
   votes: number;
   elected?: boolean;
+  /** Shown instead of a percentage in multi-seat races, e.g. "#1". */
+  rank?: string;
 };
 
 export type Race = {
   title: string;
-  subtitle?: string;
+  /** "1 seat" / "12 seats", right-aligned in the race header. */
+  seatLabel: string;
+  subtitle: string;
   pickLimit: number;
   ballotsTotal: number;
   candidates: Candidate[];
+  footnote?: string;
 };
 
 const PRESIDENT: Race = {
   title: "President",
+  seatLabel: "1 seat",
+  subtitle: "12,488,302 votes counted",
   pickLimit: 1,
-  ballotsTotal: 1247,
+  ballotsTotal: 12488302,
   candidates: [
-    { name: "Maria Santos", party: "Lakas–CMD", votes: 612, elected: true },
-    { name: "Juan Dela Cruz", party: "Independent", votes: 318 },
-    { name: "Andres Bonifacio", party: "PDP–Laban", votes: 201 },
-    { name: "Gabriela Silang", party: "Akbayan", votes: 116 },
+    {
+      name: "Andrea Reyes",
+      party: "Lakas ng Bayan",
+      votes: 5341887,
+      elected: true,
+    },
+    { name: "Marco Villanueva", party: "Tatak Galing", votes: 4102556 },
+    { name: "Joy delos Santos", party: "Bagong Pilipinas", votes: 2210019 },
+    { name: "Rashid Hassan", party: "Independent", votes: 833840 },
   ],
 };
 
 const VICE_PRESIDENT: Race = {
   title: "Vice President",
+  seatLabel: "1 seat",
+  subtitle: "12,301,744 votes counted",
   pickLimit: 1,
-  ballotsTotal: 1247,
+  ballotsTotal: 12301744,
   candidates: [
-    { name: "Jose Rizal", party: "Independent", votes: 542, elected: true },
-    { name: "Apolinario Mabini", party: "Aksyon", votes: 311 },
-    { name: "Melchora Aquino", party: "Liberal", votes: 250 },
-    { name: "Diego Silang", party: "PDP–Laban", votes: 144 },
+    {
+      name: "Camille Aquino",
+      party: "Lakas ng Bayan",
+      votes: 4920698,
+      elected: true,
+    },
+    { name: "Benigno Torres", party: "Tatak Galing", votes: 4556002 },
+    { name: "Liza Mangahas", party: "Bagong Pilipinas", votes: 1968279 },
+    { name: "Omar Pangilinan", party: "Independent", votes: 856765 },
   ],
 };
 
-const SENATORS: Race = {
-  title: "Senators — top 12 elected",
-  subtitle: "12 of 14 candidates elected.",
+const SENATOR: Race = {
+  title: "Senator",
+  seatLabel: "12 seats",
+  subtitle: "Top 12 of 37 candidates elected",
   pickLimit: 12,
-  ballotsTotal: 1247,
+  ballotsTotal: 12488302,
   candidates: [
-    {
-      name: "Emilio Aguinaldo",
-      party: "Lakas–CMD",
-      votes: 1182,
-      elected: true,
-    },
-    { name: "Corazon Aquino", party: "Liberal", votes: 1147, elected: true },
-    {
-      name: "Manuel Quezon",
-      party: "Nacionalista",
-      votes: 1098,
-      elected: true,
-    },
-    { name: "Lapu-Lapu", party: "Independent", votes: 1056, elected: true },
-    {
-      name: "Sergio Osmeña",
-      party: "Nacionalista",
-      votes: 1021,
-      elected: true,
-    },
-    { name: "Manuel Roxas", party: "Liberal", votes: 994, elected: true },
-    { name: "Elpidio Quirino", party: "Liberal", votes: 962, elected: true },
-    {
-      name: "Ramon Magsaysay",
-      party: "Nacionalista",
-      votes: 941,
-      elected: true,
-    },
-    { name: "Carlos Garcia", party: "Nacionalista", votes: 908, elected: true },
-    { name: "Diosdado Macapagal", party: "Liberal", votes: 884, elected: true },
-    { name: "Ferdinand Marcos", party: "KBL", votes: 851, elected: true },
-    { name: "Benigno Aquino", party: "Liberal", votes: 812, elected: true },
-    { name: "Teodora Alonzo", party: "Akbayan", votes: 477 },
-    { name: "Marcela Agoncillo", party: "Independent", votes: 412 },
+    { name: "Grace Bautista", votes: 8114200, elected: true, rank: "#1" },
+    { name: "Isabel Navarro", votes: 7902551, elected: true, rank: "#2" },
+    { name: "Ramon Cuevas", votes: 7488019, elected: true, rank: "#3" },
+    { name: "Teodoro Lim", votes: 5102884, rank: "#13" },
   ],
+  footnote: "Showing the top 3 of 12 elected senators.",
 };
 
-export const RACES: Race[] = [PRESIDENT, VICE_PRESIDENT, SENATORS];
+export const RACES: Race[] = [PRESIDENT, VICE_PRESIDENT, SENATOR];
 
+export const ELECTION_NAME = "Philippine National Elections 2028";
 export const TALLY_SHA256 =
-  "9b1c4f8a2e6d7d44ab3271f02c8e5a91b6d3e7c0f184a229b5c768d019e4f3a1";
+  "9f3a7c2e8b1d4056af92e7c0d3b618fe4a2c9d70e15b8843f6a0c2e9b71d4f88";
 
-export const BALLOTS_CAST = 1247;
+export const BALLOTS_CAST = 12613540;
+export const BALLOTS_VERIFIED = 12611219;
+export const BALLOTS_REJECTED = 2321;
+export const PRECINCTS = 38204;
+export const REGISTERED_VOTERS = 17665000;
+export const TURNOUT = 71.4;
+
 export const TRUSTEES_SIGNED = 3;
 export const TRUSTEES_TOTAL = 5;
-export const POLLS_CLOSED_AT = "2026-06-08 23:59 PHT";
-export const SAMPLE_VOTE_RECORDED_AT = "2026-06-08 21:14 PHT";
-export const ENCRYPTION_SCHEME = "ElGamal + additive homomorphism";
+export const POLLS_CLOSED_AT = "May 8, 2028 · 7:00 PM PHT";
+export const TALLY_PUBLISHED_AT = "May 8, 2028 · 9:42 PM";
+export const SAMPLE_VOTE_RECORDED_AT = "May 8, 2028 · 6:14 PM PHT";

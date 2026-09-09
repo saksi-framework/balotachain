@@ -1,23 +1,39 @@
-import { useEffect, useMemo, useState } from "react";
 import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import {
+  tokens,
+  Card,
+  CopyButton,
   PrimaryButton,
   SecondaryButton,
-  tokens,
   AlertIcon,
   CheckIcon,
-  CopyIcon,
   LockIcon,
   ShieldCheckIcon,
 } from "@balotachain/ui";
-import { Card } from "./components/Card";
 import { Chip, type ChipVariant } from "./components/Chip";
 import { ProgressBar } from "./components/ProgressBar";
 import {
   AGGREGATE_FINGERPRINT,
   BALLOT_COUNT,
+  ELECTION_NAME,
   INITIAL_LOG,
+  KEY_SHARE_CEREMONY,
   KEY_SHARE_FINGERPRINT,
+  POLLS_CLOSED_AT,
+  POSITION_NAMES,
+  THRESHOLD_REQUIRED,
   TRUSTEES,
+  TRUSTEE_TOTAL,
+  YOU_NAME,
+  YOU_ORDINAL,
+  YOU_ROLE,
+  initialsOf,
   type LogEntry,
   type Trustee,
   type TrusteeStatus,
@@ -36,7 +52,20 @@ const DEMO_SECRET_SHARE = 17;
 
 type SubmitPhase = "idle" | "confirm" | "submitted";
 
-const THRESHOLD_REQUIRED = 3;
+const wrap: CSSProperties = {
+  maxWidth: 1240,
+  margin: "0 auto",
+  padding: "0 28px",
+  width: "100%",
+};
+
+const cardLabel: CSSProperties = {
+  fontSize: 12.5,
+  fontWeight: 600,
+  letterSpacing: 0.6,
+  textTransform: "uppercase",
+  color: tokens.color.text2,
+};
 
 function statusVariant(status: TrusteeStatus): ChipVariant {
   switch (status) {
@@ -49,94 +78,85 @@ function statusVariant(status: TrusteeStatus): ChipVariant {
   }
 }
 
-function formatTs(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+function nowLogStamp(): string {
+  const d = new Date();
   const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`;
+  return `${d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })} · ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function copy(text: string) {
-  if (typeof navigator !== "undefined" && navigator.clipboard) {
-    void navigator.clipboard.writeText(text);
-  }
-}
-
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false);
+function Avatar({
+  initials,
+  size,
+  radius,
+  filled,
+}: {
+  initials: string;
+  size: number;
+  radius: number;
+  filled: boolean;
+}) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={() => {
-        copy(value);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1400);
-      }}
+    <span
+      aria-hidden
       style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        flexShrink: 0,
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
-        padding: "6px 10px",
-        background: "transparent",
-        color: tokens.color.text2,
-        border: `1px solid ${tokens.color.border}`,
-        borderRadius: tokens.radius.button,
-        cursor: "pointer",
-        fontSize: 12,
-        fontWeight: 500,
-      }}
-    >
-      {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
-      {copied ? "Copied" : "Copy"}
-    </button>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        margin: 0,
-        fontSize: tokens.type.h2,
+        justifyContent: "center",
+        fontSize: size >= 46 ? 16 : size >= 40 ? 14 : 13,
         fontWeight: 700,
-        color: tokens.color.text1,
-        letterSpacing: -0.2,
+        background: filled ? tokens.color.teal : tokens.color.neutralFill,
+        color: filled ? tokens.color.surface : tokens.color.text2,
       }}
     >
-      {children}
-    </h2>
+      {initials}
+    </span>
   );
 }
 
-function Subtitle({ children }: { children: React.ReactNode }) {
+function CardHead({
+  title,
+  label,
+  style,
+}: {
+  title: string;
+  label?: string;
+  style?: CSSProperties;
+}) {
   return (
-    <p
+    <div
       style={{
-        margin: 0,
-        fontSize: 14,
-        color: tokens.color.text2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        marginBottom: 18,
+        ...style,
       }}
     >
-      {children}
-    </p>
+      <h2
+        style={{ fontSize: 17, fontWeight: 700, margin: 0, letterSpacing: 0.2 }}
+      >
+        {title}
+      </h2>
+      {label ? <span style={cardLabel}>{label}</span> : null}
+    </div>
   );
 }
 
-function Header() {
+function TopBar() {
   return (
     <header
       style={{
-        height: 56,
         background: tokens.color.surface,
         borderBottom: `1px solid ${tokens.color.border}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         position: "sticky",
         top: 0,
         zIndex: 10,
@@ -144,60 +164,97 @@ function Header() {
     >
       <div
         style={{
-          width: "100%",
-          maxWidth: 1024,
-          padding: `0 ${tokens.space.md}px`,
+          ...wrap,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: tokens.space.md,
+          gap: tokens.space.sm,
+          height: 64,
         }}
       >
-        <div
-          style={{
-            fontSize: tokens.type.h2,
-            fontWeight: 700,
-            color: tokens.color.text1,
-            letterSpacing: -0.3,
-          }}
-        >
-          BalotaChain — Trustee Console
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: tokens.space.sm,
-            color: tokens.color.text1,
-            fontSize: 14,
-          }}
-        >
+        <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: tokens.color.teal,
+              color: tokens.color.surface,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheckIcon size={20} strokeWidth={1.7} />
+          </span>
+          <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0.1 }}>
+            BalotaChain{" "}
+            <span style={{ color: tokens.color.text2, fontWeight: 500 }}>
+              — Trustee Console
+            </span>
+          </span>
+        </span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <span
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 6,
-              color: tokens.color.success,
+              gap: 8,
+              fontSize: 13.5,
               fontWeight: 600,
+              color: tokens.color.success,
             }}
           >
-            <ShieldCheckIcon size={16} />
+            <span
+              className="bc-pulse"
+              aria-hidden
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: tokens.radius.pill,
+                background: "currentColor",
+                position: "relative",
+              }}
+            />
             Secure session
           </span>
           <span
-            aria-hidden
-            style={{ width: 1, height: 16, background: tokens.color.border }}
-          />
-          <span
             style={{
-              display: "inline-flex",
+              display: "flex",
               alignItems: "center",
-              gap: 6,
-              fontWeight: 500,
+              gap: 10,
+              paddingLeft: 18,
+              borderLeft: `1px solid ${tokens.color.border}`,
             }}
           >
-            <LockIcon size={16} />
-            Trustee 03 — Dr. R. Mendoza
+            <span
+              aria-hidden
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: tokens.color.tealLight,
+                color: tokens.color.tealDark,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              {initialsOf(YOU_NAME)}
+            </span>
+            <span style={{ lineHeight: 1.25 }}>
+              <b style={{ fontSize: 14, fontWeight: 600, display: "block" }}>
+                {YOU_NAME}
+              </b>
+              <small style={{ fontSize: 12, color: tokens.color.text2 }}>
+                Trustee {YOU_ORDINAL} of {TRUSTEE_TOTAL}
+              </small>
+            </span>
           </span>
         </div>
       </div>
@@ -205,325 +262,363 @@ function Header() {
   );
 }
 
-function IdentityCard() {
+function ThresholdCard({
+  trustees,
+  submitted,
+}: {
+  trustees: Trustee[];
+  submitted: number;
+}) {
+  const met = submitted >= THRESHOLD_REQUIRED;
+  const remaining = Math.max(0, THRESHOLD_REQUIRED - submitted);
   return (
     <Card>
+      <CardHead
+        title="Threshold Decryption"
+        label={`Quorum ${THRESHOLD_REQUIRED} of ${TRUSTEE_TOTAL}`}
+      />
+
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: tokens.space.sm,
+          marginBottom: 8,
         }}
       >
-        <SectionTitle>Identity & key share</SectionTitle>
+        <div style={{ fontSize: 15 }}>
+          <b style={{ fontWeight: 700 }}>
+            {THRESHOLD_REQUIRED} of {TRUSTEE_TOTAL} trustees
+          </b>{" "}
+          are required to decrypt the final tally.
+        </div>
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            gap: tokens.space.md,
-            alignItems: "center",
+            fontSize: 14,
+            fontWeight: 700,
+            color: tokens.color.tealDark,
+            whiteSpace: "nowrap",
           }}
         >
+          {Math.min(submitted, THRESHOLD_REQUIRED)} of {THRESHOLD_REQUIRED}{" "}
+          submitted
+        </div>
+      </div>
+
+      <ProgressBar
+        value={Math.min(submitted, THRESHOLD_REQUIRED)}
+        max={THRESHOLD_REQUIRED}
+      />
+
+      <div
+        style={{
+          fontSize: tokens.type.small,
+          marginTop: 9,
+          color: met ? tokens.color.success : tokens.color.text2,
+          fontWeight: met ? 600 : 400,
+        }}
+      >
+        {met
+          ? "Threshold reached — the final tally can now be decrypted."
+          : `${remaining} more partial decryption${remaining === 1 ? "" : "s"} needed to reach the threshold.`}
+      </div>
+
+      <div
+        style={{
+          marginTop: 22,
+          borderTop: `1px solid ${tokens.color.border}`,
+        }}
+      >
+        {trustees.map((t, i) => (
+          <div
+            key={t.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 13,
+              padding: "14px 0",
+              borderBottom:
+                i === trustees.length - 1
+                  ? "none"
+                  : `1px solid ${tokens.color.border}`,
+            }}
+          >
+            <Avatar
+              initials={initialsOf(t.name)}
+              size={40}
+              radius={11}
+              filled={t.isYou === true}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                {t.name}
+                {t.isYou ? (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: 0.3,
+                      color: tokens.color.tealDark,
+                      background: tokens.color.tealLight,
+                      borderRadius: tokens.radius.pill,
+                      padding: "1px 8px",
+                    }}
+                  >
+                    YOU
+                  </span>
+                ) : null}
+              </div>
+              <div
+                style={{
+                  fontSize: tokens.type.small,
+                  color: tokens.color.text2,
+                  marginTop: 1,
+                }}
+              >
+                {t.role}
+              </div>
+            </div>
+            <Chip variant={statusVariant(t.status)} dot>
+              {t.status}
+            </Chip>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ActionCard({
+  phase,
+  onStart,
+  onCancel,
+  onConfirm,
+  submitError,
+  thresholdMet,
+}: {
+  phase: SubmitPhase;
+  onStart: () => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  submitError: string | null;
+  thresholdMet: boolean;
+}) {
+  return (
+    <Card
+      flush
+      style={{
+        border: `1.5px solid ${tokens.color.teal}`,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          background: tokens.color.teal,
+        }}
+      />
+      <div style={{ padding: "24px 24px 24px 26px" }}>
+        <div
+          style={{
+            fontSize: tokens.type.eyebrow,
+            fontWeight: 700,
+            letterSpacing: 0.6,
+            textTransform: "uppercase",
+            color: tokens.color.tealDark,
+            marginBottom: 12,
+          }}
+        >
+          What you must do
+        </div>
+        <h2
+          style={{
+            fontSize: tokens.type.h3,
+            fontWeight: 700,
+            margin: "0 0 7px",
+          }}
+        >
+          Submit your partial decryption
+        </h2>
+        <p
+          style={{
+            fontSize: 14.5,
+            color: tokens.color.text2,
+            lineHeight: 1.5,
+            margin: "0 0 20px",
+            maxWidth: 560,
+          }}
+        >
+          Your key share is combined with the others to decrypt{" "}
+          <b>only the final totals</b> — never any individual ballot. The
+          threshold is met once {THRESHOLD_REQUIRED} trustees submit.
+        </p>
+
+        {phase !== "submitted" ? (
+          <>
+            <PrimaryButton onClick={onStart} disabled={phase === "confirm"}>
+              <LockIcon size={20} strokeWidth={1.7} />
+              Submit Partial Decryption
+            </PrimaryButton>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: tokens.type.small,
+                color: tokens.color.warnText,
+                marginTop: tokens.space.sm,
+              }}
+            >
+              <span
+                style={{ color: tokens.color.warn, display: "inline-flex" }}
+              >
+                <AlertIcon size={16} strokeWidth={1.7} />
+              </span>
+              This action is irreversible and is permanently recorded to the
+              public bulletin board.
+            </div>
+          </>
+        ) : null}
+
+        {phase === "confirm" ? (
+          <div
+            style={{
+              marginTop: tokens.space.sm,
+              background: tokens.color.warnLight,
+              border: `1px solid ${tokens.color.warnBorder}`,
+              borderRadius: tokens.radius.button,
+              padding: "18px 20px",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 6px",
+                fontSize: tokens.type.body,
+                fontWeight: 700,
+                color: tokens.color.warnText,
+              }}
+            >
+              Confirm submission
+            </h3>
+            <p
+              style={{
+                margin: "0 0 16px",
+                fontSize: 14,
+                color: tokens.color.warnText,
+                lineHeight: 1.5,
+              }}
+            >
+              You are about to release Trustee {YOU_ORDINAL}&apos;s partial
+              decryption using your key share. This cannot be undone, and the
+              event will be signed and published to the audit log and bulletin
+              board.
+            </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <PrimaryButton
+                onClick={onConfirm}
+                style={{ minHeight: 48, padding: "0 24px", fontSize: 15 }}
+              >
+                Yes, submit my share
+              </PrimaryButton>
+              <SecondaryButton
+                onClick={onCancel}
+                style={{
+                  minHeight: 48,
+                  padding: "0 22px",
+                  fontSize: 15,
+                  borderRadius: tokens.radius.button,
+                  border: `1.5px solid ${tokens.color.border}`,
+                  color: tokens.color.text1,
+                }}
+              >
+                Cancel
+              </SecondaryButton>
+            </div>
+          </div>
+        ) : null}
+
+        {phase === "submitted" ? (
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: tokens.space.sm,
+              gap: 14,
+              background: tokens.color.successLight,
+              border: `1px solid ${tokens.color.successBorder}`,
+              borderRadius: tokens.radius.button,
+              padding: "18px 20px",
             }}
           >
-            <div
+            <span
+              aria-hidden
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: tokens.radius.button,
-                background: tokens.color.tealLight,
-                color: tokens.color.teal,
+                width: 44,
+                height: 44,
+                borderRadius: tokens.radius.pill,
+                background: tokens.color.success,
+                color: tokens.color.surface,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <ShieldCheckIcon size={28} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <div
+              <CheckIcon size={24} strokeWidth={2.6} />
+            </span>
+            <div>
+              <h3
                 style={{
-                  color: tokens.color.success,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
+                  margin: "0 0 2px",
+                  fontSize: tokens.type.body,
+                  fontWeight: 700,
+                  color: tokens.color.successText,
                 }}
               >
-                Key share: held securely
-                <CheckIcon size={16} />
-              </div>
-              <div style={{ color: tokens.color.text2, fontSize: 14 }}>
-                Never leaves this device.
-              </div>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: tokens.space.xs,
-              padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
-              background: tokens.color.bg,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.button,
-            }}
-          >
-            <code
-              style={{
-                fontFamily: tokens.type.mono,
-                fontSize: 13,
-                color: tokens.color.text1,
-              }}
-            >
-              {KEY_SHARE_FINGERPRINT}
-            </code>
-            <CopyButton
-              value={KEY_SHARE_FINGERPRINT}
-              label="Copy key share fingerprint"
-            />
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function RosterTile({ trustee }: { trustee: Trustee }) {
-  return (
-    <div
-      style={{
-        border: `1px solid ${tokens.color.border}`,
-        borderRadius: tokens.radius.card,
-        padding: tokens.space.sm,
-        background: tokens.color.surface,
-        display: "flex",
-        flexDirection: "column",
-        gap: tokens.space.xs,
-        minHeight: 116,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 12,
-          color: tokens.color.text2,
-          fontWeight: 600,
-          letterSpacing: 0.4,
-          textTransform: "uppercase",
-        }}
-      >
-        Trustee {trustee.id.toString().padStart(2, "0")}
-      </div>
-      <div
-        style={{
-          fontSize: 15,
-          fontWeight: 600,
-          color: tokens.color.text1,
-        }}
-      >
-        {trustee.name}
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: tokens.space.xs,
-          marginTop: "auto",
-        }}
-      >
-        <Chip variant={statusVariant(trustee.status)}>{trustee.status}</Chip>
-        {trustee.isYou && <Chip variant="teal">YOU</Chip>}
-      </div>
-    </div>
-  );
-}
-
-function DecryptionPanel({
-  trustees,
-  submitted,
-  phase,
-  onStart,
-  onCancel,
-  onConfirm,
-  submitError,
-}: {
-  trustees: Trustee[];
-  submitted: number;
-  phase: SubmitPhase;
-  onStart: () => void;
-  onCancel: () => void;
-  onConfirm: () => void;
-  submitError: string | null;
-}) {
-  const liveCount = Math.min(submitted, THRESHOLD_REQUIRED);
-  return (
-    <Card>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: tokens.space.md,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: tokens.space.xs,
-          }}
-        >
-          <SectionTitle>Threshold decryption ceremony</SectionTitle>
-          <Subtitle>3 of 5 trustees required.</Subtitle>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: tokens.space.xs,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: tokens.space.sm,
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <ProgressBar value={liveCount} max={THRESHOLD_REQUIRED} />
-            </div>
-            <div
-              style={{
-                fontFamily: tokens.type.mono,
-                fontSize: 13,
-                fontWeight: 600,
-                color: tokens.color.text1,
-                minWidth: 56,
-                textAlign: "right",
-              }}
-            >
-              {liveCount} / {THRESHOLD_REQUIRED}
-            </div>
-          </div>
-          <div style={{ color: tokens.color.text2, fontSize: 14 }}>
-            {liveCount} of {THRESHOLD_REQUIRED} partial decryptions submitted.
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: tokens.space.sm,
-          }}
-        >
-          {trustees.map((t) => (
-            <RosterTile key={t.id} trustee={t} />
-          ))}
-        </div>
-
-        {phase === "idle" && (
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <PrimaryButton onClick={onStart}>
-              Submit my partial decryption
-            </PrimaryButton>
-          </div>
-        )}
-
-        {phase === "confirm" && (
-          <div
-            style={{
-              background: "rgba(200, 133, 26, 0.08)",
-              border: `1px solid ${tokens.color.warn}`,
-              borderRadius: tokens.radius.card,
-              padding: tokens.space.md,
-              display: "flex",
-              flexDirection: "column",
-              gap: tokens.space.sm,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: tokens.space.sm,
-              }}
-            >
-              <span
+                Partial decryption submitted
+              </h3>
+              <p
                 style={{
-                  color: tokens.color.warn,
-                  flexShrink: 0,
-                  marginTop: 2,
+                  margin: 0,
+                  fontSize: 13.5,
+                  color: tokens.color.successBody,
                 }}
               >
-                <AlertIcon size={20} />
-              </span>
-              <div style={{ color: tokens.color.text1, fontSize: 15 }}>
-                Once submitted, your partial decryption is irreversible and
-                recorded in the public audit log.
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: tokens.space.sm,
-                justifyContent: "flex-end",
-                flexWrap: "wrap",
-              }}
-            >
-              <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>
-              <PrimaryButton onClick={onConfirm}>
-                Confirm submission
-              </PrimaryButton>
+                Your share has been recorded.{" "}
+                {thresholdMet
+                  ? "Threshold reached — the final tally can now be decrypted."
+                  : "Waiting on the remaining trustees to reach the threshold."}
+              </p>
+              {submitError ? (
+                <p
+                  className="bc-mono"
+                  style={{
+                    margin: "6px 0 0",
+                    fontSize: 12,
+                    color: tokens.color.text2,
+                  }}
+                >
+                  offline mode: {submitError}
+                </p>
+              ) : null}
             </div>
           </div>
-        )}
-
-        {phase === "submitted" && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: tokens.space.xs,
-            }}
-          >
-            <div
-              style={{
-                background: "rgba(46, 125, 91, 0.10)",
-                border: `1px solid ${tokens.color.success}`,
-                borderRadius: tokens.radius.card,
-                padding: tokens.space.md,
-                display: "flex",
-                alignItems: "center",
-                gap: tokens.space.sm,
-                color: tokens.color.success,
-                fontWeight: 600,
-              }}
-            >
-              <CheckIcon size={20} />
-              Partial decryption submitted.
-            </div>
-            {submitError && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: tokens.color.text2,
-                  fontFamily: tokens.type.mono,
-                }}
-              >
-                offline mode: {submitError}
-              </div>
-            )}
-          </div>
-        )}
+        ) : null}
       </div>
     </Card>
   );
@@ -532,123 +627,284 @@ function DecryptionPanel({
 function VerificationCard({ ballotCount }: { ballotCount: number }) {
   return (
     <Card>
+      <CardHead title="What is being decrypted" label="Verification context" />
+
+      <VcLine label="Encrypted aggregate tally — fingerprint" first>
+        <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            className="bc-mono"
+            style={{
+              fontSize: 13.5,
+              color: tokens.color.tealDark,
+              wordBreak: "break-all",
+            }}
+          >
+            {AGGREGATE_FINGERPRINT}
+          </span>
+          <CopyButton
+            value={AGGREGATE_FINGERPRINT}
+            label="Copy aggregate fingerprint"
+            size="sm"
+          />
+        </span>
+      </VcLine>
+
+      <VcLine label="Ballots aggregated">
+        {ballotCount.toLocaleString("en-US")}{" "}
+        <span style={{ color: tokens.color.text2, fontWeight: 400 }}>
+          verified ballots
+        </span>
+      </VcLine>
+
+      <VcLine label="Positions in tally">
+        3{" "}
+        <span style={{ color: tokens.color.text2, fontWeight: 400 }}>
+          {POSITION_NAMES}
+        </span>
+      </VcLine>
+
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: tokens.space.sm,
+          gap: 10,
+          alignItems: "flex-start",
+          marginTop: tokens.space.sm,
+          padding: "14px 16px",
+          background: tokens.color.tealLight,
+          borderRadius: tokens.radius.button,
+          fontSize: 13.5,
+          color: tokens.color.tealDark,
+          lineHeight: 1.5,
         }}
       >
-        <SectionTitle>Verification context</SectionTitle>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: tokens.space.md,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: tokens.space.xs,
-              padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
-              background: tokens.color.bg,
-              border: `1px solid ${tokens.color.border}`,
-              borderRadius: tokens.radius.button,
-              minHeight: 48,
-            }}
-          >
-            <code
-              style={{
-                fontFamily: tokens.type.mono,
-                fontSize: 13,
-                color: tokens.color.text1,
-                flex: 1,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {AGGREGATE_FINGERPRINT}
-            </code>
-            <CopyButton
-              value={AGGREGATE_FINGERPRINT}
-              label="Copy aggregate fingerprint"
-            />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <div
-              style={{
-                fontSize: tokens.type.h2,
-                fontWeight: 700,
-                color: tokens.color.text1,
-                letterSpacing: -0.2,
-              }}
-            >
-              Ballots tallied: {ballotCount.toLocaleString("en-US")}
-            </div>
-            <div style={{ color: tokens.color.text2, fontSize: 13 }}>
-              Each ballot encrypted with the joint public key. Tallied via
-              additive homomorphic aggregation.
-            </div>
-          </div>
-        </div>
+        <span style={{ flexShrink: 0, marginTop: 1, display: "inline-flex" }}>
+          <ShieldCheckIcon size={18} strokeWidth={1.6} />
+        </span>
+        This tally is the homomorphic aggregate of all ballots. Individual
+        ballots are never decrypted — only the combined totals are revealed.
       </div>
     </Card>
   );
 }
 
-function AuditLog({ entries }: { entries: LogEntry[] }) {
+function VcLine({
+  label,
+  children,
+  first = false,
+}: {
+  label: string;
+  children: ReactNode;
+  first?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: first ? "4px 0 15px" : "15px 0",
+        borderTop: first ? "none" : `1px solid ${tokens.color.border}`,
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={{ fontSize: 13.5, color: tokens.color.text2 }}>{label}</span>
+      <span style={{ fontSize: 14.5, fontWeight: 600, textAlign: "right" }}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function KeyShareCard() {
   return (
     <Card>
+      <CardHead title="Your identity & key share" />
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: tokens.space.sm,
+          alignItems: "center",
+          gap: 13,
+          marginBottom: 18,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <SectionTitle>Ceremony audit log</SectionTitle>
-          <Subtitle>Read-only public record.</Subtitle>
+        <Avatar initials={initialsOf(YOU_NAME)} size={48} radius={13} filled />
+        <div>
+          <b
+            style={{
+              fontSize: tokens.type.body,
+              fontWeight: 700,
+              display: "block",
+            }}
+          >
+            {YOU_NAME}
+          </b>
+          <small
+            style={{ fontSize: tokens.type.small, color: tokens.color.text2 }}
+          >
+            Trustee {YOU_ORDINAL} of {TRUSTEE_TOTAL} · {YOU_ROLE}
+          </small>
         </div>
-        <ol
-          style={{
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {entries.map((e, idx) => (
+      </div>
+
+      <KsLine label="Key share status">
+        <Chip variant="success" dot>
+          Held securely
+        </Chip>
+      </KsLine>
+      <KsLine label="Share fingerprint">
+        <span className="bc-mono" style={{ fontSize: 13, fontWeight: 600 }}>
+          {KEY_SHARE_FINGERPRINT}
+        </span>
+      </KsLine>
+      <KsLine label="From ceremony">
+        <span style={{ fontWeight: 600 }}>{KEY_SHARE_CEREMONY}</span>
+      </KsLine>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 9,
+          alignItems: "flex-start",
+          marginTop: tokens.space.sm,
+          padding: "13px 14px",
+          background: tokens.color.bg,
+          border: `1px solid ${tokens.color.border}`,
+          borderRadius: tokens.radius.button,
+          fontSize: tokens.type.small,
+          color: tokens.color.text2,
+          lineHeight: 1.5,
+        }}
+      >
+        <span style={{ flexShrink: 0, marginTop: 1, display: "inline-flex" }}>
+          <LockIcon size={17} strokeWidth={1.6} />
+        </span>
+        Your private key share never leaves this device. Only a partial
+        decryption — which reveals nothing on its own — is transmitted.
+      </div>
+    </Card>
+  );
+}
+
+function KsLine({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "13px 0",
+        borderTop: `1px solid ${tokens.color.border}`,
+        fontSize: 14,
+      }}
+    >
+      <span style={{ color: tokens.color.text2 }}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function AuditLog({ entries }: { entries: LogEntry[] }) {
+  return (
+    <Card
+      flush
+      style={{ display: "flex", flexDirection: "column", maxHeight: 460 }}
+    >
+      <div style={{ padding: "24px 24px 14px" }}>
+        <CardHead
+          title="Ceremony audit log"
+          label="Read-only"
+          style={{ marginBottom: 0 }}
+        />
+      </div>
+      <ol
+        style={{
+          listStyle: "none",
+          margin: 0,
+          overflowY: "auto",
+          padding: "4px 24px 20px",
+        }}
+      >
+        {entries.map((e, i) => {
+          const last = i === entries.length - 1;
+          return (
             <li
-              key={`${e.ts}-${idx}`}
+              key={`${e.ts}-${i}`}
+              className={e.isNew ? "bc-log-in" : undefined}
               style={{
-                display: "grid",
-                gridTemplateColumns: "220px 1fr",
-                gap: tokens.space.sm,
-                padding: `${tokens.space.xs + 2}px 0`,
+                display: "flex",
+                gap: 13,
+                padding: "12px 0",
                 borderTop:
-                  idx === 0 ? "none" : `1px solid ${tokens.color.border}`,
-                fontSize: 14,
+                  i === 0 ? "none" : `1px solid ${tokens.color.border}`,
               }}
             >
               <span
+                aria-hidden
                 style={{
-                  fontFamily: tokens.type.mono,
-                  fontSize: 12,
-                  color: tokens.color.text2,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  flexShrink: 0,
                 }}
               >
-                {formatTs(e.ts)}
+                <span
+                  style={{
+                    width: 11,
+                    height: 11,
+                    borderRadius: tokens.radius.pill,
+                    marginTop: 4,
+                    flexShrink: 0,
+                    background:
+                      e.kind === "teal"
+                        ? tokens.color.teal
+                        : e.kind === "ok"
+                          ? tokens.color.success
+                          : tokens.color.border,
+                  }}
+                />
+                {last ? null : (
+                  <span
+                    style={{
+                      width: 2,
+                      flex: 1,
+                      background: tokens.color.border,
+                      marginTop: 4,
+                      minHeight: 8,
+                    }}
+                  />
+                )}
               </span>
-              <span style={{ color: tokens.color.text1 }}>{e.event}</span>
+              <span style={{ paddingBottom: 2 }}>
+                <span
+                  className="bc-mono"
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    color: tokens.color.text2,
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {e.ts}
+                </span>
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: 14,
+                    color: tokens.color.text1,
+                    marginTop: 2,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <b style={{ fontWeight: 600 }}>{e.lead}</b>
+                  {e.detail ? ` — ${e.detail}` : ""}
+                </span>
+              </span>
             </li>
-          ))}
-        </ol>
-      </div>
+          );
+        })}
+      </ol>
     </Card>
   );
 }
@@ -657,13 +913,25 @@ function Footer() {
   return (
     <footer
       style={{
-        textAlign: "center",
-        color: tokens.color.text2,
-        fontSize: 13,
-        padding: `${tokens.space.md}px 0`,
+        borderTop: `1px solid ${tokens.color.border}`,
+        marginTop: 14,
+        padding: "24px 0 40px",
       }}
     >
-      BalotaChain v0.1 — staging demo. Open-source on Saksi.
+      <div
+        style={{
+          ...wrap,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          fontSize: 13.5,
+          color: tokens.color.text2,
+        }}
+      >
+        <ShieldCheckIcon size={16} strokeWidth={1.5} />
+        Every action in this ceremony is signed and recorded to the public
+        bulletin board, where anyone can independently verify it.
+      </div>
     </footer>
   );
 }
@@ -688,13 +956,11 @@ function deriveRoster(
   return bulletin.election.trustees.map((entry, idx) => {
     const numericId =
       Number.parseInt(entry.id.replace(/[^0-9]/g, ""), 10) || idx + 1;
-    const status: TrusteeStatus = submittedIds.has(entry.id)
-      ? "Submitted"
-      : "Pending";
     return {
       id: numericId,
       name: entry.name,
-      status,
+      role: fallback[idx]?.role ?? "Election trustee",
+      status: submittedIds.has(entry.id) ? "Submitted" : "Pending",
       isYou: entry.id === YOU_TRUSTEE_ID,
     };
   });
@@ -728,60 +994,47 @@ export default function App() {
     [trustees],
   );
 
-  function start() {
-    setPhase("confirm");
-  }
-
-  function cancel() {
-    setPhase("idle");
+  function markSelfSubmitted(next: Trustee[]): Trustee[] {
+    return next.map((t) =>
+      t.isYou ? { ...t, status: "Submitted" as TrusteeStatus } : t,
+    );
   }
 
   async function confirm() {
     setSubmitError(null);
+    let detail = "submitted partial decryption";
     try {
       const updated = await submitAllPartialDecryptions(
         YOU_TRUSTEE_ID,
         DEMO_SECRET_SHARE,
       );
-      const ts = nowIso();
-      const myPartials = updated.partial_decryptions.filter(
+      const mine = updated.partial_decryptions.filter(
         (p) => p.trustee_id === YOU_TRUSTEE_ID,
       ).length;
+      detail = `submitted ${mine} partial decryption${mine === 1 ? "" : "s"}`;
       setBulletin(updated);
-      setTrustees((prev) => {
-        const derived = deriveRoster(updated, prev);
-        // Even when the bulletin has no election yet, mark the YOU trustee
-        // submitted so the demo roster visibly updates.
-        return derived.map((t) =>
-          t.isYou ? { ...t, status: "Submitted" as TrusteeStatus } : t,
-        );
-      });
-      setLog((prev) => [
-        ...prev,
-        {
-          ts,
-          event: `Trustee 03 — Submitted ${myPartials} partial decryption(s)`,
-        },
-      ]);
-      setPhase("submitted");
+      setTrustees((prev) => markSelfSubmitted(deriveRoster(updated, prev)));
     } catch (err) {
       // No Tauri runtime in tests or dev preview — degrade gracefully so the
       // visible flow still completes for the demo.
-      const message = err instanceof Error ? err.message : String(err);
-      setSubmitError(message);
-      const ts = nowIso();
-      setTrustees((prev) =>
-        prev.map((t) =>
-          t.isYou ? { ...t, status: "Submitted" as TrusteeStatus } : t,
-        ),
-      );
-      setLog((prev) => [
-        ...prev,
-        { ts, event: "Trustee 03 — Submitted partial decryption (offline)" },
-      ]);
-      setPhase("submitted");
+      setSubmitError(err instanceof Error ? err.message : String(err));
+      detail = "submitted partial decryption (offline)";
+      setTrustees(markSelfSubmitted);
     }
+    setLog((prev) => [
+      ...prev,
+      {
+        ts: nowLogStamp(),
+        lead: `Trustee ${YOU_ORDINAL} (You — ${YOU_NAME})`,
+        detail,
+        kind: "teal",
+        isNew: true,
+      },
+    ]);
+    setPhase("submitted");
   }
+
+  const thresholdMet = submittedCount >= THRESHOLD_REQUIRED;
 
   return (
     <div
@@ -790,35 +1043,91 @@ export default function App() {
         background: tokens.color.bg,
         color: tokens.color.text1,
         fontFamily: tokens.type.fontFamily,
+        fontSize: tokens.type.body,
+        lineHeight: tokens.type.lineHeight,
       }}
     >
-      <Header />
-      <main
-        style={{
-          maxWidth: 1024,
-          margin: "0 auto",
-          padding: `${tokens.space.md}px`,
-          display: "flex",
-          flexDirection: "column",
-          gap: tokens.space.md,
-        }}
-      >
-        <IdentityCard />
-        <DecryptionPanel
-          trustees={trustees}
-          submitted={submittedCount}
-          phase={phase}
-          onStart={start}
-          onCancel={cancel}
-          onConfirm={confirm}
-          submitError={submitError}
-        />
-        <VerificationCard
-          ballotCount={bulletin?.ballots.length ?? BALLOT_COUNT}
-        />
-        <AuditLog entries={log} />
-        <Footer />
+      <TopBar />
+
+      <main style={wrap}>
+        <div
+          style={{
+            padding: "30px 0 22px",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: tokens.type.eyebrow,
+                fontWeight: 600,
+                letterSpacing: 0.8,
+                color: tokens.color.text2,
+                textTransform: "uppercase",
+              }}
+            >
+              Active Ceremony
+            </div>
+            <h1
+              style={{
+                fontSize: 27,
+                fontWeight: 700,
+                margin: "9px 0 0",
+                letterSpacing: 0.1,
+              }}
+            >
+              Decryption Ceremony
+            </h1>
+            <div
+              style={{
+                color: tokens.color.text2,
+                fontSize: 14.5,
+                marginTop: 6,
+              }}
+            >
+              {bulletin?.election?.name ?? ELECTION_NAME} · {POLLS_CLOSED_AT}
+            </div>
+          </div>
+          <Chip variant={thresholdMet ? "success" : "teal"} dot>
+            {thresholdMet ? "Threshold reached" : "Ready — awaiting your share"}
+          </Chip>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+            gap: 22,
+            alignItems: "start",
+            paddingBottom: 18,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+            <ThresholdCard trustees={trustees} submitted={submittedCount} />
+            <ActionCard
+              phase={phase}
+              onStart={() => setPhase("confirm")}
+              onCancel={() => setPhase("idle")}
+              onConfirm={confirm}
+              submitError={submitError}
+              thresholdMet={thresholdMet}
+            />
+            <VerificationCard
+              ballotCount={bulletin?.ballots.length ?? BALLOT_COUNT}
+            />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+            <KeyShareCard />
+            <AuditLog entries={log} />
+          </div>
+        </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
