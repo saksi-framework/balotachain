@@ -354,59 +354,78 @@ with the reason string quoted verbatim from the journal.
 
 **Answers C32 (CONTRADICTED) and C34 (PARTIAL).**
 
+> **Status: the signed-tally mechanism is scheduled in this cycle; strip the
+> markers once Tasks 10 and 11 merge.** Every sentence below that describes it
+> carries a sentence-level marker naming the task that delivers it. Nothing in
+> this section describing tally signatures is true of the code as it stands
+> today; the only unmarked statements are the two that are.
+
 Table 3.11 lists a signed final tally among the items committed to the bulletin
 board. At the time of the audit no tally signature existed anywhere — not on the
-wire, not on-chain, not in the trustee application — so the row was false.
+wire, not on-chain, not in the trustee application — so the row was false. It is
+still false as this amendment is written.
 
-**The row becomes true, and the manuscript should describe the mechanism as
-follows.** Each trustee signs the tally with a Schnorr proof over
-ristretto255 whose base is the group generator, whose statement is the
-trustee's public share, whose witness is the trustee's secret share, and whose
-context binds the domain separator `saksi.tally.sig.v1`, the election id, and
-the totals as little-endian unsigned 64-bit integers. The signatures travel on
-the wire as `repeated TrusteeSignature signatures` on `TallyResult`.
-Verification keys are not transmitted: they are derived from the DKG
-transcript's coefficient commitments by evaluating every trustee's commitment
-polynomial at the signer's index and summing, so a signature is verifiable by
-anyone holding the public record.
+**The row becomes true once Tasks 10 and 11 merge, and the manuscript should
+then describe the mechanism as follows.** Each trustee signs the tally with a
+Schnorr proof over ristretto255 whose base is the group generator, whose
+statement is the trustee's public share, and whose witness is the trustee's
+secret share *(lands with Task 10)*. The signing context binds the domain
+separator `saksi.tally.sig.v1`, the election id, and the totals as
+little-endian unsigned 64-bit integers *(lands with Task 10)*. The signatures
+travel on the wire as `repeated TrusteeSignature signatures` on `TallyResult`
+*(lands with Task 10)*. Verification keys are not transmitted: they are derived
+from the DKG transcript's coefficient commitments by evaluating every trustee's
+commitment polynomial at the signer's index and summing, so a signature is
+verifiable by anyone holding the public record *(key derivation lands with
+Task 10 in Rust and with Task 11 in the chaincode)*.
 
-Verification happens in two places. On-chain, the chaincode's `PublishTally`
-rejects a tally whose signatures do not verify, whose trustee ids are duplicated
-or unknown, or whose count of valid signatures is below the election's
-threshold, using the `sigverify` package's `DeriveVerificationKey` and
-`VerifySchnorr` against a golden vector shared byte-for-byte with the Rust
-implementation (`saksi/packages/saksi-protocol/test-vectors/tally-sig-v1.hex`).
-Off-chain, the independent verifier reports the `tally.signatures` finding,
-which is strict: an unsigned tally is a FAIL, not a pass with a warning. Runs
-recorded before this mechanism existed are labelled "unsigned (legacy)" in the
-audit trail rather than silently accepted.
+Verification then happens in two places. On-chain, the chaincode's
+`PublishTally` rejects a tally whose signatures do not verify, whose trustee ids
+are duplicated or unknown, or whose count of valid signatures is below the
+election's threshold *(lands with Task 11)*, using the `sigverify` package's
+`DeriveVerificationKey` and `VerifySchnorr` *(lands with Task 11)* against a
+golden vector shared byte-for-byte with the Rust implementation,
+`saksi/packages/saksi-protocol/test-vectors/tally-sig-v1.hex` *(the vector is
+written by Task 10 and consumed by Task 11)*. Off-chain, the independent
+verifier reports the `tally.signatures` finding, which is strict: an unsigned
+tally is a FAIL, not a pass with a warning *(the `tally.signatures` finding
+lands with Task 10)*. Runs recorded before this mechanism existed are labelled
+"unsigned (legacy)" in the audit trail rather than silently accepted *(lands
+with Task 11)*.
 
-*Status marker:* the chaincode half of this lands with Task 11. Until it does,
-the threshold is enforced by the console alone and the manuscript must say so;
-once it lands, signature verification and the t-of-n count are chaincode-enforced.
-`TODO(confirm Task 11 landed before submission; if the pre-agreed fallback was
-taken, state that the chaincode enforces shape and distinct-signer count only
-and that full signature verification is the auditor's.)`
+*Status marker, to be resolved before submission.* Task 10 (wire field, Rust
+signing, golden vector, `tally.signatures` finding) is in flight on a parallel
+branch; Task 11 (chaincode `sigverify`, `PublishTally` gate, trail label) is
+pending. Until Task 11 lands, the t-of-n threshold is enforced by the console
+alone and the manuscript must say so; once it lands, signature verification and
+the t-of-n count are chaincode-enforced.
+`TODO(confirm Tasks 10 and 11 landed before submission and strip the markers;
+if the pre-agreed fallback was taken, state that the chaincode enforces shape
+and distinct-signer count only and that full signature verification is the
+auditor's.)`
 
 **Limitation that must be stated in the same paragraph.** The decryption
-ceremony is *simulated*. All trustee partial decryptions and all tally
-signatures are produced by the generator inside a single process and are
-forwarded to the ledger by the console; there is no multi-party ceremony across
-separate machines or separate custody boundaries. The cryptography is real —
-real Chaum-Pedersen proofs, real Schnorr signatures, real threshold
-recombination, verified on-chain and by the independent verifier — but the trust
-separation between trustees is not exercised by these experiments. This is the
-same trust model as the existing partial-decryption path and should be read as
-an evaluation-harness limitation, not a protocol claim.
+ceremony is *simulated*. All trustee partial decryptions — and, once Task 10
+lands, all tally signatures — are produced by the generator inside a single
+process and are forwarded to the ledger by the console; there is no multi-party
+ceremony across separate machines or separate custody boundaries. The
+cryptography is real: real Chaum-Pedersen proofs today, and real Schnorr
+signatures and real threshold recombination once the tasks above merge. What is
+not exercised by these experiments is the trust separation between trustees.
+This is the same trust model as the existing partial-decryption path and should
+be read as an evaluation-harness limitation, not a protocol claim.
 
-**Second limitation, on partial decryptions.** The chaincode validates that a
-submitted partial decryption *carries* a Chaum-Pedersen proof; it does not
-verify that proof at endorsement (`SubmitPartialDecryption` in
-`saksi/packages/saksi-bulletin/chaincode/contract.go`). Proof verification is
-the verifier's, reported as the `decryption.cp_proof` finding. With Task 11
-landed the split is precise and should be stated precisely: **tally signatures
-are verified on chain; partial-decryption proofs are validated for shape on
-chain and verified cryptographically off chain.**
+**Second limitation, on partial decryptions. This one is true of the code
+today.** The chaincode validates that a submitted partial decryption *carries* a
+Chaum-Pedersen proof — the check is `partial.GetProof() == nil` in
+`SubmitPartialDecryption`,
+`saksi/packages/saksi-bulletin/chaincode/contract.go` — and does not verify that
+proof at endorsement. Proof verification is the verifier's, reported as the
+`decryption.cp_proof` finding. With Task 11 landed the split becomes precise and
+should then be stated precisely: **tally signatures are verified on chain;
+partial-decryption proofs are validated for shape on chain and verified
+cryptographically off chain.** Until then, nothing about the tally is verified
+on chain at all.
 
 ---
 
