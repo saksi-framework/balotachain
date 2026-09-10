@@ -25,14 +25,14 @@ Sources of truth (read them, in this order):
 
 STEP 1 — code and toolchains
 
-Clone saksi main at 51c7f19 (PR #36 merged) into a path with NO SPACES, and
+Clone saksi main at 302d569 (PRs #36 and #35 merged) into a path with NO SPACES, and
 balotachain beside it:
 
 ```bash
 mkdir -p ~/Code && cd ~/Code
 git clone https://github.com/saksi-framework/saksi.git
 git clone https://github.com/saksi-framework/balotachain.git
-cd ~/Code/saksi && git checkout 51c7f19 && git log --oneline -1
+cd ~/Code/saksi && git checkout 302d569 && git log --oneline -1
 cd ~/Code/balotachain && git checkout ci/audit-trail && git log --oneline -1
 ```
 
