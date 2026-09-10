@@ -82,8 +82,7 @@ driver now carries out that procedure: `saksi-campaign --repeat --config run.jso
 --warmups W --reps R` drives the console's HTTP API once per repetition, tags
 each repetition's journal with a `rep {index, kind}` event where `kind` is
 `warmup` or `measured`, and writes `summary.csv` across the measured repetitions
-only. (Driver lands with Task 9; the failure predicate and the journal tagging
-it reads are already on the branch.) Failed runs are excluded from every throughput and latency statistic and
+only. Failed runs are excluded from every throughput and latency statistic and
 are reported instead as a failure rate; a run is failed when the predicate
 `runFailed` in `saksi/packages/saksi-campaign/journal.go` fires — a stage error,
 any dropped ballot, a reconcile mismatch, a non-zero `E` on any contest, or an
@@ -316,10 +315,10 @@ instrument, not a reason supplied by the author. The reasons available are:
 - the ladder gate's refusal, for a tier that was never started because the
   validation ladder had not been run for the current build — error text
   "validation ladder has not been run for this build; run tools/ladder.sh
-  first" (lands with Task 9);
+  first";
 - the disk guard's refusal, for an on-chain tier whose projected ledger size
   exceeded free space on the peer volume, with the projected and available byte
-  counts in the message (lands with Task 9);
+  counts in the message;
 - the offline ceiling, for a cryptographic-path tier above the offline cap —
   `OfflineVoterCeiling` in `saksi/packages/saksi-campaign/config.go`.
 
@@ -354,64 +353,57 @@ with the reason string quoted verbatim from the journal.
 
 **Answers C32 (CONTRADICTED) and C34 (PARTIAL).**
 
-> **Status: the signed-tally mechanism is scheduled in this cycle; strip the
-> markers once Tasks 10 and 11 merge.** Every sentence below that describes it
-> carries a sentence-level marker naming the task that delivers it. Nothing in
-> this section describing tally signatures is true of the code as it stands
-> today; the only unmarked statements are the two that are.
-
 Table 3.11 lists a signed final tally among the items committed to the bulletin
 board. At the time of the audit no tally signature existed anywhere — not on the
-wire, not on-chain, not in the trustee application — so the row was false. It is
-still false as this amendment is written.
+wire, not on-chain, not in the trustee application — so the row was false.
 
-**The row becomes true once Tasks 10 and 11 merge, and the manuscript should
-then describe the mechanism as follows.** Each trustee signs the tally with a
+**The row is now true, and the manuscript should describe the mechanism as
+follows.** Each trustee signs the tally with a
 Schnorr proof over ristretto255 whose base is the group generator, whose
 statement is the trustee's public share, and whose witness is the trustee's
-secret share *(lands with Task 10)*. The signing context binds the domain
+secret share. The signing context binds the domain
 separator `saksi.tally.sig.v1`, the election id, and the totals as
-little-endian unsigned 64-bit integers *(lands with Task 10)*. The signatures
-travel on the wire as `repeated TrusteeSignature signatures` on `TallyResult`
-*(lands with Task 10)*. Verification keys are not transmitted: they are derived
+little-endian unsigned 64-bit integers. The signatures travel on the wire as
+`repeated TrusteeSignature signatures` on `TallyResult`. Verification keys are
+not transmitted: they are derived
 from the DKG transcript's coefficient commitments by evaluating every trustee's
 commitment polynomial at the signer's index and summing, so a signature is
-verifiable by anyone holding the public record *(key derivation lands with
-Task 10 in Rust and with Task 11 in the chaincode)*.
+verifiable by anyone holding the public record — in Rust and, byte-identically,
+in the chaincode.
 
 Verification then happens in two places. On-chain, the chaincode's
 `PublishTally` rejects a tally whose signatures do not verify, whose trustee ids
 are duplicated or unknown, or whose count of valid signatures is below the
-election's threshold *(lands with Task 11)*, using the `sigverify` package's
-`DeriveVerificationKey` and `VerifySchnorr` *(lands with Task 11)* against a
+election's threshold, using the `sigverify` package's `DeriveVerificationKey`
+and `VerifySchnorr` against a
 golden vector shared byte-for-byte with the Rust implementation,
-`saksi/packages/saksi-protocol/test-vectors/tally-sig-v1.hex` *(the vector is
-written by Task 10 and consumed by Task 11)*. Off-chain, the independent
+`saksi/packages/saksi-protocol/test-vectors/tally-sig-v1.hex`. Off-chain, the
+independent
 verifier reports the `tally.signatures` finding, which is strict: an unsigned
-tally is a FAIL, not a pass with a warning *(the `tally.signatures` finding
-lands with Task 10)*. Runs recorded before this mechanism existed are labelled
-"unsigned (legacy)" in the audit trail rather than silently accepted *(lands
-with Task 11)*.
+tally is a FAIL, not a pass with a warning. Runs recorded before this mechanism
+existed are labelled "unsigned (legacy)" in the audit trail rather than silently
+accepted.
 
-*Status marker, to be resolved before submission.* Task 10 (wire field, Rust
-signing, golden vector, `tally.signatures` finding) is in flight on a parallel
-branch; Task 11 (chaincode `sigverify`, `PublishTally` gate, trail label) is
-pending. Until Task 11 lands, the t-of-n threshold is enforced by the console
-alone and the manuscript must say so; once it lands, signature verification and
-the t-of-n count are chaincode-enforced.
-`TODO(confirm Tasks 10 and 11 landed before submission and strip the markers;
-if the pre-agreed fallback was taken, state that the chaincode enforces shape
-and distinct-signer count only and that full signature verification is the
-auditor's.)`
+**How many signatures the published tally carries depends on which path
+published it.** The plain submit path — the no-ceremony harness run, where the
+console forwards the generated bundle straight to the ledger — publishes the
+generator's full n-of-n signature set. The trustee-ceremony path publishes only
+the signatures of the trustees that actually submitted in that ceremony
+(`tallyToPublish`, `saksi/packages/saksi-campaign/ceremony.go`), because the
+chaincode counts these signatures against the threshold and a 5-of-5
+endorsement must not be recorded for a ceremony two trustees took part in. Both
+sets are signatures over the same totals; only the number of signers on the
+published record differs, and the manuscript should say which path produced the
+run it reports.
 
 **Limitation that must be stated in the same paragraph.** The decryption
-ceremony is *simulated*. All trustee partial decryptions — and, once Task 10
-lands, all tally signatures — are produced by the generator inside a single
+ceremony is *simulated*. All trustee partial decryptions and all tally
+signatures are produced by the generator inside a single
 process and are forwarded to the ledger by the console; there is no multi-party
 ceremony across separate machines or separate custody boundaries. The
-cryptography is real: real Chaum-Pedersen proofs today, and real Schnorr
-signatures and real threshold recombination once the tasks above merge. What is
-not exercised by these experiments is the trust separation between trustees.
+cryptography is real: real Chaum-Pedersen proofs, real Schnorr signatures and
+real threshold recombination. What is not exercised by these experiments is the
+trust separation between trustees.
 This is the same trust model as the existing partial-decryption path and should
 be read as an evaluation-harness limitation, not a protocol claim.
 
@@ -421,11 +413,9 @@ Chaum-Pedersen proof — the check is `partial.GetProof() == nil` in
 `SubmitPartialDecryption`,
 `saksi/packages/saksi-bulletin/chaincode/contract.go` — and does not verify that
 proof at endorsement. Proof verification is the verifier's, reported as the
-`decryption.cp_proof` finding. With Task 11 landed the split becomes precise and
-should then be stated precisely: **tally signatures are verified on chain;
-partial-decryption proofs are validated for shape on chain and verified
-cryptographically off chain.** Until then, nothing about the tally is verified
-on chain at all.
+`decryption.cp_proof` finding. The split should therefore be stated precisely:
+**tally signatures are verified on chain; partial-decryption proofs are
+validated for shape on chain and verified cryptographically off chain.**
 
 ---
 
@@ -540,7 +530,7 @@ are driven by the project's own driver, not by Caliper: a sweep multiplies the
 target send rate per step within a time-bounded window, sizing each step's
 concurrency from the previous step's p99 so the closed-loop driver is not itself
 the ceiling, and stopping at the first step where committed throughput falls or
-ballots drop. The plateau is the last good step (lands with Task 9). This is
+ballots drop. The plateau is the last good step. This is
 what backs the manuscript's "increasing send rates until saturation" (C20) and
 the T8 peak-load case; Caliper's fixed-rate rounds do not.
 
