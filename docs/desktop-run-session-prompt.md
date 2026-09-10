@@ -31,7 +31,9 @@ balotachain beside it:
 ```bash
 mkdir -p ~/Code && cd ~/Code
 git clone https://github.com/saksi-framework/saksi.git
+git clone https://github.com/saksi-framework/balotachain.git
 cd ~/Code/saksi && git checkout 51c7f19 && git log --oneline -1
+cd ~/Code/balotachain && git checkout ci/audit-trail && git log --oneline -1
 ```
 
 Build both binaries and prove the checkout is green before anything is
@@ -43,7 +45,7 @@ cargo build -p saksi-demo --release          # -> target/release/saksi-demo
 (cd packages/saksi-campaign && go build -o saksi-campaign ./cmd/saksi-campaign)
 cargo test --workspace 2>&1 | tail -20
 for m in packages/saksi-campaign packages/saksi-bulletin/client-sdk \
-         packages/saksi-bulletin/chaincode; do
+         packages/saksi-bulletin/chaincode packages/saksi-protocol/go; do
   (cd "$m" && echo "== $m" && go test ./... 2>&1 | tail -5)
 done
 ```
@@ -89,15 +91,17 @@ that rather than editing ladder.json.
 
 STEP 3 — row 2: SP-1K then MP-1K, on-chain
 
-The console started by `up.sh` is the on-chain-wired one; keep it running. If
-it was stopped, restart it with the same flags (runbook section 4 plus the
-Fabric flags `up.sh` passes: `--fabric-channel saksi --fabric-tls-cert ...
---fabric-cert ... --fabric-key ...`, the paths `resolve_identity` prints).
+The console started by `up.sh` is the on-chain-wired one. Restart it via
+`tools/up.sh`, which resolves and passes the identity paths itself (the
+`signcerts` / `keystore` lookup in `up.sh`'s `resolve_identity`) — do not hand-
+assemble the `--fabric-*` flags of runbook section 4.
 
 Reset the ledger before each tier so `ledger_bytes_delta` and the commit
 latencies measure that tier, not the accumulated state of the one before it.
-`tier.sh` tears the network down, brings it back up on a fresh channel and
-redeploys the chaincode; restart the console after it:
+`tier.sh` tears the network down and brings it back up on a fresh channel with
+the chaincode redeployed. The console's gRPC connection is process-lifetime, so
+a console that was running across a `tier.sh` is holding a dead connection:
+**restart it after every `tier.sh`, before the `--repeat` run.**
 
 ```bash
 cd ~/Code/saksi
@@ -129,11 +133,18 @@ sed -e 's/"SP-1K"/"MP-1K"/' -e 's/"positions": 1/"positions": 3/' \
 SP-1K FIRST — its TPS is what re-plans rows 4-9 — then reset and run MP-1K:
 
 ```bash
+# in the console's shell, after the SP-1K tier.sh above:
+cd ~/Code/saksi && ./tools/up.sh          # fresh console on the fresh network
+# then, in the second shell:
 cd ~/Code/saksi
+./tools/up.sh status                      # "fabric":true before measuring
 ./target/saksi-campaign --repeat --config ~/sp-1k.json --warmups 2 --reps 10 \
   --base-url http://127.0.0.1:8090 --out ~/Code/saksi/sp-1k-summary.csv
 
-./tools/tier.sh 1000 3        # before MP-1K; then restart the console (up.sh)
+./tools/tier.sh 1000 3                    # before MP-1K
+# Ctrl-C the console, restart it, and confirm it is live again:
+cd ~/Code/saksi && ./tools/up.sh          # console shell
+./tools/up.sh status                      # second shell: "fabric":true
 ./target/saksi-campaign --repeat --config ~/mp-1k.json --warmups 2 --reps 10 \
   --base-url http://127.0.0.1:8090 --out ~/Code/saksi/mp-1k-summary.csv
 ```
