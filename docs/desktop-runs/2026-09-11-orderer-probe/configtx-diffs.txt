@@ -1,0 +1,43 @@
+--- configtx.default.yaml
++++ configtx.tuned-batch-only.yaml
+192c192
+<     MaxMessageCount: 10
+---
+>     MaxMessageCount: 500
+199c199
+<     PreferredMaxBytes: 512 KB
+---
+>     PreferredMaxBytes: 16 MB
+
+--- configtx.default.yaml
++++ configtx.b50-t2s.yaml
+192c192
+<     MaxMessageCount: 10
+---
+>     MaxMessageCount: 50
+199c199
+<     PreferredMaxBytes: 512 KB
+---
+>     PreferredMaxBytes: 2 MB
+270a271,272
+>         Options:
+>           SnapshotIntervalSize: 268435456
+
+--- configtx.default.yaml
++++ configtx.b500-t250ms.yaml
+188c188
+<   BatchTimeout: 2s
+---
+>   BatchTimeout: 250ms
+192c192
+<     MaxMessageCount: 10
+---
+>     MaxMessageCount: 500
+199c199
+<     PreferredMaxBytes: 512 KB
+---
+>     PreferredMaxBytes: 2 MB
+270a271,272
+>         Options:
+>           SnapshotIntervalSize: 268435456
+
