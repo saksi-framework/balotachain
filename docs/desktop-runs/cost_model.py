@@ -11,16 +11,19 @@ Python 3 standard library only: no numpy, no scipy. Least squares is solved by
 the normal equations; Student-t critical values come from a small hard-coded
 two-sided 95 % table.
 
-Usage (Windows, reading the WSL2 run tree over the 9p share):
+The runs tree (default: the WSL2 tree over the 9p share from Windows; pass
+`--runs` inside WSL) holds every regime ever measured -- default and b50-t2s
+orderer parameters, several saksi builds. A regime is (verify_threads,
+orderer_batch, saksi commit); if one cost class spans more than one, the script
+refuses to fit and names them. `--match GLOB` (repeatable) keeps only run
+folders whose name matches one of the globs; it is also the only way to split
+two orderer configurations run on one commit while `orderer_batch` is not yet
+recorded in the journal. The rows 2-4 b50-t2s refit, inside WSL:
 
-    python cost_model.py --out cost-model.md
-
-Usage (inside WSL, or any POSIX box with the tree mounted):
-
-    python3 cost_model.py \
-        --runs /home/user/.saksi/campaign/runs \
+    python3 cost_model.py --runs /home/user/.saksi/campaign/runs \
         --runs /home/user/.saksi/campaign/runs-offline \
-        --out cost-model.md
+        --match 'sp-*-b50-*' --match 'mp-*-b50-*' --match 'offline-*' \
+        --fit-concurrency 128 --out cost-model.md
 
 The output is deterministic: it carries no wall-clock timestamp, so rerunning it
 after new runs land produces a diff only where the numbers actually moved.
@@ -29,9 +32,11 @@ after new runs land produces a diff only where the numbers actually moved.
 import argparse
 import csv
 import datetime
+import fnmatch
 import json
 import math
 import os
+import shlex
 import statistics
 import sys
 
@@ -187,9 +192,13 @@ def load_run(path):
     """
     rid = os.path.basename(path.rstrip("\\/"))
     try:
-        cfg = _json(os.path.join(path, "run.json"))["config"]
+        rj = _json(os.path.join(path, "run.json"))
+        cfg = rj["config"]
     except (OSError, KeyError, ValueError):
         return None
+    commit = rj.get("commit")
+    if isinstance(commit, dict):
+        commit = commit.get("git_head_saksi") or commit.get("git_head_console")
 
     events = []
     try:
@@ -294,11 +303,43 @@ def load_run(path):
         "failed": str(perf.get("failed", "")).lower() == "true"
         or bool(by["run.end"][0].get("failed")),
         "ceremony_ms": stage_ms("ceremony"),
+        # The regime a run was measured in. Coefficients are never pooled
+        # across regimes (see mixed_regimes): the audit term changes with the
+        # auditor's thread count, and every term can change with the orderer
+        # configuration or the saksi build. Absent verify_threads = the serial
+        # auditor = 1; absent orderer_batch = not recorded (runs predate it).
+        "verify_threads": int(_f(timings.get("verify_threads"))
+                              or _f(perf.get("verify_threads")) or 1),
+        "orderer_batch": (json.dumps(by["env"][0]["orderer_batch"], sort_keys=True)
+                          if by.get("env") and "orderer_batch" in by["env"][0] else None),
+        "commit": commit,
     }
 
 
-def collect(run_dirs, include_probes=False, min_concurrency=MIN_CONCURRENCY):
-    """Load every run folder under `run_dirs`; return (kept, skipped)."""
+def regime(r):
+    return (r["verify_threads"], r["orderer_batch"], r["commit"])
+
+
+def mixed_regimes(runs):
+    """[(class, sorted regimes)] for every cost class whose runs span >1 regime.
+
+    A regime is (verify_threads, orderer_batch, saksi commit). Pooling runs
+    from two regimes into one coefficient would fit neither -- the parallel
+    auditor alone divides v_audit by ~8 -- so main() refuses instead of fitting.
+    """
+    by = {}
+    for r in runs:
+        by.setdefault(r["klass"], set()).add(regime(r))
+    return [(k, sorted(v, key=str)) for k, v in sorted(by.items()) if len(v) > 1]
+
+
+def collect(run_dirs, include_probes=False, min_concurrency=MIN_CONCURRENCY, match=None):
+    """Load every run folder under `run_dirs`; return (kept, skipped).
+
+    `match`, when given, is a list of globs: folders whose name matches none of
+    them are not read at all (and not listed as skipped -- they are another
+    regime, not a defect).
+    """
     kept, skipped = [], []
     for root in run_dirs:
         if not os.path.isdir(root):
@@ -307,6 +348,8 @@ def collect(run_dirs, include_probes=False, min_concurrency=MIN_CONCURRENCY):
         for name in sorted(os.listdir(root)):
             path = os.path.join(root, name)
             if not os.path.isdir(path):
+                continue
+            if match and not any(fnmatch.fnmatch(name, g) for g in match):
                 continue
             r = load_run(path)
             if r is None:
@@ -444,7 +487,15 @@ def actuals(runs, voters, positions, onchain):
             and r["onchain"] == onchain]
 
 
-def render(on, off, runs, skipped, run_dirs, fit_concurrency):
+def regime_line(rs):
+    v, ob, c = regime(rs[0])
+    return ("Regime -- shared by every run of this class, because the script refuses "
+            "to pool across regimes: `verify_threads` = %d%s, `orderer_batch` = %s, "
+            "saksi commit `%s`." % (v, " (serial auditor)" if v == 1 else "",
+                                     ("`%s`" % ob) if ob else "not recorded", c))
+
+
+def render(on, off, runs, skipped, run_dirs, fit_concurrency, invocation=None):
     out = []
     w = out.append
 
@@ -454,14 +505,11 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
       "new tier lands and it refits; the output carries no timestamp, so the "
       "diff shows only numbers that moved.")
     w("")
-    w("```")
-    w("python cost_model.py --out cost-model.md          # Windows, WSL tree over \\\\wsl.localhost")
-    w("python3 cost_model.py --runs /home/user/.saksi/campaign/runs \\")
-    w("                     --runs /home/user/.saksi/campaign/runs-offline --out cost-model.md")
-    w("```")
-    w("")
     w("Run tree read: " + ", ".join("`%s`" % d for d in run_dirs) + ".")
     w("")
+    if invocation:
+        w("This file was generated by: `%s`" % invocation)
+        w("")
 
     # ---- (a) the model -------------------------------------------------
     w("## 1. The model")
@@ -482,7 +530,10 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
     w("  L(p)  fixed on-chain lifecycle   = tau * (4 + trustees * p * candidates)")
     w("        the 4 are CreateElection, PublishDKGTranscript, CloseElection, PublishTally;")
     w("        the rest are one SubmitPartialDecryption per (trustee, position, candidate).")
-    w("        Each is alone in its own block and waits out the orderer's BatchTimeout.")
+    w("        Before saksi PR #38 each was alone in its own block and waited out the")
+    w("        orderer's BatchTimeout. Since #38 the partials go out concurrently and")
+    w("        share blocks, the median receipt gap (tau) is 0, L drops out, and the")
+    w("        lifecycle's few remaining BatchTimeout waits are inside c0.")
     w("        L = 0 offline.")
     w("  c0    residual fixed overhead: check, bundle, receipt fetch, ceremony,")
     w("        per-run bookkeeping -- whatever the four per-record terms and L do not explain.")
@@ -541,6 +592,8 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
               ", ".join(str(c) for c in fit_concurrency) if fit_concurrency
               else "all concurrencies pooled"))
         w("")
+        w(regime_line(on.runs))
+        w("")
         w("| Symbol | Estimate | 95 % CI | df | runs | Source column |")
         w("|---|---|---|---|---|---|")
         for f, src in ((on.g, "`gen-timings.json` `wall_ms`"),
@@ -566,6 +619,12 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
                   on.tau_s, len([r for r in on.runs if r["tau_s"]]),
                   "" if len(on.runs) == 1 else "s",
                   on.lifecycle_ms(1) / 1000.0, on.lifecycle_ms(3) / 1000.0))
+            w("")
+        elif on.runs:
+            w("`tau = 0`: the fitted runs' lifecycle receipts share blocks (the "
+              "partial decryptions go out concurrently since saksi PR #38), so "
+              "the median receipt gap is 0 and `L(p) = 0`. The lifecycle's "
+              "remaining `BatchTimeout` waits are part of `c0`.")
             w("")
         w("Fitted from these runs:")
         w("")
@@ -634,6 +693,8 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
               "can be computed -- these are single-point ratios, not a fit"
               if len(off.runs) < 2 else
               "the intervals below rest on very few points"))
+        w("")
+        w(regime_line(off.runs))
         w("")
         w("| Symbol | Estimate | 95 % CI | df | runs |")
         w("|---|---|---|---|---|")
@@ -731,7 +792,7 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
             (mf.beta - pred) / pred * 100.0))
     w("")
     if off.runs and len(off.runs) == 1:
-        w("The offline row's 0.0 %% error is arithmetic, not evidence: with one "
+        w("The offline row's 0.0 % error is arithmetic, not evidence: with one "
           "run in the class, `c0` is whatever the run's residual happens to be, "
           "so the model reproduces it exactly by construction. Row 8's hours "
           "have no validation behind them until a second true-offline tier runs.")
@@ -742,21 +803,36 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
     w("")
     w("The model is a per-record cost plus two fixed costs, and it is only as "
       "portable as the settings it was measured under. `s` is the submission "
-      "cost **at driver concurrency %s on the Fabric test-network's default "
-      "orderer parameters** (`BatchTimeout` 2 s, `MaxMessageCount` 10); `tau`, "
-      "and therefore all of `L(p)`, is that same `BatchTimeout`. Retune the "
-      "driver concurrency, change either orderer parameter, or batch the ledger "
-      "dump that `v_dump` pays for one `GetBallot` at a time, and `s`, `v_dump` "
-      "or `L` move -- the fit is then stale and the script must be rerun. It is "
+      "cost **at driver concurrency %s on the orderer parameters those runs were "
+      "made under** (the desktop-runs note for them records the parameters); "
+      "`tau`, where it is measurable, is the orderer's `BatchTimeout`. Retune the "
+      "driver concurrency, change an orderer parameter, or change how the "
+      "console batches its ledger reads or lifecycle transactions, and `s`, "
+      "`v_dump`, `L` or `c0` move -- the fit is then stale and the script must "
+      "be rerun. `--match` pins a fit to one regime's run folders. It is "
       "written to be rerun: it reads whatever complete, measured, non-failed "
       "runs exist and refits from scratch." % (
           "/".join(sorted({str(r["concurrency"]) for r in on.runs})) if on.runs else "n/a"))
     w("")
     w("That concurrency dependence is why the fit is taken at one setting and "
       "other settings are held out. To pool every setting instead, rerun with "
-      "`--fit-concurrency all`; to fit at the row-3 setting, "
-      "`--fit-concurrency 192`. Either changes what `s` means and both should "
+      "`--fit-concurrency all`; to fit at another setting, "
+      "`--fit-concurrency <c>`. Either changes what `s` means and both should "
       "be read next to the per-concurrency table in section 2.")
+    w("")
+    w("**One regime per fit, or no fit.** A run's regime is its auditor thread "
+      "count (`verify_threads` in `timings.json` or `perf.csv`; absent = 1, the "
+      "serial auditor), its orderer configuration (`orderer_batch` in "
+      "`journal.ndjson` line 1; absent = not recorded) and its saksi commit "
+      "(`run.json`). If the runs of one cost class span more than one regime the "
+      "script **refuses to fit** and exits naming the regimes it found, rather "
+      "than fitting per group: every coefficient -- not only `v_audit` -- can move "
+      "between regimes, and `v_dump` is derived as the verify stage minus the "
+      "audit, so it inherits any shift in `v_audit`. Pick one regime per class "
+      "with `--match`. When the parallel auditor (`verify_threads` > 1) is "
+      "deployed, `v_audit` and with it `v_dump` must be refitted on runs from "
+      "that build; the chain-side terms (`s`, the lifecycle) do not depend on "
+      "the auditor.")
     w("")
     w("Excluded from the fit by construction: warm-up reps (`rep.kind` is not "
       "`measured`), failed runs, in-flight folders with no `run.end`, the "
@@ -788,8 +864,9 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
     w("### Hardware, and what a faster box would actually change")
     w("")
     w("Every number here was measured on one machine: **AMD Ryzen 7 5700G "
-      "(8 cores / 16 threads), Fabric inside WSL2 Ubuntu with 16 vCPU and 15 GB "
-      "of RAM** (WSL's default half of the box's 32 GB), Docker Desktop, Fabric "
+      "(8 cores / 16 threads), Fabric inside WSL2 Ubuntu with 16 vCPU** and the "
+      "RAM WSL allots (15 GB for the row-2 default-parameter runs on SATA-backed "
+      "Docker storage, 24 GB from the move to NVMe on), Docker Desktop, Fabric "
       "2.5.15 test-network. The terms do not all scale with the same resource:")
     w("")
     w("- **Scales with CPU cores / single-core speed:** `g` (credential issue, "
@@ -799,16 +876,16 @@ def render(on, off, runs, skipped, run_dirs, fit_concurrency):
       "roughly in proportion.")
     w("- **Scales with the Fabric pipeline, not with cores:** `s` (endorse -> "
       "order -> commit, bounded by orderer batching and by how many in-flight "
-      "submissions the driver holds) and `v_dump` (one `GetBallot` query per "
-      "nullifier against the peer). A faster CPU moves these only as far as the "
-      "peer and orderer processes were CPU-starved.")
-    w("- **Scales with neither:** `L(p)`, which is `tau` x a transaction count. "
-      "It is the orderer waiting out its configured timeout; it is the same 48 s "
-      "(SP) or 128 s (MP) on any hardware, and it is only reduced by changing "
-      "`BatchTimeout`.")
+      "submissions the driver holds) and `v_dump` (the ledger dump's "
+      "`GetBallot` / `GetBallots` queries against the peer). A faster CPU moves "
+      "these only as far as the peer and orderer processes were CPU-starved.")
+    w("- **Scales with neither:** `L(p)` (or, when `tau = 0`, the lifecycle part "
+      "of `c0`): the orderer waiting out its `BatchTimeout` on lifecycle blocks "
+      "that never fill. It is the same on any hardware and is reduced only by "
+      "changing `BatchTimeout` or by putting fewer such blocks on the chain.")
     w("")
     w("So \"a faster machine makes the campaign N times quicker\" is wrong as a "
-      "blanket claim. At the small tiers `L` dominates and a faster box changes "
+      "blanket claim. At the small tiers the fixed per-run cost dominates and a faster box changes "
       "almost nothing; at the large tiers the split between the CPU-bound and "
       "the Fabric-bound terms in the coefficient table above is the honest "
       "scope for any such claim.")
@@ -857,6 +934,13 @@ def selfcheck():
     assert mo.predict_ms(1000, 1) == 1000 * 1.0 + 48000.0 + 500.0
     # MoE = sqrt((1000*0.1)^2 + 0 + 0 + 0 + 50^2)
     assert abs(mo.moe_ms(1000, 1) - math.hypot(100.0, 50.0)) < 1e-9
+    # Regime guard: same class + different thread count (or commit) is mixed;
+    # the same regime in two classes is not.
+    base = {"klass": "onchain", "verify_threads": 1, "orderer_batch": None, "commit": "a"}
+    assert mixed_regimes([base, dict(base)]) == []
+    assert mixed_regimes([base, dict(base, klass="offline", commit="b")]) == []
+    assert [k for k, _ in mixed_regimes([base, dict(base, verify_threads=8)])] == ["onchain"]
+    assert [k for k, _ in mixed_regimes([base, dict(base, commit="b")])] == ["onchain"]
     print("selfcheck ok")
     return 0
 
@@ -884,8 +968,14 @@ def main(argv=None):
                          "fit, or `all` to pool them (default %s). Runs at other "
                          "concurrencies still supply actuals and so test the fit out "
                          "of sample." % ",".join(str(c) for c in FIT_CONCURRENCY))
+    ap.add_argument("--match", action="append", metavar="GLOB",
+                    help="read only run folders whose name matches this glob; "
+                         "repeatable (a folder matching any one is read). Pins the "
+                         "fit to one regime, e.g. --match 'sp-*-b50-*'")
     ap.add_argument("--selfcheck", action="store_true",
                     help="run the arithmetic self-check and exit (touches no artifacts)")
+    if argv is None:
+        argv = sys.argv[1:]
     args = ap.parse_args(argv)
 
     if args.selfcheck:
@@ -897,7 +987,7 @@ def main(argv=None):
         fit_conc = tuple(int(c) for c in args.fit_concurrency.split(","))
 
     run_dirs = args.runs or DEFAULT_RUN_DIRS
-    runs, skipped = collect(run_dirs, args.include_probes, args.min_concurrency)
+    runs, skipped = collect(run_dirs, args.include_probes, args.min_concurrency, args.match)
     if not runs:
         sys.stderr.write(
             "no usable runs under %s\n"
@@ -907,10 +997,33 @@ def main(argv=None):
             % (", ".join(run_dirs), DEFAULT_RUN_DIRS[0]))
         return 1
 
+    mixed = mixed_regimes(runs)
+    if mixed:
+        sys.stderr.write("refusing to fit: runs of one cost class span more than one "
+                         "regime (verify_threads, orderer_batch, saksi commit), and a "
+                         "coefficient pooled across regimes fits none of them.\n")
+        for klass, regs in mixed:
+            for v, ob, c in regs:
+                n = sum(1 for r in runs if r["klass"] == klass and regime(r) == (v, ob, c))
+                sys.stderr.write("  %-8s verify_threads=%s orderer_batch=%s commit=%s  (%d runs)\n"
+                                 % (klass, v, ob or "not recorded", c, n))
+        sys.stderr.write("Select one regime per class with --match GLOB (repeatable).\n")
+        return 2
+
     on = fit(runs, onchain=True, fit_concurrency=fit_conc)
     off = fit(runs, onchain=False)
 
-    md = render(on, off, runs, skipped, run_dirs, fit_conc)
+    # --out is dropped from the recorded invocation: it names this file.
+    shown, skip_next = [], False
+    for a in argv:
+        if skip_next:
+            skip_next = False
+        elif a == "--out":
+            skip_next = True
+        elif not a.startswith("--out="):
+            shown.append(a)
+    invocation = "python3 cost_model.py " + " ".join(shlex.quote(a) for a in shown)
+    md = render(on, off, runs, skipped, run_dirs, fit_conc, invocation)
     with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(md)
 
