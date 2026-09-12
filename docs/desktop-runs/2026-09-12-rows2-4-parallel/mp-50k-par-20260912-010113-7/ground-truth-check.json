@@ -1,0 +1,48 @@
+{
+  "pass": true,
+  "checks": [
+    {
+      "name": "Ballot table shape",
+      "pass": true,
+      "detail": "6 columns: voter, scale, complexity, and one per position"
+    },
+    {
+      "name": "Voter ids unique and sequential",
+      "pass": true,
+      "detail": "V-000001 through V-50000, no duplicates or gaps"
+    },
+    {
+      "name": "Every selection is a real candidate",
+      "pass": true,
+      "detail": "all selections fall within the 4 declared candidates"
+    },
+    {
+      "name": "Every voter accounted for",
+      "pass": true,
+      "detail": "50,000 rows, one per configured voter"
+    },
+    {
+      "name": "Recount matches the published tally",
+      "pass": true,
+      "detail": "all 12 contests agree, recounted from the ballot table"
+    },
+    {
+      "name": "No votes lost or invented",
+      "pass": true,
+      "detail": "each of the 3 positions totals exactly 50,000"
+    },
+    {
+      "name": "Population fingerprinted",
+      "pass": true,
+      "detail": "sha256 recorded for both tables — a later encrypted run can be shown to use this exact population"
+    }
+  ],
+  "rows": 50000,
+  "ground_truth_ballots_sha256": "9a8fe418b68fa88220310c276bce9ed1b1efd7630bd5c5db71681a6250359062",
+  "ground_truth_summary_sha256": "7062fdbc92219e3f89ff3e5d0ef2c20f2ca0e1896b8a5bf298ff1ed788d01d1b",
+  "voters": 50000,
+  "positions": 3,
+  "candidates": 4,
+  "distribution": "realistic",
+  "election_id": "mp-50k-par-20260912-010113-7"
+}
