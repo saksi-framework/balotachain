@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Part 5: The Codebase</title>
+<style>
+  /* Measured from BalotaChain_Defense_Reviewer.pdf pages 1 to 21 (LibreOffice
+     export, Liberation Sans). Arial has the same metrics. The running header
+     is stamped by build.py, not printed here. */
+  @page { size: Letter; margin: 50pt 55pt 58pt 55pt; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: "Liberation Sans", Arial, Helvetica, sans-serif;
+         font-size: 9.5pt; line-height: 1.42; color: #000; }
+  h1 { font-size: 14pt; font-weight: bold; color: #1F3864; text-transform: uppercase;
+       margin: 0 0 9pt; padding-bottom: 2pt; border-bottom: 1pt solid #1F3864; }
+  h2 { font-size: 11pt; font-weight: bold; margin: 13pt 0 5pt; break-after: avoid; }
+  h3 { font-size: 9.5pt; font-weight: bold; font-style: italic; margin: 9pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 5pt; }
+  ul { margin: 0 0 5pt; padding-left: 23pt; }
+  li { margin: 0 0 2pt; }
+  .intro { font-size: 8.5pt; font-style: italic; margin: 0 0 6pt; }
+  .note { font-size: 8.5pt; font-style: italic; color: #404040; background: #F7F7F7;
+          margin: 3pt 0 8pt 10pt; padding: 2pt 4pt; break-inside: avoid; }
+  table { border-collapse: collapse; width: 94%; margin: 3pt 0 6pt; font-size: 8.5pt; line-height: 1.45; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  th, td { border: 0.5pt solid #7F7F7F; padding: 3.5pt 4.5pt 4pt; text-align: left; vertical-align: top; }
+  th { background: #D9E2F3; font-weight: bold; }
+  table.dense { font-size: 8pt; }
+  .closing { font-style: italic; margin-top: 8pt; }
+</style>
+</head>
+<body>
+
+<h1>Part 5: The Codebase, Saksi and BalotaChain</h1>
+<p class="intro">Everything in this part describes the code as built on 15 September 2026, at saksi commit 25d523f and balotachain commit a79918d, not the manuscript. Parts 1 to 4 tell you what the thesis promises; this part tells you where each promise lives in the repositories, what changed while building it, and where the code is weaker than the text. Paths are relative to each repository's root.</p>
+
+<h2>The two repositories and what each holds</h2>
+<ul>
+  <li><b>Saksi (the framework):</b> the saksi repository. Its packages hold the Rust cryptographic core, the Go chaincode and ledger client, and a Go research console that runs whole elections for the evaluation.</li>
+  <li><b>BalotaChain (the application):</b> the balotachain repository. It holds the three web apps an operator, a trustee and the public use, and the thesis evidence under docs.</li>
+</ul>
+<p class="note">The manuscript calls Saksi a Rust library. The cryptographic core is exactly that. The saksi repository around it also carries the chaincode and the console, because the wire format, the on-chain verification and the evaluation harness are versioned together with the core and tested against the same vectors. If a panelist asks, say: the core is the library; the repository is the framework. Terminology still holds: Saksi is the framework, BalotaChain is the application.</p>
+
+<h2>Saksi packages (the 11 you may be asked to open)</h2>
+<table>
+  <thead><tr><th style="width:24%">Package</th><th style="width:13%">Language</th><th style="width:38%">What it holds</th><th>Manuscript component</th></tr></thead>
+  <tbody>
+    <tr><td>packages/saksi-crypto</td><td>Rust</td><td>ristretto255 ElGamal, CDS and Chaum-Pedersen proofs, Schnorr signatures, Pedersen DKG</td><td>Saksi cryptographic core</td></tr>
+    <tr><td>packages/saksi-credentials</td><td>Rust</td><td>blind-signed credentials, presentations, per-position nullifiers</td><td>Registration (stage 2)</td></tr>
+    <tr><td>packages/saksi-protocol</td><td>protobuf, Rust, Go</td><td>the wire format (wire.proto) and golden test vectors shared by Rust and Go</td><td>Published test vectors</td></tr>
+    <tr><td>packages/saksi-auditor</td><td>Rust</td><td>the synthetic population generator, the streaming verifier, ground-truth tables</td><td>Open-source verifier; data collection</td></tr>
+    <tr><td>packages/saksi-demo</td><td>Rust</td><td>the command line: gen, gen-ground-truth, audit, audit-stream</td><td>Verifier entry point</td></tr>
+    <tr><td>packages/saksi-bulletin/chaincode</td><td>Go</td><td>14 contract functions, plus cdsverify, credverify and sigverify</td><td>Fabric chaincode</td></tr>
+    <tr><td>packages/saksi-bulletin/client-sdk</td><td>Go</td><td>gateway connection, ledger receipts, chain walk, the load driver (bench)</td><td>Blockchain integration</td></tr>
+    <tr><td>packages/saksi-bulletin/network</td><td>shell, YAML</td><td>the Fabric test network and its declared orderer batch parameters</td><td>Table 3.12 environment</td></tr>
+    <tr><td>packages/saksi-campaign</td><td>Go, HTML</td><td>the research console, its wizard, campaigns, the attack timeline</td><td>Evaluation tool (Appendix C)</td></tr>
+    <tr><td>packages/saksi-ffi-flutter, saksi-ffi-tauri</td><td>Rust</td><td>bindings for mobile and desktop clients</td><td>Flutter and Tauri clients; not on the evaluated path</td></tr>
+    <tr><td>tools</td><td>shell</td><td>up.sh, tier.sh, ladder.sh, t3-restart.sh</td><td>Deployment steps; validation ladder</td></tr>
+  </tbody>
+</table>
+
+<h2>BalotaChain directories: what is live and what is legacy</h2>
+<table>
+  <thead><tr><th style="width:26%">Directory</th><th style="width:10%">Status</th><th>What it holds</th></tr></thead>
+  <tbody>
+    <tr><td>apps/admin</td><td>Live</td><td>Election admin web app: create an election, check the population, run it, open the ceremony, publish, verify</td></tr>
+    <tr><td>apps/trustee</td><td>Live</td><td>Trustee web app: sign in, submit your own shares, publish once the threshold is met</td></tr>
+    <tr><td>apps/auditor</td><td>Live</td><td>Public bulletin board: results after publication, integrity checks, verify a tracking code</td></tr>
+    <tr><td>packages/ui</td><td>Live</td><td>Shared design system (@balotachain/ui) used by the three apps</td></tr>
+    <tr><td>docs</td><td>Live</td><td>CLAIMS.md, manuscript-amendments.md, desktop-runs evidence, the cost model</td></tr>
+    <tr><td>apps/voter</td><td>Legacy</td><td>Flutter screens from the one-voter demo; not connected to the console</td></tr>
+    <tr><td>apps/*/src-tauri</td><td>Legacy</td><td>Tauri desktop shells over a file-backed stand-in; no longer built</td></tr>
+    <tr><td>crates/*, services/fabric-adapter</td><td>Legacy</td><td>The path from before the console: file store, HTTP gateway, one-voter runner, read-only chain adapter</td></tr>
+  </tbody>
+</table>
+<p class="note">The three live apps are built into one folder and served by the saksi console at /admin/, /trustee/ and /board/, on the same origin as its API. That is why they have no backend of their own, and why the console's origin checks and session cookie protect them unchanged.</p>
+
+<h2>Figure 3.3's 7 stages, located in code</h2>
+<table>
+  <thead><tr><th style="width:15%">Stage</th><th style="width:47%">What the code does</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>1. Setup</td><td>The generator builds the election parameters and the DKG transcript; the chaincode records them (CreateElection, PublishDKGTranscript).</td><td>saksi-auditor/src/fixtures.rs (gen_prologue); saksi-bulletin/chaincode/contract.go</td></tr>
+    <tr><td>2. Registration</td><td>One issuer keypair per run; one blind-signed credential per synthetic voter.</td><td>fixtures.rs (build_voter); saksi-credentials/src/issuance.rs</td></tr>
+    <tr><td>3. Voting</td><td>One ciphertext per candidate, each with a CDS proof, plus a per-position nullifier.</td><td>fixtures.rs (build_voter); saksi-crypto/src/nizk/cds.rs</td></tr>
+    <tr><td>4. Submission</td><td>Ballots go through a timed window. The chaincode checks, in order: decode, shape, credential signature, election exists and is open, nullifier unspent, CDS proof.</td><td>saksi-campaign/executor.go (submitBallots); chaincode/contract.go (SubmitBallot)</td></tr>
+    <tr><td>5. Aggregation</td><td>The verifier sums eligible ballots per contest as it streams them. Nothing is accumulated on-chain.</td><td>saksi-auditor/src/lib.rs (audit_streaming_chunked)</td></tr>
+    <tr><td>6. Tally ceremony</td><td>Trustees submit shares; the console refuses to publish below the threshold; the chaincode refuses a tally without threshold-many valid trustee signatures.</td><td>saksi-campaign/ceremony.go; chaincode/contract.go (PublishTally); chaincode/sigverify</td></tr>
+    <tr><td>7. Verification</td><td>audit-stream re-derives the result from the published files, and for on-chain runs from the chain's own copy as well.</td><td>saksi-auditor/src/demo.rs; saksi-campaign/ledger_dump.go</td></tr>
+  </tbody>
+</table>
+<p class="note">Stage 5 is where code and manuscript differ most. Algorithm 4's per-precinct sub-accumulators were not built: with no on-chain accumulator there is no hot key to contend for, and the verifier recomputes every sum from the ballots. The change is written up in docs/manuscript-amendments.md; know that it exists before you defend Algorithm 4.</p>
+
+<h2>The verifier's 10 checks (Table 3.11), located in code</h2>
+<table>
+  <thead><tr><th style="width:36%">Check</th><th style="width:34%">Verifier check id (saksi-auditor)</th><th>Also enforced on-chain?</th></tr></thead>
+  <tbody>
+    <tr><td>(1) every recorded transaction is valid</td><td>ballot.decode, ballot.shape</td><td>Yes, decode and shape gates at endorsement</td></tr>
+    <tr><td>(2) each ballot's credential is valid</td><td>ballot.credential, ballot.issuer_binding</td><td>Yes, credential gate</td></tr>
+    <tr><td>(3) every nullifier is unique</td><td>nullifier.unique</td><td>Yes, nullifier gate</td></tr>
+    <tr><td>(4) every ciphertext is well-formed</td><td>ballot.shape</td><td>Yes, shape gate</td></tr>
+    <tr><td>(5) every ballot's disjunctive proof</td><td>ballot.cds_proof</td><td>Yes, cds gate</td></tr>
+    <tr><td>(6) the homomorphic aggregate is correct</td><td>tally.aggregate</td><td>No</td></tr>
+    <tr><td>(7) each trustee's Chaum-Pedersen proof</td><td>decryption.cp_proof</td><td>Presence only (cp-presence)</td></tr>
+    <tr><td>(8) at least three of five trustees contributed</td><td>decryption.threshold, tally.signatures</td><td>Yes, the PublishTally signature gate</td></tr>
+    <tr><td>(9) the announced tally equals the decrypted aggregate</td><td>tally.homomorphic_sum</td><td>No</td></tr>
+    <tr><td>(10) append-only consistency of the ledger</td><td>VerifyChain in client-sdk/ledger.go, run by the console's verify-only step</td><td>Not a chaincode check</td></tr>
+  </tbody>
+</table>
+<p class="note">Two more checks exist that the manuscript does not list: stream.completeness (as many ballots audited as the header declares) and tally.accuracy (E = 0 against the seeded ground truth). Every check has a stable id, and attack verdicts are scored against those ids.</p>
+
+<h2>The research console behind Chapter IV</h2>
+<ul>
+  <li><b>Single election:</b> through the console's wizard or the admin app. Generate, check the data, encrypt and record, trustee ceremony, verify, then attack it.</li>
+  <li><b>Measurement campaign:</b> warm-ups and measured repetitions of one configuration, summarised in summary.csv. Attacks are always off, because a security run perturbs timing.</li>
+  <li><b>Gates before a run:</b> the validation ladder (1, 10, 100 and 1,000 voters) must have passed on the same build before any larger tier; the console also refuses a tier that will not fit the disk or memory, or whose longest phase would outlast the phase timeout.</li>
+  <li><b>Attack timeline:</b> the lifecycle pauses before ballots, part-way through submission, after the close and during the ceremony. A PASS counts only when the attack was refused by the gate it targets; a refusal by any other gate is INCONCLUSIVE.</li>
+  <li><b>Resilience (T3):</b> a fault stops the peer part-way through submission; resume submits only what the chain lacks and closes the election; verify-only reconciles the chain against the run.</li>
+  <li><b>Evidence per run:</b> journal.ndjson (line 1 records the environment and commits), perf.csv, correctness.csv, negative-tests.csv, and a campaign export zip for the cost model.</li>
+</ul>
+<p class="note">This is your answer on traceability (Software development, pp. 42 to 44): every run folder names the saksi commit in run.json and in journal line 1, and a failed repetition is recorded with its reason rather than dropped.</p>
+
+<h2>The browser apps and the console API</h2>
+<table>
+  <thead><tr><th style="width:18%">App</th><th style="width:52%">Calls</th><th>Who may call</th></tr></thead>
+  <tbody>
+    <tr><td>Admin</td><td>POST /generate, GET /api/check, POST /ceremony/start, POST /verify</td><td>Admin session</td></tr>
+    <tr><td>Trustee</td><td>POST /ceremony/submit (own shares only), POST /ceremony/publish</td><td>Trustee session; publish by any signed-in user</td></tr>
+    <tr><td>Public board</td><td>GET /api/board, GET /api/verify-code</td><td>Anyone</td></tr>
+  </tbody>
+</table>
+<p class="note">Sign-in is demo-grade and you should say so: users in a file with bcrypt passwords, sessions in memory, no TLS termination, the console bound to localhost by default. A trustee's identity comes from the session, never from the link, so a trustee cannot submit another trustee's shares.</p>
+
+<h2>Easy-to-confuse pairs: manuscript versus code</h2>
+<table>
+  <thead><tr><th style="width:36%">The manuscript says</th><th>The code does</th></tr></thead>
+  <tbody>
+    <tr><td>Flutter voter application; Tauri trustee console</td><td>Browser apps served by the console (admin, trustee, board). The Flutter and Tauri code is legacy. No person casts a ballot on the evaluated path; the generator builds every voter, as Chapter III's synthetic data design requires.</td></tr>
+    <tr><td>Private keys and nonces are uniformly random from the OS CSPRNG (Algorithms, pp. 39 to 42)</td><td>True for encryption nonces, proofs, credentials and the issuer key. Not true for the generator's DKG dealers, whose polynomial coefficients are fixed in fixtures.rs.</td></tr>
+    <tr><td>Chaincode with three gates</td><td>Named gates. A ballot passes decode, shape, credential, election-exists, election-open, nullifier, dkg-missing and cds; DKG transcripts, partials and tallies have their own.</td></tr>
+    <tr><td>Per-precinct sub-accumulators (Algorithm 4)</td><td>Not built. Aggregation happens in the verifier, so there is no hot key.</td></tr>
+    <tr><td>Threshold enforced by the console, not the chaincode (this reviewer's Panel Q&amp;A)</td><td>Changed. The chaincode now refuses a tally unless every signature verifies and at least threshold distinct trustees signed. Chaum-Pedersen proofs are still only checked for presence on-chain.</td></tr>
+    <tr><td>The on-chain path has not been executed end to end (this reviewer's Known soft spots)</td><td>No longer true. It has been run on the desktop Fabric network, and the runs are recorded in balotachain docs/desktop-runs.</td></tr>
+    <tr><td>Five trustees, three of five</td><td>The wizard's default. The console accepts any t of n up to 15 trustees.</td></tr>
+  </tbody>
+</table>
+
+<h2>Panel Q&amp;A: questions about the code</h2>
+<table class="dense">
+  <thead><tr><th style="width:28%">Likely question</th><th style="width:48%">Answer from the code</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Which commit produced your results?</td><td>Every run records the saksi commit in run.json and journal line 1, and the ladder that unlocks large tiers is tied to one build.</td><td>saksi-campaign/env.go, runstore.go</td></tr>
+    <tr><td>Does the chaincode verify proofs, or trust the client?</td><td>It verifies the CDS proof and the issuer's signature on the credential at endorsement, and refuses with a named gate. It does not verify partial-decryption proofs; the verifier does.</td><td>chaincode/contract.go (SubmitBallot); chaincode/cdsverify</td></tr>
+    <tr><td>Is the verifier independent of the code that made the election?</td><td>It is a separate program that reads only published files, and for on-chain runs it also audits the chain's own copy. It shares Saksi's Rust crates with the generator, so the Go chaincode's proof check is the independent second implementation for ballots.</td><td>saksi-auditor/src/demo.rs; saksi-campaign/ledger_dump.go</td></tr>
+    <tr><td>How do you know an attack was stopped by the right check?</td><td>Every refusal carries a gate id and a PASS needs the declared one; anything else is INCONCLUSIVE. Earlier on-chain verdicts scored without this were discarded, not reused.</td><td>saksi-campaign/scenarios.go (classifyLive, classifyAudit)</td></tr>
+    <tr><td>Could someone decrypt your generated elections without the trustees?</td><td>Yes, today. The generator's DKG dealers are fixed, so the secret key is derivable from the source. The runs demonstrate correctness and verifiability, not ballot secrecy. Say this before it is found.</td><td>saksi-auditor/src/fixtures.rs (gen_prologue)</td></tr>
+    <tr><td>Who can submit to the chaincode?</td><td>Any identity on the channel; no function checks the caller. Every submission still passes the gates, so the risk is denial of service (claiming an election id first), not forgery.</td><td>chaincode/contract.go</td></tr>
+    <tr><td>What happens if a peer fails mid-election?</td><td>The T3 fault stops the peer during submission. Resume submits only the ballots the chain does not hold, then closes the election, and verify-only reconciles the chain against the run.</td><td>saksi-campaign/fault.go; executor.go (resumeAndClose)</td></tr>
+    <tr><td>Why is ballot ordering not protected?</td><td>The tally does not depend on order, and no check looks at it. Reordering is recorded as a SKIPPED attack instead of being claimed as detected.</td><td>saksi-campaign/scenarios.go (Registry)</td></tr>
+    <tr><td>How does a voter check their ballot?</td><td>On the public board, with a tracking code made from the first 8 hex digits of the ballot's nullifier.</td><td>saksi-campaign/board.go (handleVerifyCode)</td></tr>
+  </tbody>
+</table>
+
+<h2>Known soft spots in the code (know these before a panelist finds them)</h2>
+<ul>
+  <li><b>Fixed DKG dealers.</b> The generator's dealer coefficients are fixed, so generated elections are not secret from anyone who reads the source. A run with real secrecy needs random dealer polynomials held by separate trustees.</li>
+  <li><b>The ceremony is simulated.</b> The generator produces every partial decryption and signature in one process, and the console forwards them when a trustee acts. The cryptography is real; separation between trustees is not exercised.</li>
+  <li><b>No caller authorization in the chaincode.</b> Anyone on the channel can call any function; the gates still apply to what they submit.</li>
+  <li><b>Ordering is not detected</b> on-chain or by the verifier.</li>
+  <li><b>Chaum-Pedersen proofs are checked for presence on-chain.</b> A share with a wrong proof is recorded and caught only by the verifier.</li>
+  <li><b>One machine.</b> The test network's two organisations and single orderer run on one computer, so distributed trust between operators is not demonstrated.</li>
+  <li><b>No live voter.</b> The Flutter app is not connected; the Tauri shells and the one-voter runner in crates are left over from the earlier demo and are not built by CI.</li>
+  <li><b>An open gap on the public board.</b> Its download links still point at the admin-only export route, although the console already serves a public copy of the verification files.</li>
+</ul>
+<p class="closing">The code is the strongest evidence you have. For every part of it, know whether it is implemented, demonstrated, or a stated limit, and say which before you are asked.</p>
+
+</body>
+</html>

@@ -328,3 +328,7 @@ pdf-handouts/
 
 # Assembled browser bundles served by the saksi-campaign console (tools/build-web.*)
 dist-web/
+
+# Local tool state: gstack browser locks, agent worktrees
+.gstack/
+.claude/worktrees/
