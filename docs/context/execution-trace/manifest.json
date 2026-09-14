@@ -1,0 +1,929 @@
+[
+ {
+  "key": "guard",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "Server.guard",
+  "why": "The first thing every request meets. A loopback bind alone does not stop a web page in the operator's browser from posting to 127.0.0.1, so the Host header must be on the allowlist and any browser Origin must be same-origin.",
+  "name": "guard"
+ },
+ {
+  "key": "authorize",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/auth.go",
+  "lang": "go",
+  "symbol": "Server.authorize",
+  "why": "The single place roles are enforced. It resolves the session cookie, looks up the route the mux will actually run, and answers 401 or 403 before the handler sees the request. With no --auth-file it passes everything through.",
+  "name": "authorize"
+ },
+ {
+  "key": "routeAccess",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/auth.go",
+  "lang": "go",
+  "symbol": "var:routeAccess",
+  "why": "One table decides who may call what. It is keyed by the mux pattern, so it cannot disagree with the router, and a route missing from it defaults to admin rather than public.",
+  "name": "routeAccess"
+ },
+ {
+  "key": "handleLogin",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/auth.go",
+  "lang": "go",
+  "symbol": "handleLogin",
+  "why": "Password sign-in against a bcrypt users file. Failures are rate-limited per address and username, and success sets an HttpOnly, SameSite=Strict session cookie.",
+  "name": "handleLogin"
+ },
+ {
+  "key": "claim",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "claim",
+  "why": "The single-run lock. A second phase on a busy run, anything while the peer is stopped by a fault, and anything during a network reset are all refused here with the reason.",
+  "name": "claim"
+ },
+ {
+  "key": "dispatch",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "dispatch",
+  "why": "Every phase route funnels through here: one running phase per run, bounded by the phase timeout, 202 returned at once and progress delivered over the event stream.",
+  "name": "dispatch"
+ },
+ {
+  "key": "handleGenerate",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "handleGenerate",
+  "why": "Step 1's entry point. It validates the config, refuses on-chain mode when no Fabric network is configured, and runs the admission gates before any run folder exists.",
+  "name": "handleGenerate"
+ },
+ {
+  "key": "admit",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "admit",
+  "why": "Every path that creates a run goes through these gates, so a second entry point cannot quietly skip them. A tier that cannot produce a trustworthy run costs nothing but the error message.",
+  "name": "admit"
+ },
+ {
+  "key": "ladderGate",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "ladderGate",
+  "why": "Large tiers are refused until the 1, 10, 100 and 1,000-voter ladder has passed on this exact build. A console that cannot name its own commit is refused too.",
+  "name": "ladderGate"
+ },
+ {
+  "key": "diskGate",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "diskGate",
+  "why": "Projects the ledger (on-chain) or the run folder (offline) and refuses a run that will not fit, with the numbers in the message. A volume it cannot read does not block the run.",
+  "name": "diskGate"
+ },
+ {
+  "key": "memoryGate",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "memoryGate",
+  "why": "Projects the auditor's peak memory and refuses a run above what the host says is available. Hosts that cannot report it are not refused.",
+  "name": "memoryGate"
+ },
+ {
+  "key": "Validate",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/config.go",
+  "lang": "go",
+  "symbol": "ElectionConfig.Validate",
+  "why": "The single source of truth for a valid election. The UI mirrors these checks only for instant feedback; this is the gate every posted config passes.",
+  "name": "Validate"
+ },
+ {
+  "key": "Generate",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.Generate",
+  "why": "Opens the run's journal with the environment snapshot, then shells the Rust generator. The Go layer builds an argv and does no cryptography itself.",
+  "name": "Generate"
+ },
+ {
+  "key": "OpenJournal",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/journal.go",
+  "lang": "go",
+  "symbol": "OpenJournal",
+  "why": "Line 1 of journal.ndjson is the environment the run executed in: Go runtime, the saksi-demo version or hash, the commits of the generator and the console, the declared orderer batch, Docker, container limits, kernel and CPU. A probe that fails is recorded as null, by name.",
+  "name": "OpenJournal"
+ },
+ {
+  "key": "cmd_gen",
+  "repo": "saksi",
+  "path": "packages/saksi-demo/src/main.rs",
+  "lang": "rust",
+  "symbol": "cmd_gen",
+  "why": "The saksi-demo gen entry point: parses the flags, validates the parameters, then writes the stream in chunks, or in a single pass with --chunk 0.",
+  "name": "cmd_gen"
+ },
+ {
+  "key": "write_election_stream_chunked",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/stream.rs",
+  "lang": "rust",
+  "symbol": "write_election_stream_chunked",
+  "why": "Builds voters a chunk at a time, in parallel inside the chunk, and writes them in voter order before the next chunk starts, so memory is bounded by a chunk rather than the population.",
+  "name": "write_election_stream_chunked"
+ },
+ {
+  "key": "gen_prologue",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "gen_prologue",
+  "why": "Everything that exists once per election: the parameters, the DKG transcript and the credential issuer's keypair. Every dealer polynomial and the issuer key come from OsRng, so no two elections share a key.",
+  "name": "gen_prologue"
+ },
+ {
+  "key": "random_dealers",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "random_dealers",
+  "why": "One dealer per trustee, each drawn by Dealer::random. The generator's elections are published, so their secret key must not be derivable from this source.",
+  "name": "random_dealers"
+ },
+ {
+  "key": "Dealer_random",
+  "repo": "saksi",
+  "path": "packages/saksi-crypto/src/dkg.rs",
+  "lang": "rust",
+  "symbol": "Dealer::random",
+  "why": "A dealer's polynomial of degree threshold - 1, every coefficient from a CSPRNG. The constant term is this dealer's contribution to the election's secret key; before saksi #50 the generator used fixed coefficients instead.",
+  "name": "Dealer::random"
+ },
+ {
+  "key": "build_voter",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "build_voter",
+  "why": "One voter end to end: issue a credential, then per position present it (the nullifier) and encrypt and CDS-prove one bit per candidate. It depends only on its inputs and its own randomness, so many run at once.",
+  "name": "build_voter"
+ },
+ {
+  "key": "realistic_quotas",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "realistic_quotas",
+  "why": "How the realistic profile decides a race: a reserved share apportioned down the ranks, in integer arithmetic so the same parameters give the same population on any machine.",
+  "name": "realistic_quotas"
+ },
+ {
+  "key": "select",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "SelectionPlan::select",
+  "why": "Which candidate a voter picks for a position. Deterministic from the voter index and the plan, which is what lets anyone regenerate the ground truth from the parameters alone.",
+  "name": "select"
+ },
+ {
+  "key": "tally_selections",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "tally_selections",
+  "why": "Ground truth is counted from an explicit record of the selections, never as a side effect of building ciphertexts. That independence is what gives E = 0 its meaning.",
+  "name": "tally_selections"
+ },
+ {
+  "key": "sign_tally",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/fixtures.rs",
+  "lang": "rust",
+  "symbol": "sign_tally",
+  "why": "Each trustee signs the published totals with a Schnorr proof of knowledge of its DKG share, which is what the chaincode's threshold gate and the auditor's tally.signatures check.",
+  "name": "sign_tally"
+ },
+ {
+  "key": "write_ground_truth_csvs",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/ground_truth.rs",
+  "lang": "rust",
+  "symbol": "write_ground_truth_csvs",
+  "why": "The plaintext tables of Appendix A. No cryptography runs here, which is why ground-truth mode reaches the 3.5-million-voter tier.",
+  "name": "write_ground_truth_csvs"
+ },
+ {
+  "key": "RunCheck",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/check.go",
+  "lang": "go",
+  "symbol": "Executor.RunCheck",
+  "why": "The data-validation gate before encryption. It streams the ballot table, so the capstone tiers audit in bounded memory, and writes its report into the run folder.",
+  "name": "RunCheck"
+ },
+ {
+  "key": "recountBallots",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/check.go",
+  "lang": "go",
+  "symbol": "recountBallots",
+  "why": "Recounts the ballot table from disk, checking each row's shape and voter ordinal as it goes, independently of the published summary.",
+  "name": "recountBallots"
+ },
+ {
+  "key": "compareToSummary",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/check.go",
+  "lang": "go",
+  "symbol": "compareToSummary",
+  "why": "Holds the independent recount against the published tally, contest by contest. This is the check the whole gate exists for.",
+  "name": "compareToSummary"
+ },
+ {
+  "key": "CeremonyStart",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "Executor.CeremonyStart",
+  "why": "Step 4's entry point: loads the bundle and either drives the on-chain lifecycle to the close or records a local ceremony. Every outcome is stamped, so a failed start reaches run.end.",
+  "name": "CeremonyStart"
+ },
+ {
+  "key": "bundleFrom",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "bundleFrom",
+  "why": "Builds bundle.json from the header step 2 wrote, pointing at ballots.ndjson rather than inlining ballots. The election is never regenerated mid-ceremony.",
+  "name": "bundleFrom"
+ },
+ {
+  "key": "lifecycle",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.lifecycle",
+  "why": "Loads the cached bundle and returns a step function bound to this run: one ledger call, one receipt, one progress event.",
+  "name": "lifecycle"
+ },
+ {
+  "key": "setupOnChain",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.setupOnChain",
+  "why": "The lifecycle prefix that must precede any trustee action: CreateElection, the DKG transcript, every ballot, then CloseElection, with the attack plan's pause points between them.",
+  "name": "setupOnChain"
+ },
+ {
+  "key": "submitBallots",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.submitBallots",
+  "why": "The measured ballot window. Only submission and commit status run inside it; receipts, files and journal writes happen outside, so the numbers are the chain's.",
+  "name": "submitBallots"
+ },
+ {
+  "key": "benchRun",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bench/driver.go",
+  "lang": "go",
+  "symbol": "Run",
+  "why": "The load driver: up to Concurrency ballots in flight, every result recorded, a dropped ballot counted rather than swallowed. Serial submission would measure the client, not Fabric.",
+  "name": "Run"
+ },
+ {
+  "key": "Submit",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "Submit",
+  "why": "Submits one transaction and waits for its commit status, with no query call, which makes it the part of a submission that is safe to time.",
+  "name": "Submit"
+ },
+ {
+  "key": "collectReceipts",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "collectReceipts",
+  "why": "After the window, fetches receipts one block at a time, so a thousand ballots in a hundred blocks cost a hundred fetches. A block it cannot fetch is stamped, not fatal.",
+  "name": "collectReceipts"
+ },
+ {
+  "key": "ReceiptsForBlock",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "ReceiptsForBlock",
+  "why": "Fetches a block once and returns receipts for the given transactions it contains. The console reconciles anything missing against what it submitted.",
+  "name": "ReceiptsForBlock"
+ },
+ {
+  "key": "Lifecycle",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/receipts.go",
+  "lang": "go",
+  "symbol": "receiptsWriter.Lifecycle",
+  "why": "Writes a lifecycle receipt to receipts.csv and appends one line to trail.ndjson under the same lock. Append-only: the trail is never rewritten.",
+  "name": "Lifecycle"
+ },
+ {
+  "key": "SubmitBallot",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "SubmitBallot",
+  "why": "Where the chaincode earns its place: decode, shape, the issuer's signature on the credential, the election open, the nullifier unspent, then every CDS proof, at endorsement. Each refusal names its gate.",
+  "name": "SubmitBallot"
+ },
+ {
+  "key": "rejectAt",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "rejectAt",
+  "why": "Prefixes every refusal with gate=<id>:, a stable machine-readable name. The console reads it to say which check stopped an attack; a refusal by any other gate is not evidence about the one under test.",
+  "name": "rejectAt"
+ },
+ {
+  "key": "VerifyBinaryCDS",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/cdsverify/cdsverify.go",
+  "lang": "go",
+  "symbol": "VerifyBinaryCDS",
+  "why": "On-chain verification of the proof that a ciphertext encrypts 0 or 1, bound to the election, contest and nullifier. Byte-compatible with the Rust prover.",
+  "name": "VerifyBinaryCDS"
+ },
+ {
+  "key": "blockHeaderHash",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "blockHeaderHash",
+  "why": "Fabric stores no block hash, so a receipt's hash is recomputed as SHA-256 over the ASN.1-DER header, exactly as protoutil does.",
+  "name": "blockHeaderHash"
+ },
+ {
+  "key": "CreateElection",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "CreateElection",
+  "why": "Records the election parameters: version, a non-empty id, contests and trustees, threshold in range. An existing id is refused, which is also why a caller could front-run one.",
+  "name": "CreateElection"
+ },
+ {
+  "key": "PublishDKGTranscript",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "PublishDKGTranscript",
+  "why": "Records the DKG transcript once per election, checking its shape and that threshold and trustee count match the parameters. It does not check that commitments are valid points; the auditor does.",
+  "name": "PublishDKGTranscript"
+ },
+ {
+  "key": "SubmitPartialDecryption",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "SubmitPartialDecryption",
+  "why": "Records one trustee's share for one contest after the election closes: membership, shape, one per contest, and a Chaum-Pedersen proof that is present. The proof is verified off-chain.",
+  "name": "SubmitPartialDecryption"
+ },
+ {
+  "key": "pauseForAttacks",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/timeline.go",
+  "lang": "go",
+  "symbol": "Executor.pauseForAttacks",
+  "why": "Holds the lifecycle at a stage the run's plan lists until the operator runs or skips that stage's attacks, stamping each attack's mount context.",
+  "name": "pauseForAttacks"
+ },
+ {
+  "key": "pausedWindow",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/timeline.go",
+  "lang": "go",
+  "symbol": "pausedWindow",
+  "why": "Splits a security run's ballot window at the chosen fraction, mounts the ballots-stage attacks against the open election, then finishes. The halves are stitched back into one window.",
+  "name": "pausedWindow"
+ },
+ {
+  "key": "CeremonySubmit",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "Executor.CeremonySubmit",
+  "why": "Submits exactly one trustee's partial decryptions. Every other trustee's shares stay untouched, which is what makes the threshold visible.",
+  "name": "CeremonySubmit"
+ },
+ {
+  "key": "CeremonyStatus",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "Executor.CeremonyStatus",
+  "why": "The roster and the quorum. On-chain the ledger is consulted as the authority; offline the local ceremony file is.",
+  "name": "CeremonyStatus"
+ },
+ {
+  "key": "partialsByTrustee",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "partialsByTrustee",
+  "why": "Groups the bundle's partial decryptions by the trustee id inside each protobuf rather than by array position, so a layout change cannot hand a trustee someone else's shares.",
+  "name": "partialsByTrustee"
+ },
+ {
+  "key": "CeremonyPublish",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "Executor.CeremonyPublish",
+  "why": "Publishes the tally only once the threshold is met. Below it, nothing is submitted and the route answers 409.",
+  "name": "CeremonyPublish"
+ },
+ {
+  "key": "tallyToPublish",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ceremony.go",
+  "lang": "go",
+  "symbol": "tallyToPublish",
+  "why": "Keeps only the signatures of trustees who actually submitted, so the chaincode's count reflects the ceremony that happened rather than the full set the generator holds.",
+  "name": "tallyToPublish"
+ },
+ {
+  "key": "PublishTally",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "PublishTally",
+  "why": "The chaincode's threshold gate: the election closed, one total per contest, no earlier tally, every signature valid and at least threshold distinct signers over these exact totals.",
+  "name": "PublishTally"
+ },
+ {
+  "key": "verifyTallySignatures",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "verifyTallySignatures",
+  "why": "Rejects a tally carrying any bad signature, not only a shortfall, so the chaincode and the auditor can never disagree about the same bytes.",
+  "name": "verifyTallySignatures"
+ },
+ {
+  "key": "VerifySchnorr",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/sigverify/sigverify.go",
+  "lang": "go",
+  "symbol": "VerifySchnorr",
+  "why": "Checks a 64-byte Schnorr signature with a transcript identical to the Rust verifier, under a key derived from the DKG transcript alone.",
+  "name": "VerifySchnorr"
+ },
+ {
+  "key": "verify",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.verify",
+  "why": "Step 6's body: dump and audit the ledger's copy, audit the console's copy, compare them, write correctness.csv, then decide run.end.",
+  "name": "verify"
+ },
+ {
+  "key": "auditLedger",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.auditLedger",
+  "why": "Reads the chain's own record of the run into ledger/ and audits it with the same auditor. A dump that fails is recorded as not run, never as a verdict.",
+  "name": "auditLedger"
+ },
+ {
+  "key": "dumpLedger",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ledger_dump.go",
+  "lang": "go",
+  "symbol": "dumpLedger",
+  "why": "Pages through ListNullifiers and GetBallots, writing each page before asking for the next, and rebuilds a header from the on-chain parameters, DKG, partials and tally.",
+  "name": "dumpLedger"
+ },
+ {
+  "key": "compareLedger",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ledger_dump.go",
+  "lang": "go",
+  "symbol": "compareLedger",
+  "why": "Are the chain's record and the console's the same election? Same ballots by nullifier, same aggregate ciphertexts, both compared order-independently.",
+  "name": "compareLedger"
+ },
+ {
+  "key": "audit_stream_dir_full",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/demo.rs",
+  "lang": "rust",
+  "symbol": "audit_stream_dir_full",
+  "why": "The audit-stream entry point: reads the header, opens the ballot stream without loading it, builds the thread pool from SAKSI_AUDIT_THREADS, and reports findings and timings.",
+  "name": "audit_stream_dir_full"
+ },
+ {
+  "key": "audit_streaming_chunked",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/lib.rs",
+  "lang": "rust",
+  "symbol": "audit_streaming_chunked",
+  "why": "Verifies ballots in parallel batches, then folds findings, nullifiers and the aggregate serially in stream order, so the result is byte-identical to a one-thread run.",
+  "name": "audit_streaming_chunked"
+ },
+ {
+  "key": "verify_ballot",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/ballot.rs",
+  "lang": "rust",
+  "symbol": "verify_ballot",
+  "why": "Every per-ballot check: decode, shape, each CDS proof, the credential presentation and its issuer binding. Only a ballot that passes both proof families joins the tally.",
+  "name": "verify_ballot"
+ },
+ {
+  "key": "NullifierTracker",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/lib.rs",
+  "lang": "rust",
+  "symbol": "struct:NullifierTracker",
+  "why": "The double-vote check over a stream: one 32-byte key and a first-use index per ballot, nothing else retained.",
+  "name": "NullifierTracker"
+ },
+ {
+  "key": "verify_partial_decryptions",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/decryption.rs",
+  "lang": "rust",
+  "symbol": "verify_partial_decryptions",
+  "why": "Checks every trustee's Chaum-Pedersen proof against the aggregate the stream produced, and that enough distinct trustees contributed.",
+  "name": "verify_partial_decryptions"
+ },
+ {
+  "key": "lagrange_coefficient_at_zero",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/decryption.rs",
+  "lang": "rust",
+  "symbol": "lagrange_coefficient_at_zero",
+  "why": "The weight each participating trustee's share gets when the shares are combined at x = 0. Duplicate indices are refused.",
+  "name": "lagrange_coefficient_at_zero"
+ },
+ {
+  "key": "verify_tally",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/tally.rs",
+  "lang": "rust",
+  "symbol": "verify_tally",
+  "why": "Combines the shares, recovers each total by bounded discrete log, and checks shape, range, the homomorphic sum and accuracy against ground truth.",
+  "name": "verify_tally"
+ },
+ {
+  "key": "decode_tally",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/tally.rs",
+  "lang": "rust",
+  "symbol": "decode_tally",
+  "why": "Turns a plaintext point back into a count. The count is bounded by the number of ballots, so the search always terminates.",
+  "name": "decode_tally"
+ },
+ {
+  "key": "bsgs_decode",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/tally.rs",
+  "lang": "rust",
+  "symbol": "bsgs_decode",
+  "why": "Baby-step giant-step: O(sqrt(max)) time and memory, used from 50,000 ballots up; below that a linear scan returns the identical answer.",
+  "name": "bsgs_decode"
+ },
+ {
+  "key": "verify_tally_signatures",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/tally.rs",
+  "lang": "rust",
+  "symbol": "verify_tally_signatures",
+  "why": "Strict: no signatures is a failure, and so is any unknown or duplicated signer, any signature that does not verify, or fewer than threshold valid ones.",
+  "name": "verify_tally_signatures"
+ },
+ {
+  "key": "writeCorrectnessCSV",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "writeCorrectnessCSV",
+  "why": "One self-contained row per contest: ground truth, decoded total, E, the recovered point, the aggregate it came from, and the artifact hashes, plus ledger rows on-chain.",
+  "name": "writeCorrectnessCSV"
+ },
+ {
+  "key": "Finalise",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/journal.go",
+  "lang": "go",
+  "symbol": "Finalise",
+  "why": "Decides the run's verdict and stamps run.end, which is what campaigns, the runs list and summary.csv read.",
+  "name": "Finalise"
+ },
+ {
+  "key": "runFailed",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/journal.go",
+  "lang": "go",
+  "symbol": "runFailed",
+  "why": "The failed-run predicate: a stage error, nothing submitted on-chain, a dropped ballot, a reconcile mismatch, any E not zero, or an interruption. The first clause that fires is the reason.",
+  "name": "runFailed"
+ },
+ {
+  "key": "Registry",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "Registry",
+  "why": "The attack catalogue. Each entry names its lifecycle stage, its chaincode gate and its auditor check, and the briefing text lives beside the mutation it describes.",
+  "name": "Registry"
+ },
+ {
+  "key": "runOneScenario",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "Executor.runOneScenario",
+  "why": "A simulated attack: audit the untouched copy as a positive control, apply the mutation, re-audit, classify.",
+  "name": "runOneScenario"
+ },
+ {
+  "key": "classifyAudit",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "classifyAudit",
+  "why": "PASS needs the declared check among the auditor's failures. Something else failing instead is INCONCLUSIVE: the attack was caught, but not by the gate under test.",
+  "name": "classifyAudit"
+ },
+ {
+  "key": "classifyLive",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "classifyLive",
+  "why": "PASS only when every gate id in the peer's refusal is the declared one. A refusal by an earlier gate, or one naming no gate, cannot be attributed and is INCONCLUSIVE.",
+  "name": "classifyLive"
+ },
+ {
+  "key": "mountLiveAttack",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "Executor.mountLiveAttack",
+  "why": "Applies the mutation to a copy and submits it to the live election. The verdict is inverted: a refusal is the ledger doing its job, and an accepted tampered artifact is a finding.",
+  "name": "mountLiveAttack"
+ },
+ {
+  "key": "preflight",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/preflight.go",
+  "lang": "go",
+  "symbol": "Server.preflight",
+  "why": "Checks the console and host against a planned run: Fabric, the declared orderer batch, the ladder, disk, memory, host load, audit threads and the phase timeout.",
+  "name": "preflight"
+ },
+ {
+  "key": "handleCampaigns",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/campaign.go",
+  "lang": "go",
+  "symbol": "handleCampaigns",
+  "why": "Starts a measurement campaign after preflight: warm-ups, measured repetitions, an optional sweep and burst. Attacks are forced off and one job runs at a time.",
+  "name": "handleCampaigns"
+ },
+ {
+  "key": "Repeat",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/repeat.go",
+  "lang": "go",
+  "symbol": "Repeat",
+  "why": "Runs the repetitions against the console's own API and writes summary.csv. A failed repetition is recorded, because the failure rate is one of the things a campaign reports.",
+  "name": "Repeat"
+ },
+ {
+  "key": "sweep",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/repeat.go",
+  "lang": "go",
+  "symbol": "repeatDriver.sweep",
+  "why": "Raises the offered rate each step, over a fixed wall-clock window, until committed throughput stops improving or a ballot drops; the last good step is the plateau.",
+  "name": "sweep"
+ },
+ {
+  "key": "RunLadder",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/repeat.go",
+  "lang": "go",
+  "symbol": "RunLadder",
+  "why": "Runs 1, 10, 100 and 1,000 voters through the API and records ladder.json for this build only if every tier passes the gate with E = 0.",
+  "name": "RunLadder"
+ },
+ {
+  "key": "handleNetworkReset",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/reset.go",
+  "lang": "go",
+  "symbol": "handleNetworkReset",
+  "why": "Rebuilds the Fabric network for a tier by running tools/tier.sh as a job. Admin, loopback and a typed RESET only, and never while anything else runs.",
+  "name": "handleNetworkReset"
+ },
+ {
+  "key": "handleFault",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/fault.go",
+  "lang": "go",
+  "symbol": "handleFault",
+  "why": "Arms the peer-restart fault on an eligible on-chain run. Admin, loopback and a typed RESTART only; arming makes the run a security run.",
+  "name": "handleFault"
+ },
+ {
+  "key": "newPeerFault",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/fault.go",
+  "lang": "go",
+  "symbol": "newPeerFault",
+  "why": "Stops the peer when the chosen share of ballots has been dispatched, keeps it down for the chosen time, and stamps the stop, restart and recovery in the journal.",
+  "name": "newPeerFault"
+ },
+ {
+  "key": "planResume",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "planResume",
+  "why": "Decides from the journal alone whether a run can be resumed, before anything is dispatched, so a refusal comes back as a 409 with its reason.",
+  "name": "planResume"
+ },
+ {
+  "key": "resumeAndClose",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.resumeAndClose",
+  "why": "Submits only the ballots the chain does not hold, then closes the election. A close that fails is retried by resuming again; one the chain already holds counts as done.",
+  "name": "resumeAndClose"
+ },
+ {
+  "key": "verifyOnly",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/executor.go",
+  "lang": "go",
+  "symbol": "Executor.verifyOnly",
+  "why": "Reconciles the chain's committed ballots against the run and walks the chain, submitting nothing. Required after a node-restart test.",
+  "name": "verifyOnly"
+ },
+ {
+  "key": "streamCampaignBundle",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/export_bundle.go",
+  "lang": "go",
+  "symbol": "streamCampaignBundle",
+  "why": "The thesis export: every run's files, the journal, lifecycle receipts, summary and preflight in one zip. A file that cannot be read aborts the download rather than leaving a hole.",
+  "name": "streamCampaignBundle"
+ },
+ {
+  "key": "serveBoardFile",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/board.go",
+  "lang": "go",
+  "symbol": "serveBoardFile",
+  "why": "Public verification downloads. The name must match an allowlist exactly, nothing is served while the board is sealed, and the headers are streamed with ground truth and voter ids emptied.",
+  "name": "serveBoardFile"
+ },
+ {
+  "key": "buildBoard",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/board.go",
+  "lang": "go",
+  "symbol": "buildBoard",
+  "why": "The public board: results only after publish, turnout stated as synthetic, the check list, and ledger enrichment when a network is reachable.",
+  "name": "buildBoard"
+ },
+ {
+  "key": "handleVerifyCode",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/board.go",
+  "lang": "go",
+  "symbol": "handleVerifyCode",
+  "why": "Looks a tracking code up by nullifier prefix in the published ballots. An ambiguous prefix is refused rather than guessed.",
+  "name": "handleVerifyCode"
+ },
+ {
+  "key": "handleCeremonySubmit",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "handleCeremonySubmit",
+  "why": "A signed-in trustee may submit only the trustee id in their session; any other id in the body is a 403.",
+  "name": "handleCeremonySubmit"
+ },
+ {
+  "key": "handleMe",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/auth.go",
+  "lang": "go",
+  "symbol": "handleMe",
+  "why": "Tells an app who is signed in and as which trustee, or 401. With auth off the route does not exist, which the apps read as auth off.",
+  "name": "handleMe"
+ },
+ {
+  "key": "mountWebDir",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "mountWebDir",
+  "why": "Serves the BalotaChain apps at /board/, /trustee/ and /admin/ from one folder, on the console's own origin, so the guard and the session cookie apply to them unchanged.",
+  "name": "mountWebDir"
+ },
+ {
+  "key": "ts_generateElection",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "generateElection",
+  "why": "The admin app's step 1: posts the form's ElectionConfig to /generate and returns the new run id.",
+  "name": "generateElection"
+ },
+ {
+  "key": "ts_startCeremony",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "startCeremony",
+  "why": "The admin app's step 3: posts /ceremony/start, which records the lifecycle and closes the election.",
+  "name": "startCeremony"
+ },
+ {
+  "key": "ts_publishTally",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "publishTally",
+  "why": "Posts /ceremony/publish. Below the threshold the console answers 409 and the app shows why.",
+  "name": "publishTally"
+ },
+ {
+  "key": "ts_stepFor",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/election.ts",
+  "lang": "ts",
+  "symbol": "stepFor",
+  "why": "Chooses which wizard step an existing election reopens at, from its run status and ceremony state.",
+  "name": "stepFor"
+ },
+ {
+  "key": "ts_getMe",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "getMe",
+  "why": "Called on load. It returns the session, or null when the console answers 404 because auth is off; a 401 propagates, and the app sends the user to its login screen.",
+  "name": "getMe"
+ },
+ {
+  "key": "ts_submitPartialDecryption",
+  "repo": "balotachain",
+  "path": "apps/trustee/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "submitPartialDecryption",
+  "why": "The trustee app's one write: submit this trustee's shares for the run.",
+  "name": "submitPartialDecryption"
+ },
+ {
+  "key": "ts_loadBoard",
+  "repo": "balotachain",
+  "path": "apps/auditor/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "loadBoard",
+  "why": "The public board polls this every four seconds, which is how it flips from sealed to published on its own.",
+  "name": "loadBoard"
+ },
+ {
+  "key": "ts_verifyTrackingCode",
+  "repo": "balotachain",
+  "path": "apps/auditor/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "verifyTrackingCode",
+  "why": "Checks a BC-XXXX-XXXX code's format in the browser, then asks the console whether a published ballot carries that nullifier prefix.",
+  "name": "verifyTrackingCode"
+ }
+]
