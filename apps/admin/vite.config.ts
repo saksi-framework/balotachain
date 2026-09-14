@@ -1,18 +1,40 @@
-import { defineConfig } from "vite";
+import { defineConfig, type ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
+// @ts-expect-error process is a nodejs global
+const console_ = process.env.VITE_CONSOLE_URL || "http://127.0.0.1:8090";
 
-// https://vite.dev/config/
+/**
+ * In production the saksi-campaign console serves this bundle itself at
+ * `/admin/`, so every API call is same-origin and carries the session cookie.
+ * In dev, Vite proxies the console's prefixes.
+ *
+ * `removeHeader("origin")` is load-bearing: the console's guard() rejects any
+ * POST whose Origin host differs from Host. `changeOrigin` rewrites Host to the
+ * console but forwards the browser's `Origin: http://localhost:1420`, so every
+ * write would 403. Stripping Origin puts the request in the no-browser-Origin
+ * branch the guard already allows. Production is same-origin, so nothing is
+ * weakened there.
+ */
+const consoleProxy: ProxyOptions = {
+  target: console_,
+  changeOrigin: true,
+  configure: (proxy) => {
+    proxy.on("proxyReq", (proxyReq) => proxyReq.removeHeader("origin"));
+  },
+};
+
 export default defineConfig(async () => ({
+  // The console mounts this app at /admin/, so assets must resolve there.
+  base: "/admin/",
   plugins: [react()],
-
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+  },
   server: {
     port: 1420,
     strictPort: true,
@@ -25,8 +47,21 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+    proxy: Object.fromEntries(
+      [
+        "/api",
+        "/runs",
+        "/export",
+        "/events",
+        "/generate",
+        "/verify",
+        "/ceremony",
+        "/board",
+        "/trustee",
+        "/trail",
+      ].map((prefix) => [prefix, consoleProxy]),
+    ),
   },
 }));
