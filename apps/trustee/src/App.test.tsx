@@ -1,11 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import type { Ceremony, RunView } from "./lib/bulletin";
+import { ApiError, type Ceremony, type RunView } from "./lib/bulletin";
 
 const listRunsMock = vi.fn();
 const loadCeremonyMock = vi.fn();
 const submitMock = vi.fn();
 const publishMock = vi.fn();
+const getMeMock = vi.fn();
+const loginMock = vi.fn();
+const logoutMock = vi.fn();
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
@@ -17,6 +20,9 @@ vi.mock("./lib/bulletin", async (importActual) => {
       submitMock(runId, trusteeId),
     publishTally: (runId: string) => publishMock(runId),
     subscribeEvents: () => () => {},
+    getMe: () => getMeMock(),
+    login: (u: string, p: string) => loginMock(u, p),
+    logout: () => logoutMock(),
   };
 });
 
@@ -84,6 +90,13 @@ beforeEach(() => {
   loadCeremonyMock.mockReset();
   submitMock.mockReset();
   publishMock.mockReset();
+  getMeMock.mockReset();
+  loginMock.mockReset();
+  logoutMock.mockReset();
+  // Default: a console without auth routes, the behaviour PR #54 shipped.
+  getMeMock.mockResolvedValue(null);
+  loginMock.mockResolvedValue(undefined);
+  logoutMock.mockResolvedValue(undefined);
   listRunsMock.mockResolvedValue([run]);
   loadCeremonyMock.mockResolvedValue(ceremony());
   submitMock.mockResolvedValue(undefined);
@@ -265,5 +278,141 @@ describe("trustee console", () => {
     expect(
       await screen.findByText(/no trustee authentication/i),
     ).toBeInTheDocument();
+  });
+});
+
+describe("trustee console with console auth on", () => {
+  const ppcrv = { username: "ppcrv", role: "trustee", trustee_id: "2" };
+
+  it("asks for a sign-in when there is no session, then shows the ceremony", async () => {
+    getMeMock
+      .mockRejectedValueOnce(new ApiError(401, "login required"))
+      .mockResolvedValue(ppcrv);
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText("Username"), {
+      target: { value: "ppcrv" },
+    });
+    // Nobody is acting yet, so the ?trustee link offers no identity switch.
+    expect(
+      screen.queryByRole("button", { name: "Not you?" }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "pw" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await waitFor(() => expect(loginMock).toHaveBeenCalledWith("ppcrv", "pw"));
+    expect(await screen.findByText("Trustee 2 of 5")).toBeInTheDocument();
+  });
+
+  it("shows the login refusal verbatim", async () => {
+    getMeMock.mockRejectedValue(new ApiError(401, "login required"));
+    loginMock.mockRejectedValue(new ApiError(401, "invalid credentials"));
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText("Username"), {
+      target: { value: "ppcrv" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "wrong" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByText("invalid credentials")).toBeInTheDocument();
+  });
+
+  // Identity comes from the session: no picker, and no ?trustee needed.
+  it("binds the trustee to the session, not the URL", async () => {
+    getMeMock.mockResolvedValue(ppcrv);
+    setUrl("?run=demo-2026-1");
+    render(<App />);
+    expect(await screen.findByText("Trustee 2 of 5")).toBeInTheDocument();
+    expect(screen.queryByText("Who are you?")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sign out" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/no trustee authentication/i),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Yes, submit my share/i }),
+    );
+    await waitFor(() =>
+      expect(submitMock).toHaveBeenCalledWith("demo-2026-1", "2"),
+    );
+  });
+
+  it("says so plainly when a trustee opens another trustee's link", async () => {
+    getMeMock.mockResolvedValue(ppcrv);
+    setUrl("?run=demo-2026-1&trustee=3");
+    render(<App />);
+    expect(
+      await screen.findByText(/This link is for trustee 3 \(NAMFREL\)/),
+    ).toBeInTheDocument();
+    // Still acting as PPCRV: the submit on offer is their own, never NAMFREL's.
+    expect(screen.getByText("Trustee 2 of 5")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Yes, submit my share/i }),
+    );
+    await waitFor(() =>
+      expect(submitMock).toHaveBeenCalledWith("demo-2026-1", "2"),
+    );
+    expect(submitMock).not.toHaveBeenCalledWith("demo-2026-1", "3");
+  });
+
+  it("returns to sign-in when a call answers 401", async () => {
+    getMeMock.mockResolvedValue(ppcrv);
+    submitMock.mockRejectedValue(new ApiError(401, "login required"));
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Yes, submit my share/i }),
+    );
+    expect(await screen.findByLabelText("Username")).toBeInTheDocument();
+  });
+
+  it("shows a 403 refusal verbatim", async () => {
+    getMeMock.mockResolvedValue(ppcrv);
+    submitMock.mockRejectedValue(
+      new ApiError(403, "trustees may submit only their own shares"),
+    );
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Yes, submit my share/i }),
+    );
+    expect(
+      await screen.findByText("trustees may submit only their own shares"),
+    ).toBeInTheDocument();
+  });
+
+  it("is read-only for an administrator", async () => {
+    getMeMock.mockResolvedValue({ username: "ops", role: "admin" });
+    render(<App />);
+    expect(
+      await screen.findByText(
+        /an administrator\. Trustees submit their own shares/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Submit Partial Decryption/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Who are you?")).not.toBeInTheDocument();
+  });
+
+  it("signs out back to the sign-in screen", async () => {
+    getMeMock.mockResolvedValue(ppcrv);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
+    await waitFor(() => expect(logoutMock).toHaveBeenCalled());
+    expect(await screen.findByLabelText("Username")).toBeInTheDocument();
   });
 });

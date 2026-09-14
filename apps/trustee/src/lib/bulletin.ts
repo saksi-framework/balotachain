@@ -81,14 +81,50 @@ export type ConsoleEvent = {
   msg: string;
 };
 
+/**
+ * A non-2xx answer, carrying the status so the app can tell "sign in" (401)
+ * from "not allowed" (403) from "no auth routes on this console" (404).
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/** `GET /api/me`. `trustee_id` is set for trustees only. */
+export type Session = {
+  username: string;
+  role: "admin" | "trustee";
+  trustee_id?: string;
+};
+
+/**
+ * The console's error text: `http.Error` writes plain prose, the auth routes
+ * write `{"error": "..."}`. Both are user-facing already.
+ */
+async function errorText(res: Response): Promise<string> {
+  const text = (await res.text()).trim();
+  try {
+    const body = JSON.parse(text) as { error?: unknown };
+    if (typeof body?.error === "string") return body.error;
+  } catch {
+    // plain text
+  }
+  return text;
+}
+
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(BASE + path, {
     signal,
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
-    throw new Error(
-      `${path} returned ${res.status}: ${(await res.text()).trim()}`,
+    throw new ApiError(
+      res.status,
+      `${path} returned ${res.status}: ${await errorText(res)}`,
     );
   }
   return (await res.json()) as T;
@@ -100,17 +136,40 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
  * see the result. The console's error bodies are already user-facing prose (the
  * threshold 409 in particular), so they are surfaced verbatim.
  */
-async function post(path: string, body: unknown): Promise<void> {
+async function post(path: string, body?: unknown): Promise<void> {
   const res = await fetch(BASE + path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(
-      (await res.text()).trim() || `request failed (${res.status})`,
+    throw new ApiError(
+      res.status,
+      (await errorText(res)) || `request failed (${res.status})`,
     );
   }
+}
+
+/**
+ * The signed-in user, or `null` when the console has no auth routes — a
+ * console without auth answers `/api/me` from its 404 catch-all, and the page
+ * then works as before, without a login. No session is a 401.
+ */
+export async function getMe(signal?: AbortSignal): Promise<Session | null> {
+  try {
+    return await get<Session>("/api/me", signal);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+export function login(username: string, password: string): Promise<void> {
+  return post("/api/login", { username, password });
+}
+
+export function logout(): Promise<void> {
+  return post("/api/logout");
 }
 
 export function listRuns(signal?: AbortSignal): Promise<RunView[]> {
@@ -126,7 +185,10 @@ export function loadCeremony(
   return get<Ceremony>(`/api/ceremony/${encodeURIComponent(runId)}`, signal);
 }
 
-/** Submits exactly one trustee's shares — one per contest. */
+/**
+ * Submits exactly one trustee's shares — one per contest. With console auth on
+ * the id must be the session's own: another trustee's id is a 403.
+ */
 export function submitPartialDecryption(
   runId: string,
   trusteeId: string,

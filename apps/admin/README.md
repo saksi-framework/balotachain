@@ -1,15 +1,24 @@
 # apps/admin
 
-Desktop client for election administrators.
+The election administrator's console: a browser app served by the
+saksi-campaign console at `/admin/` (built with `tools/build-web.{sh,ps1}` into
+`dist-web/admin`, served with `saksi-campaign serve --web-dir`).
 
-- **Platform:** Tauri v2 (Rust backend + TypeScript front end). Targets macOS, Linux, Windows.
-- **Crypto:** linked against the [Saksi framework](https://github.com/saksi-framework/saksi)'s `saksi-ffi-tauri`, consumed as a Cargo `git` dependency.
-- **Initialized by:** [issue #35](https://github.com/saksi-framework/balotachain/issues/35).
+It drives one election through the console API:
 
-Covers the election lifecycle:
+| Step | Console calls |
+|---|---|
+| Sign in | `GET /api/me`, `POST /api/login`, `POST /api/logout` |
+| Elections | `GET /runs`, `GET /api/capabilities` |
+| 1 Election | `POST /generate` (`ElectionConfig`) |
+| 2 Population (read-only) | `GET /api/runs/<id>/status`, `GET /api/check/<id>`, `GET /export/<id>/election.csv` |
+| 3 Run | `POST /ceremony/start`, `GET /events?run=`, `GET /api/ceremony/<id>` |
+| 4 Ceremony | `GET /api/ceremony/<id>`, `POST /ceremony/publish` |
+| 5 Results | `POST /verify`, `GET /export/<id>/correctness.csv` |
 
-- Election creation (races, options, trustees, threshold, bootstrap method).
-- Voter roll import and management.
-- Credential issuance under any of the pluggable bootstrap methods: WMSU SSO (OIDC), Student-ID + birthdate lookup, in-person QR token.
-- Election open and close orchestration.
-- Audit log of every administrative action.
+The Population step shows what the generator made; nothing here issues real
+voter credentials. When the console has no auth routes (`/api/me` answers 404),
+the app runs without a login.
+
+Dev: `pnpm --filter admin dev` proxies the console prefixes to
+`http://127.0.0.1:8090`. The `src-tauri` crate is no longer a delivery path.
