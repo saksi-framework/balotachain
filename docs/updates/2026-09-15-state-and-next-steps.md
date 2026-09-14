@@ -8,15 +8,17 @@ from the machine it was written on.
 
 | Repo | `main` | Open PRs |
 |---|---|---|
-| saksi | `2f8bbc9` | #52 wizard: sweep and burst fields, reopen any run, phase timeout (W4c) · #48 study-from-wizard docs, held until #52 lands |
+| saksi | `5ead2db` | none |
 | balotachain | this commit | none |
 
 Landed on 14 and 15 September:
 
-- **Study-grade wizard** (saksi #42 to #49): console auth, campaigns with preflight and
-  the ladder, the attack timeline with gate-matched verdicts, network reset and the
+- **Study-grade wizard** (saksi #42 to #49, #52): console auth, campaigns with preflight
+  and the ladder, the attack timeline with gate-matched verdicts, network reset and the
   peer-restart fault, resume and verify-only, public board files, `--phase-timeout`,
-  the export zip for the cost model.
+  the export zip for the cost model, sweep and burst fields, and **Open** to finish any
+  run. The operator instructions are runbook §10 and `docs/study-checklist.md`
+  (saksi #48).
 - **Random DKG dealers** (saksi #50, `1812139`): the generator's election keys are drawn
   from `OsRng`. Runs generated before that commit have keys derivable from the source;
   they support correctness, verifiability and performance, not ballot secrecy
@@ -59,7 +61,8 @@ Landed on 14 and 15 September:
 4. **Run on-chain** (Linux or WSL2 with Docker): `saksi/tools/up.sh` installs Fabric
    2.5.15, brings up the network, deploys the chaincode and starts the console on
    `127.0.0.1:8090`. For the capstone tiers start it as `SAKSI_PHASE_TIMEOUT=4h
-   ./tools/up.sh`. Operator steps: `saksi/docs/research-election-console-runbook.md`.
+   ./tools/up.sh`. Operator steps: `saksi/docs/research-election-console-runbook.md`
+   §10 and `saksi/docs/study-checklist.md`.
 
 5. **Tests.** `cargo test --workspace` in saksi; `go test ./...` in
    `saksi/packages/saksi-campaign` (set `SAKSI_DEMO_BIN` to a release `saksi-demo` to
@@ -81,13 +84,7 @@ Landed on 14 and 15 September:
 
 ## Next, in order
 
-1. **Review and merge saksi #52** (W4c).
-2. **Rewrite and merge saksi #48.** Its runbook §10 and study checklist still list gaps
-   that W4b and W4c closed: the 10,000-voter offline cap, no sweep or burst fields, no way
-   to reopen a run, the fixed 60-minute phase timeout, and the export lacking what
-   `cost_model.py` reads. Rewrite those paragraphs, and the `<!-- W4b -->` blocks, against
-   the merged code.
-3. **W6 validation on the desktop** (rebuild the WSL console on `main` first):
+1. **W6 validation on the desktop** (rebuild the WSL console on `main` first):
    - a wizard SP-1K campaign whose medians match a CLI `--repeat` of the same config
      within 5 %;
    - one on-chain single election with the full attack timeline, each attack refused by
@@ -98,16 +95,16 @@ Landed on 14 and 15 September:
      during `down_s` restores the peer; a second `CloseElection` through the real gateway
      answers "is already closed";
    - `go test -race` for the fault, resume and campaign tests under WSL.
-4. **balotachain follow-ups:** point the public board's download links at
+2. **balotachain follow-ups:** point the public board's download links at
    `GET /api/board/<run>/files/<name>` (today they hit admin-only `/export/`); teach
    `docs/desktop-runs/cost_model.py` the campaign export layout (`journal.ndjson`,
    `gen-timings.json`, `receipts-lifecycle.csv`).
-5. **CLAIMS.md rows still to write:** DKG commitments are not validated as points
+3. **CLAIMS.md rows still to write:** DKG commitments are not validated as points
    on-chain; reordering is not detected; no chaincode caller authorization
    (a front-running denial of service); the T3 resilience result (no committed ballot
    lost, resume recovered every pending ballot, E = 0); PR #41 confirmed at 10K.
-6. **Secrecy evidence** must come from runs at saksi `1812139` or later.
-7. **Capstone rows 5 to 9** stay on hold until the researchers decide.
+4. **Secrecy evidence** must come from runs at saksi `1812139` or later.
+5. **Capstone rows 5 to 9** stay on hold until the researchers decide.
 
 ## The desktop environment (Table 3.12)
 
