@@ -9,9 +9,9 @@ const publishMock = vi.fn();
 const getMeMock = vi.fn();
 const loginMock = vi.fn();
 const logoutMock = vi.fn();
-const subscribeEventsMock = vi.fn(
-  (_runId: string, _onEvent: (e: unknown) => void) => () => {},
-);
+const subscribeEventsMock = vi.fn<
+  (runId: string, onEvent: (e: unknown) => void) => () => void
+>(() => () => {});
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
