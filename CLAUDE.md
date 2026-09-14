@@ -8,8 +8,8 @@ Orientation for coding agents. Read this first, then the latest update doc, then
   start here on a new machine. The study runs from saksi's `/wizard` (campaigns, preflight,
   attack timeline, network reset, T3 fault, resume, export); the admin, trustee and board apps
   are served by that console; generator DKG keys are random from saksi `1812139` (older runs
-  support no secrecy claim); Defense Reviewer Part 5 covers the codebase. Open: saksi #52
-  (wizard W4c), then rewrite #48, then W6 validation on the desktop. Ledger:
+  support no secrecy claim); Defense Reviewer Part 5 covers the codebase. Next: W6 validation
+  on the desktop (runbook §10 and the study checklist in saksi). Ledger:
   `.superpowers/sdd/2026-09-14-study-grade-wizard/progress.md`.
 
 - **2026-09-10:** [Bulletin board + trustee console are dynamic](docs/updates/2026-09-10-dynamic-board-and-trustee.md).
