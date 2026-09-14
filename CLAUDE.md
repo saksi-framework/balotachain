@@ -2,6 +2,10 @@
 
 Orientation for coding agents. Read this first, then the latest update doc, then the active plan.
 
+**New device or new session:** read [`docs/context/README.md`](docs/context/README.md) first. It carries
+the standing rules (what needs the user's approval), the Claude Code memory notes with a restore
+script, and the `/ban-init` skill.
+
 ## Latest update
 
 - **2026-09-15:** [State and next steps](docs/updates/2026-09-15-state-and-next-steps.md) —

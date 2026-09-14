@@ -1,0 +1,1033 @@
+<div class="wrap">
+<header>
+  <p class="eyebrow">BalotaChain · Saksi Framework</p>
+  <h1>Saksi Execution Trace</h1>
+  <p class="standfirst">
+    One election, followed from a form submission to a verified tally — through
+    Go, Rust, TypeScript and Hyperledger Fabric. Every function is named with the
+    file it lives in, and every snippet is <em>the real source</em>, extracted
+    from a pinned commit rather than transcribed.
+  </p>
+  <div class="langs">
+    <span class="lang">Go · console + chaincode</span>
+    <span class="lang">Rust · crypto + auditor</span>
+    <span class="lang">TypeScript · browser apps</span>
+    <span class="lang">Fabric 2.5 · ledger</span>
+  </div>
+  <p class="pin">Pinned to <code>saksi@1812139</code> and <code>balotachain@a79918d</code> · 15 September 2026</p>
+</header>
+
+<h2>How to read this</h2>
+<p>
+  The seven steps below are a genuine sequence — each one depends on the last,
+  and the numbering carries that. Paths are repo-relative:
+  <code>saksi/**</code> is the framework, <code>balotachain/**</code> the thesis
+  repo with the browser apps. The console lives in
+  <code>saksi/packages/saksi-campaign/</code>, and every Go file named without a
+  directory sits there.
+</p>
+<p>
+  Two structural ideas are worth holding on to. <strong>The Go layer never
+  implements protocol logic:</strong> it orchestrates, submits to the ledger and
+  shells out to the Rust binary for anything cryptographic, so the auditor is a
+  different program reading published files. And <strong>the console is a
+  research harness:</strong> it generates the whole voter population and every
+  ballot itself. No route lets a person cast their own ballot; live voting is
+  outside what this code does.
+</p>
+
+<figure>
+  <figcaption><span>the whole system, one diagram</span><b>request order, top to bottom</b></figcaption>
+  <pre><code>browser   saksi-campaign/web/wizard.html          research wizard, at /wizard
+          balotachain apps/admin · trustee · auditor   at /admin/ /trustee/ /board/ (--web-dir)
+   │  fetch, plus one EventSource on /events for progress
+   ▼
+Go console  saksi/packages/saksi-campaign/
+   │  server.go       guard → authorize → mux · admission gates · one phase per run
+   │  auth.go         optional login · session cookie · routeAccess role table
+   │  executor.go     generate · ballot window · resume · verify · verify-only
+   │  ceremony.go     bundle · trustee shares · publish
+   │  timeline.go     attack pause points        fault.go       peer-restart fault
+   │  scenarios.go    attack catalogue · gate-matched verdicts
+   │  ledger_dump.go  the chain's own copy       journal.go     journal · run.end verdict
+   │  campaign.go · repeat.go · preflight.go · jobs.go · reset.go   the study harness
+   │  board.go        public bulletin board API
+   ▼                                         ▼
+Rust CLI  saksi/packages/saksi-demo           client-sdk  saksi/packages/saksi-bulletin/client-sdk
+   │  gen --stream     chunks of 5,000 voters   │  Submit · SubmitWithReceipt · ReceiptsForBlock
+   │  audit-stream --json                       │  bench.Run, the ballot-window driver
+   ▼                                            ▼
+saksi-auditor · saksi-crypto                 Hyperledger Fabric   saksi-bulletin/chaincode
+saksi-credentials · saksi-protocol           contract.go + cdsverify · credverify · sigverify</code></pre>
+</figure>
+
+<h2>The seven steps</h2>
+
+<!-- 1 -->
+<div class="step">
+  <div class="num">1<small>Set up</small></div>
+  <div class="body">
+    <h3>Declare the election, and pass the gates</h3>
+    <p class="lede">
+      Name, trustees, threshold, ballot shape, distribution, seats, mode, and how
+      many ballots fly at once. Nothing is generated yet — and a tier that cannot
+      produce a trustworthy run is refused before a folder exists.
+    </p>
+
+    <div class="path">
+      <div class="hop"><span class="where">Browser</span><span class="what">startRun → config() <span>— wizard.html builds the JSON body</span></span></div>
+      <div class="hop"><span class="where">server.go</span><span class="what"><button class="fn" data-fn="guard" type="button">guard</button> → <button class="fn" data-fn="authorize" type="button">authorize</button> <span>— Host allowlist, same-origin POST, then the role table: admin</span></span></div>
+      <div class="hop"><span class="where">server.go</span><span class="what"><button class="fn" data-fn="handleGenerate" type="button">handleGenerate</button> → decodeConfig → <button class="fn" data-fn="Validate" type="button">ElectionConfig.Validate</button></span></div>
+      <div class="hop"><span class="where">server.go</span><span class="what"><button class="fn" data-fn="admit" type="button">admit</button> → <button class="fn" data-fn="ladderGate" type="button">ladderGate</button> · <button class="fn" data-fn="diskGate" type="button">diskGate</button> · <button class="fn" data-fn="memoryGate" type="button">memoryGate</button></span></div>
+      <div class="hop"><span class="where">runstore.go</span><span class="what">RunStore.Create → <button class="fn" data-fn="dispatch" type="button">dispatch</button> → <button class="fn" data-fn="claim" type="button">claim</button> <span>— the run folder, then one phase at a time</span></span></div>
+    </div>
+
+    <p>
+      Validation runs server-side, so the form cannot talk the backend into an
+      invalid run. It rejects an empty name, a threshold outside
+      <code>1..n</code>, an unknown distribution, senate seats outside
+      <code>0..candidates-1</code>, and an attack plan that does not fit the run.
+      Then three admission gates run, in order, before anything touches disk:
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-campaign/server.go</span><button class="fn" data-fn="admit" type="button">admit</button></figcaption>
+      <!--SNIP admit|for _, gate := range|return true-->
+    </figure>
+
+    <div class="tw"><table>
+      <thead><tr><th>Gate</th><th>Refuses</th></tr></thead>
+      <tbody>
+        <tr><td><button class="fn" data-fn="ladderGate" type="button">ladderGate</button></td><td>more than 1,000 voters (offline or on-chain) unless the validation ladder — 1, 10, 100 and 1,000 voters — passed on <em>this exact build</em>; ground truth is exempt</td></tr>
+        <tr><td><button class="fn" data-fn="diskGate" type="button">diskGate</button></td><td>a projected ledger (voters × positions × 12,000 bytes) or offline run folder (1,848 + 1,402 × candidates bytes per record) larger than the free space</td></tr>
+        <tr><td><button class="fn" data-fn="memoryGate" type="button">memoryGate</button></td><td>an audit projected above <code>MemAvailable</code> (32 MiB + 150 bytes per record); a host that cannot say is not refused</td></tr>
+      </tbody>
+    </table></div>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-campaign/config.go</span><b>the offline bound is a sanity check, not a resource guard</b></figcaption>
+      <!--SNIP Validate|Divided, not multiplied|OfflineRecordCeiling, c.Voters, c.Positions)-->
+    </figure>
+
+    <div class="note">
+      <strong>On-chain is refused here, not later.</strong> With mode
+      <code>onchain</code> and no Fabric network configured,
+      <button class="fn" data-fn="handleGenerate" type="button">handleGenerate</button> answers 400. It once fell through and ran locally
+      while the page said “committing to Fabric” — a run that looked committed
+      and was not.
+    </div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="step">
+  <div class="num">2<small>Ballots</small></div>
+  <div class="body">
+    <h3>Generate the population, then encrypt it</h3>
+    <p class="lede">
+      Stage 4 of the methodology. The Go layer opens the run's journal and builds
+      an argv; the Rust binary does the work, a chunk of voters at a time.
+    </p>
+
+    <div class="path">
+      <div class="hop"><span class="where">executor.go</span><span class="what"><button class="fn" data-fn="Generate" type="button">Executor.Generate</button> → <button class="fn" data-fn="OpenJournal" type="button">OpenJournal</button> <span>— line 1 is the environment snapshot</span></span></div>
+      <div class="hop"><span class="where">shell</span><span class="what">saksi-demo gen --stream &lt;dir&gt; --voters … --distribution …</span></div>
+      <div class="hop"><span class="where">main.rs</span><span class="what"><button class="fn" data-fn="cmd_gen" type="button">cmd_gen</button></span></div>
+      <div class="hop"><span class="where">stream.rs</span><span class="what"><button class="fn" data-fn="write_election_stream_chunked" type="button">write_election_stream_chunked</button></span></div>
+      <div class="hop"><span class="where">fixtures.rs</span><span class="what"><button class="fn" data-fn="gen_prologue" type="button">gen_prologue</button> → <button class="fn" data-fn="build_voter" type="button">build_voter</button> <span>× voters, in parallel inside a chunk</span></span></div>
+      <div class="hop"><span class="where">fixtures.rs</span><span class="what"><button class="fn" data-fn="tally_selections" type="button">tally_selections</button> → <button class="fn" data-fn="sign_tally" type="button">sign_tally</button></span></div>
+      <div class="hop"><span class="where">ground_truth.rs</span><span class="what"><button class="fn" data-fn="write_ground_truth_csvs" type="button">write_ground_truth_csvs</button></span></div>
+      <div class="hop"><span class="where">csvexport.go</span><span class="what">writeDerivedCSVs <span>— ballots.csv and election.csv for reading</span></span></div>
+    </div>
+
+    <p>
+      <button class="fn" data-fn="gen_prologue" type="button">gen_prologue</button> runs once: election parameters, the DKG transcript and
+      the credential issuer's keypair. Then voters are built 5,000 per chunk, the
+      chunk's voters in parallel, and written in voter order before the next chunk
+      starts — so memory is bounded by a chunk, not the population.
+    </p>
+    <p>
+      Every voter's choice comes from one deterministic rule. There is no seed:
+      restating the generation parameters reproduces the population exactly. The
+      <code>realistic</code> profile is the only one that decides an election —
+      <code>uniform</code> ties at rank one by construction, and
+      <code>skewed</code> leaves every loser on an identical count.
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-auditor/src/fixtures.rs</span><button class="fn" data-fn="realistic_quotas" type="button">realistic_quotas</button></figcaption>
+      <!--SNIP realistic_quotas|let pct = 10 + 5 * (p % 3);|q[select_candidate(SelectionProfile::Skewed, v, p, c)] += 1;-->
+    </figure>
+
+    <p>
+      The reserved slice is then apportioned down the ranks, which separates the
+      candidates the round-robin left level. All of it is integer arithmetic —
+      floating point would make the population depend on the machine's rounding.
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-auditor/src/fixtures.rs</span><button class="fn" data-fn="select" type="button">SelectionPlan::select</button></figcaption>
+      <!--SNIP select|pub(crate) fn select|^    }-->
+    </figure>
+
+    <p>
+      Per voter, <button class="fn" data-fn="build_voter" type="button">build_voter</button> runs the real cryptography: a blind-signed credential
+      (<code>saksi-credentials/src/issuance.rs</code>), an ElGamal ciphertext per
+      candidate under the joint DKG key (<code>saksi-crypto/src/elgamal.rs</code>),
+      a CDS OR-proof per ciphertext that it encrypts 0 or 1
+      (<code>saksi-crypto/src/nizk/cds.rs</code>), and a per-position nullifier
+      (<code>saksi-credentials/src/nullifier.rs</code>) — which is what makes double
+      voting detectable without linking a ballot to a voter.
+    </p>
+
+    <div class="writes">
+      <span class="lbl">writes</span>
+      <span class="file">header.json</span><span class="file">ballots.ndjson</span>
+      <span class="file">gen-timings.json</span><span class="file">ground-truth-ballots.csv</span>
+      <span class="file">ground-truth-summary.csv</span><span class="file">ballots.csv</span>
+      <span class="file">election.csv</span><span class="file">journal.ndjson</span><span class="file">run.json</span>
+    </div>
+
+    <div class="note">
+      <strong>The separation that gives <code>E = 0</code> teeth.</strong>
+      Selections are recorded explicitly and the ground truth is computed from
+      <em>that</em>, by <button class="fn" data-fn="tally_selections" type="button">tally_selections</button> — never accumulated as a side
+      effect of building ciphertexts. If it were, a crypto bug that encrypted the
+      wrong value would corrupt both sides equally and the check would still pass.
+    </div>
+
+    <div class="note">
+      <strong>Every dealer polynomial is drawn from the OS random generator.</strong>
+      Each trustee's coefficients come from <button class="fn" data-fn="Dealer_random" type="button">Dealer::random</button>, so the joint
+      secret key of a generated election cannot be derived from this public
+      source, and two elections with identical parameters get unrelated keys.
+      Until saksi #50 (merge <code>1812139</code>) the coefficients were fixed at
+      <code>dealer_id × 13 + k + 1</code>: runs generated before it support
+      correctness, verifiability and performance results, not ballot secrecy.
+      <!--SNIP random_dealers|fn random_dealers|^}-->
+    </div>
+  </div>
+</div>
+
+<!-- 3 -->
+<div class="step">
+  <div class="num">3<small>Check</small></div>
+  <div class="body">
+    <h3>Audit the population against itself</h3>
+    <p class="lede">
+      The methodology's data-validation gate, before any cryptography is trusted.
+      Fail-closed: a population that fails is not offered for encryption.
+    </p>
+
+    <div class="path">
+      <div class="hop"><span class="where">Route</span><span class="what">GET /api/check/&lt;runID&gt; <span>— admin</span></span></div>
+      <div class="hop"><span class="where">server.go</span><span class="what">handleCheck</span></div>
+      <div class="hop"><span class="where">check.go</span><span class="what"><button class="fn" data-fn="RunCheck" type="button">Executor.RunCheck</button></span></div>
+      <div class="hop"><span class="where">check.go</span><span class="what"><button class="fn" data-fn="recountBallots" type="button">recountBallots</button> → <button class="fn" data-fn="compareToSummary" type="button">compareToSummary</button></span></div>
+    </div>
+
+    <p>
+      <button class="fn" data-fn="recountBallots" type="button">recountBallots</button> re-reads the ballot table from disk and recounts it
+      from scratch, consulting neither the generator nor anything in memory. It
+      streams a line at a time and checks voter ordinals against the row counter
+      rather than collecting ids into a set, so 3.5 million rows audit in bounded
+      memory.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Check</th><th>Catches</th></tr></thead>
+        <tbody>
+          <tr><td>Ballot table shape</td><td>a file written for a different configuration</td></tr>
+          <tr><td>Voter ids unique and sequential</td><td>a duplicated, missing or out-of-order voter</td></tr>
+          <tr><td>Every selection is a real candidate</td><td>a malformed or out-of-range label</td></tr>
+          <tr><td>Every voter accounted for</td><td>a truncated file or short write</td></tr>
+          <tr><td><strong>Recount matches the published tally</strong></td><td>the population disagreeing with its own summary</td></tr>
+          <tr><td>No votes lost or invented</td><td>a vote dropped or double-counted</td></tr>
+          <tr><td>Population fingerprinted</td><td>— records provenance rather than testing</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="writes"><span class="lbl">writes</span><span class="file">ground-truth-check.json</span></div>
+
+    <div class="note">
+      <strong>What it does not prove.</strong> That the population is internally
+      consistent, not that the selection rule was applied correctly. A generator
+      that consistently applied the wrong rule would pass every check here. That
+      question is answered by the Python reference implementation,
+      <code>balotachain/docs/saksi/reference_generator.py</code>, which reproduces
+      a published table from its parameters alone.
+    </div>
+  </div>
+</div>
+
+<!-- 4 -->
+<div class="step">
+  <div class="num">4<small>Encrypt</small></div>
+  <div class="body">
+    <h3>Record the lifecycle, and time the ballot window</h3>
+    <p class="lede">
+      The bundle is read from the header generated in step 2; on-chain, the
+      lifecycle is driven onto the ledger up to the moment voting closes, with
+      the ballots sent through a measured window.
+    </p>
+
+    <div class="path">
+      <div class="hop"><span class="where">Route</span><span class="what">POST /ceremony/start <span>— admin</span></span></div>
+      <div class="hop"><span class="where">ceremony.go</span><span class="what"><button class="fn" data-fn="CeremonyStart" type="button">CeremonyStart</button> → <button class="fn" data-fn="bundleFrom" type="button">bundleFrom</button> <span>— bundle.json from header.json</span></span></div>
+      <div class="hop"><span class="where">executor.go</span><span class="what"><button class="fn" data-fn="lifecycle" type="button">lifecycle</button> → <button class="fn" data-fn="setupOnChain" type="button">setupOnChain</button></span></div>
+      <div class="hop"><span class="where">chaincode</span><span class="what"><button class="fn" data-fn="CreateElection" type="button">CreateElection</button> → <button class="fn" data-fn="PublishDKGTranscript" type="button">PublishDKGTranscript</button></span></div>
+      <div class="hop"><span class="where">executor.go</span><span class="what"><button class="fn" data-fn="submitBallots" type="button">submitBallots</button> → <button class="fn" data-fn="benchRun" type="button">bench.Run</button> → <button class="fn" data-fn="Submit" type="button">Submit</button> → <button class="fn" data-fn="SubmitBallot" type="button">SubmitBallot</button> <span>× N</span></span></div>
+      <div class="hop"><span class="where">executor.go</span><span class="what"><button class="fn" data-fn="collectReceipts" type="button">collectReceipts</button> → <button class="fn" data-fn="ReceiptsForBlock" type="button">ReceiptsForBlock</button> <span>— after the window, one fetch per block</span></span></div>
+      <div class="hop"><span class="where">chaincode</span><span class="what">CloseElection → <button class="fn" data-fn="Lifecycle" type="button">receiptsWriter.Lifecycle</button> <span>— receipts.csv and trail.ndjson</span></span></div>
+    </div>
+
+    <p>
+      Partial decryptions and the tally are deliberately <em>not</em> submitted
+      here. They belong to the trustees in step 5, which is what makes the
+      threshold visible rather than automatic. Offline, the same call records the
+      ceremony locally with no ledger.
+    </p>
+
+    <p>
+      The ballot window is the measurement. Only the submission and its commit
+      status run inside it; receipts are fetched afterwards, so the latency and
+      throughput in <code>perf.csv</code> are the chain's, not the console's
+      bookkeeping:
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-campaign/executor.go</span><button class="fn" data-fn="submitBallots" type="button">submitBallots</button><b> — what may run inside the timed window</b></figcaption>
+      <!--SNIP submitBallots|// submitBallots is the measured ballot window.|// single forward scan of ballots.ndjson-->
+    </figure>
+
+    <p>
+      On the ledger side, <button class="fn" data-fn="SubmitBallot" type="button">SubmitBallot</button> is where the chaincode earns its
+      place. It checks the issuer's signature on the credential and verifies the
+      CDS proofs <em>on-chain, at endorsement</em>. Every refusal names the gate
+      that produced it, through <button class="fn" data-fn="rejectAt" type="button">rejectAt</button>, which is what step 7 reads:
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-bulletin/chaincode/contract.go</span><button class="fn" data-fn="SubmitBallot" type="button">SubmitBallot</button><b> — the double-vote gate</b></figcaption>
+      <!--SNIP SubmitBallot|spent, err := stub.GetState(nullifierKey)|rejectAt("nullifier"-->
+    </figure>
+
+    <p>
+      If the run's attack plan lists a stage, the lifecycle stops there and waits:
+      <button class="fn" data-fn="pauseForAttacks" type="button">pauseForAttacks</button> holds after <code>CreateElection</code> and after
+      <code>CloseElection</code>, and <button class="fn" data-fn="pausedWindow" type="button">pausedWindow</button> splits the ballot window at
+      the chosen fraction so attacks meet a live, open election. The two halves are
+      stitched back into one window, and <code>perf.csv</code> marks the run as a
+      security run.
+    </p>
+
+    <p>
+      A receipt is not a field on the block — Fabric stores no block hash. The SDK
+      recomputes it as SHA-256 over the ASN.1-DER header, matching
+      <code>protoutil</code>:
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-bulletin/client-sdk/ledger.go</span><button class="fn" data-fn="blockHeaderHash" type="button">blockHeaderHash</button></figcaption>
+      <!--SNIP blockHeaderHash|func blockHeaderHash|^}-->
+    </figure>
+
+    <div class="writes">
+      <span class="lbl">writes</span><span class="file">bundle.json</span>
+      <span class="file">ceremony.json</span><span class="file">receipts.csv</span>
+      <span class="file">trail.ndjson</span><span class="file">latencies.csv</span>
+      <span class="file">submit-metrics.json</span>
+    </div>
+
+    <div class="note">
+      <strong>The bundle is read, never regenerated.</strong> <button class="fn" data-fn="bundleFrom" type="button">bundleFrom</button>
+      copies the parameters, DKG, partial decryptions and tally out of the header
+      step 2 wrote, and points at <code>ballots.ndjson</code> rather than inlining
+      the ballots. Every ceremony click sees the election it was created from.
+    </div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="step">
+  <div class="num">5<small>Trustees</small></div>
+  <div class="body">
+    <h3>Threshold decryption</h3>
+    <p class="lede">
+      The election is closed and its tally encrypted. It stays that way until
+      <em>t</em> of <em>n</em> trustees act — the system's central custody claim.
+    </p>
+
+    <div class="path">
+      <div class="hop"><span class="where">Route</span><span class="what">POST /ceremony/submit <span>— trustee, own shares only</span></span></div>
+      <div class="hop"><span class="where">server.go</span><span class="what"><button class="fn" data-fn="handleCeremonySubmit" type="button">handleCeremonySubmit</button> → <button class="fn" data-fn="CeremonySubmit" type="button">CeremonySubmit</button> → <button class="fn" data-fn="partialsByTrustee" type="button">partialsByTrustee</button></span></div>
+      <div class="hop"><span class="where">chaincode</span><span class="what"><button class="fn" data-fn="SubmitPartialDecryption" type="button">SubmitPartialDecryption</button> <span>× contests</span></span></div>
+      <div class="hop"><span class="where">ceremony.go</span><span class="what"><button class="fn" data-fn="CeremonyStatus" type="button">CeremonyStatus</button> <span>— the quorum; on-chain the ledger is the authority</span></span></div>
+      <div class="hop"><span class="where">Route</span><span class="what">POST /ceremony/publish <span>— any signed-in trustee or admin</span></span></div>
+      <div class="hop"><span class="where">ceremony.go</span><span class="what"><button class="fn" data-fn="CeremonyPublish" type="button">CeremonyPublish</button> → <button class="fn" data-fn="tallyToPublish" type="button">tallyToPublish</button></span></div>
+      <div class="hop"><span class="where">chaincode</span><span class="what"><button class="fn" data-fn="PublishTally" type="button">PublishTally</button> → <button class="fn" data-fn="verifyTallySignatures" type="button">verifyTallySignatures</button> → <button class="fn" data-fn="VerifySchnorr" type="button">sigverify.VerifySchnorr</button></span></div>
+    </div>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-campaign/ceremony.go</span><button class="fn" data-fn="CeremonyStatus" type="button">CeremonyStatus</button><b> — where the console counts the quorum</b></figcaption>
+      <!--SNIP CeremonyStatus|state.Submitted = 0|return state, nil-->
+    </figure>
+
+    <p>
+      The published tally carries a Schnorr signature per trustee over the exact
+      totals. <button class="fn" data-fn="tallyToPublish" type="button">tallyToPublish</button> keeps only the signatures of the trustees
+      who actually submitted, so the ledger's count reflects the ceremony that
+      happened, not the full set the generator could produce.
+    </p>
+
+    <div class="note">
+      <strong>Where the threshold is enforced.</strong> In three places now. The
+      console refuses to publish below <em>t</em> (409). The chaincode's
+      <button class="fn" data-fn="PublishTally" type="button">PublishTally</button> refuses a tally unless every signature verifies and at
+      least <em>t</em> distinct trustees signed. The auditor re-proves it at step 6
+      (<code>decryption.threshold</code>, <code>tally.signatures</code>). What the
+      chaincode still does <em>not</em> check is the Chaum-Pedersen proof on each
+      partial decryption: <button class="fn" data-fn="SubmitPartialDecryption" type="button">SubmitPartialDecryption</button> requires it to be
+      present (gate <code>cp-presence</code>), and only the auditor verifies it.
+    </div>
+  </div>
+</div>
+
+<!-- 6 -->
+<div class="step">
+  <div class="num">6<small>Verify</small></div>
+  <div class="body">
+    <h3>Re-derive the result from the published record</h3>
+    <p class="lede">
+      A separate program reads the published artifacts and reproduces the tally.
+      On-chain, it reads the chain's own copy first.
+    </p>
+
+    <div class="path">
+      <div class="hop"><span class="where">Route</span><span class="what">POST /verify <span>— admin</span></span></div>
+      <div class="hop"><span class="where">executor.go</span><span class="what">Executor.Verify → <button class="fn" data-fn="verify" type="button">verify</button></span></div>
+      <div class="hop"><span class="where">executor.go</span><span class="what"><button class="fn" data-fn="auditLedger" type="button">auditLedger</button> → <button class="fn" data-fn="dumpLedger" type="button">dumpLedger</button> <span>— on-chain only: ListNullifiers + GetBallots into ledger/</span></span></div>
+      <div class="hop"><span class="where">shell</span><span class="what">saksi-demo audit-stream &lt;dir&gt;/ledger --json · audit-stream &lt;dir&gt; --json</span></div>
+      <div class="hop"><span class="where">demo.rs</span><span class="what"><button class="fn" data-fn="audit_stream_dir_full" type="button">audit_stream_dir_full</button> → <button class="fn" data-fn="audit_streaming_chunked" type="button">audit_streaming_chunked</button></span></div>
+      <div class="hop"><span class="where">ledger_dump.go</span><span class="what"><button class="fn" data-fn="compareLedger" type="button">compareLedger</button> <span>— same ballots, same aggregates?</span></span></div>
+      <div class="hop"><span class="where">executor.go</span><span class="what"><button class="fn" data-fn="writeCorrectnessCSV" type="button">writeCorrectnessCSV</button> → <button class="fn" data-fn="Finalise" type="button">Finalise</button> → <button class="fn" data-fn="runFailed" type="button">runFailed</button></span></div>
+    </div>
+
+    <p>
+      The auditor never short-circuits. Ballots are verified in batches of 4,096,
+      in parallel on every core (<code>SAKSI_AUDIT_THREADS</code>); everything that
+      depends on order — findings, first use of each nullifier, the aggregate — is
+      folded serially in stream order, so the result is byte-identical to a
+      one-thread run. Each finding carries a stable check id:
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Check ids</th><th>What they test</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td><code>parameters.shape</code></td><td>version, threshold in range, contests and trustees present</td><td><code>lib.rs</code> check_parameters</td></tr>
+          <tr><td><code>dkg.decode</code> · <code>dkg.shape</code> · <code>dkg.joint_public_key</code> · <code>dkg.trustee_share_publics</code></td><td>transcript decodes, commitments are valid points, the joint key rebuilds</td><td><code>dkg.rs</code> verify_dkg_transcript</td></tr>
+          <tr><td><code>ballot.decode</code> · <code>ballot.shape</code> · <code>ballot.cds_proof</code> · <code>ballot.credential</code> · <code>ballot.issuer_binding</code></td><td>every CDS proof and credential presentation</td><td><code>ballot.rs</code> <button class="fn" data-fn="verify_ballot" type="button">verify_ballot</button></td></tr>
+          <tr><td><code>nullifier.unique</code></td><td>no nullifier used twice — double voting</td><td><code>lib.rs</code> <button class="fn" data-fn="NullifierTracker" type="button">NullifierTracker</button></td></tr>
+          <tr><td><code>stream.completeness</code></td><td>as many ballots audited as the header declares</td><td><code>lib.rs</code> <button class="fn" data-fn="audit_streaming_chunked" type="button">audit_streaming_chunked</button></td></tr>
+          <tr><td><code>decryption.*</code> — shape, share_decode, cp_decode, cp_proof, duplicate, threshold</td><td>each partial decryption's Chaum-Pedersen proof, distinct trustees ≥ <em>t</em></td><td><code>decryption.rs</code> <button class="fn" data-fn="verify_partial_decryptions" type="button">verify_partial_decryptions</button></td></tr>
+          <tr><td><code>tally.*</code> — aggregate, shape, range, homomorphic_sum, accuracy</td><td>Lagrange combine, bounded discrete log, <code>E</code></td><td><code>tally.rs</code> <button class="fn" data-fn="verify_tally" type="button">verify_tally</button></td></tr>
+          <tr><td><code>tally.signatures</code></td><td>every trustee signature verifies, ≥ <em>t</em>, no unknown or duplicate signer</td><td><code>tally.rs</code> <button class="fn" data-fn="verify_tally_signatures" type="button">verify_tally_signatures</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      This is where the ciphertexts become a result. Eligible ballots are summed
+      point-wise per contest as they stream past — the reason ElGamal was chosen:
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-auditor/src/lib.rs</span><button class="fn" data-fn="audit_streaming_chunked" type="button">audit_streaming_chunked</button><b> — the serial fold: nullifiers, then the homomorphic sum</b></figcaption>
+      <!--SNIP audit_streaming_chunked|// Serial fold, in stream order|eligible_count += 1;-->
+    </figure>
+
+    <p>
+      Then the trustee shares are combined by Lagrange interpolation at zero and
+      the plaintext point is turned back into a number. Because the count is a
+      small integer, that is a discrete log over a bounded range — baby-step
+      giant-step from 50,000 up, linear below:
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-auditor/src/tally.rs</span><button class="fn" data-fn="decode_tally" type="button">decode_tally</button><b> · <button class="fn" data-fn="bsgs_decode" type="button">bsgs_decode</button></b></figcaption>
+      <!--SNIP decode_tally|pub(crate) fn decode_tally|^}-->
+    </figure>
+
+    <p>
+      Each contest's <code>E = T − G</code>, the decoded total minus the seeded
+      ground truth, must be zero. <code>correctness.csv</code> also carries the
+      recovered point, the aggregate ciphertext it came from, and the run's
+      artifact hashes — and for an on-chain run a second block of rows,
+      <code>source=ledger</code>, with the <code>ledger_matches_local</code> verdict.
+      <button class="fn" data-fn="runFailed" type="button">runFailed</button> then decides <code>run.end</code>: a stage error, nothing
+      submitted, a dropped ballot, a reconcile mismatch, any <code>E ≠ 0</code>, or an
+      interruption fails the run.
+    </p>
+
+    <div class="writes">
+      <span class="lbl">writes</span><span class="file">correctness.csv</span>
+      <span class="file">timings.json</span><span class="file">perf.csv</span>
+      <span class="file">perf-schema.md</span><span class="file">ledger/header.json</span>
+      <span class="file">ledger/ballots.ndjson</span>
+    </div>
+  </div>
+</div>
+
+<!-- 7 -->
+<div class="step">
+  <div class="num">7<small>Attacks</small></div>
+  <div class="body">
+    <h3>Attack it, and name the gate that refused</h3>
+    <p class="lede">
+      Step 6 shows an untouched election decrypts correctly. This shows a tampered
+      one is rejected — by the check it was aimed at, not by accident.
+    </p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>Stage</th><th>Attack</th><th>Chaincode gate</th><th>Auditor check</th></tr></thead>
+        <tbody>
+          <tr><td><code>dkg</code></td><td>tamper-dkg-transcript</td><td>—</td><td><code>dkg.decode</code></td></tr>
+          <tr><td><code>ballots</code></td><td>tamper-ballot-proof</td><td><code>cds</code></td><td><code>ballot.cds_proof</code></td></tr>
+          <tr><td><code>ballots</code></td><td>reused-nullifier</td><td><code>nullifier</code></td><td><code>nullifier.unique</code></td></tr>
+          <tr><td><code>ballots</code></td><td>corrupted-ballot-bytes</td><td><code>decode</code></td><td><code>ballot.decode</code></td></tr>
+          <tr><td><code>close</code></td><td>dropped-ballot</td><td>—</td><td><code>stream.completeness</code></td></tr>
+          <tr><td><code>close</code></td><td>reordered-ballots</td><td>—</td><td>— <span class="verdict v-skip">no gate</span></td></tr>
+          <tr><td><code>ceremony</code></td><td>tamper-partial-decryption</td><td>—</td><td><code>decryption.cp_proof</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Simulated, an attack mutates a copy of the run and re-audits it, after first
+      auditing the <em>unmutated</em> copy as a positive control;
+      <button class="fn" data-fn="classifyAudit" type="button">classifyAudit</button> then reads the auditor's failed checks. Live, only the
+      three ballot attacks have a chaincode gate to test: they are submitted to the
+      open election at the ballots pause, and <button class="fn" data-fn="classifyLive" type="button">classifyLive</button> reads the
+      <code>gate=&lt;id&gt;:</code> prefix of the peer's refusal.
+    </p>
+
+    <figure>
+      <figcaption><span>saksi/packages/saksi-campaign/scenarios.go</span><button class="fn" data-fn="classifyLive" type="button">classifyLive</button><b> — a refusal by the wrong gate is not a pass</b></figcaption>
+      <!--SNIP classifyLive|// classifyLive decides a live submission's verdict|// transport error) cannot be attributed either.-->
+    </figure>
+
+    <p>
+      So there are four verdicts: <span class="verdict v-pass">PASS</span> when the
+      declared gate refused it, <span class="verdict v-inc">INCONCLUSIVE</span>
+      when something else did (or the positive control failed),
+      <span class="verdict v-fail">FAIL</span> when the tampered artifact was
+      accepted — a genuine finding — and <span class="verdict v-skip">SKIPPED</span>
+      when no gate exists to test. The wizard's attack step runs the catalogue
+      simulated; the live mounts happen at the pause points of a security run.
+    </p>
+
+    <div class="writes">
+      <span class="lbl">writes</span><span class="file">scenarios.json</span>
+      <span class="file">negative-tests.csv</span>
+    </div>
+
+    <div class="note">
+      <strong>Why the gate id matters.</strong> The chaincode refuses at the
+      <em>first</em> check a submission fails. A tampered proof sent to a closed
+      election is refused as “not open for ballots” and never reaches the proof
+      check. Scoring that as a pass for the proof gate was how earlier on-chain
+      verdicts overstated what they showed; those rows were discarded, not re-used.
+    </div>
+  </div>
+</div>
+
+<h2>Running the study</h2>
+<p>
+  Chapter 4's numbers come from the same console, driven as campaigns rather than
+  single clicks. Each of these is admin-only, and the infrastructure routes also
+  demand a loopback caller and a typed confirmation.
+</p>
+<div class="tw"><table>
+  <thead><tr><th>Route</th><th>Function</th><th>What it produces</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/preflight</code></td><td><button class="fn" data-fn="preflight" type="button">preflight</button></td><td>Fabric reachability, declared orderer batch, ladder status, disk, memory, host load, phase timeout; <em>block</em> and <em>warn</em> findings</td></tr>
+    <tr><td><code>POST /api/ladder</code></td><td><button class="fn" data-fn="RunLadder" type="button">RunLadder</button></td><td><code>ladder.json</code> for this build: 1, 10, 100 and 1,000 voters, each passing check and E = 0</td></tr>
+    <tr><td><code>POST /api/campaigns</code></td><td><button class="fn" data-fn="handleCampaigns" type="button">handleCampaigns</button> → <button class="fn" data-fn="Repeat" type="button">Repeat</button> → <button class="fn" data-fn="sweep" type="button">sweep</button></td><td>warm-ups, measured repetitions, an optional rate sweep and burst; <code>summary.csv</code> across the measured runs; attacks forced off</td></tr>
+    <tr><td><code>GET /api/campaigns/&lt;id&gt;/export</code></td><td><button class="fn" data-fn="streamCampaignBundle" type="button">streamCampaignBundle</button></td><td>a zip of every run's thesis files, the journal, lifecycle receipts and a MANIFEST</td></tr>
+    <tr><td><code>POST /api/network/reset</code></td><td><button class="fn" data-fn="handleNetworkReset" type="button">handleNetworkReset</button></td><td><code>tools/tier.sh</code> as a job: a fresh network and chaincode per tier, then the channel height</td></tr>
+    <tr><td><code>POST /api/runs/&lt;id&gt;/fault</code></td><td><button class="fn" data-fn="handleFault" type="button">handleFault</button> → <button class="fn" data-fn="newPeerFault" type="button">newPeerFault</button></td><td>stops the peer at a chosen share of the ballot window (test T3), stamped in the journal</td></tr>
+    <tr><td><code>POST /api/runs/&lt;id&gt;/resume</code></td><td><button class="fn" data-fn="planResume" type="button">planResume</button> → <button class="fn" data-fn="resumeAndClose" type="button">resumeAndClose</button></td><td>submits only what the chain does not hold, then closes the election</td></tr>
+    <tr><td><code>POST /api/runs/&lt;id&gt;/verify-only</code></td><td><button class="fn" data-fn="verifyOnly" type="button">verifyOnly</button></td><td>reconciles the chain's committed ballots against the run, submitting nothing</td></tr>
+  </tbody>
+</table></div>
+<p>
+  The same campaign runs from a terminal as <code>saksi-campaign --repeat</code>,
+  against the same API. Every phase runs under <code>--phase-timeout</code>
+  (default 60 minutes), which preflight holds against an estimate of the run's
+  longest phase.
+</p>
+
+<h2>Client apps → API → Go functions</h2>
+<p>
+  The three BalotaChain web apps are built into one folder and served by the
+  console itself (<button class="fn" data-fn="mountWebDir" type="button">mountWebDir</button>), so they share its origin: the
+  cross-origin guard keeps protecting the ceremony routes and the session cookie
+  reaches the API. Each app's <code>src/lib/bulletin.ts</code> is a thin fetch
+  client over the routes below.
+</p>
+
+<h3 class="sub">Sign-in</h3>
+<p>
+  Auth is off unless the console starts with <code>--auth-file</code>. With it,
+  <button class="fn" data-fn="handleLogin" type="button">handleLogin</button> checks a bcrypt password and sets
+  <code>saksi_session</code> (HttpOnly, SameSite=Strict, 12 hours),
+  <button class="fn" data-fn="handleMe" type="button">handleMe</button> tells an app who is signed in, and
+  <button class="fn" data-fn="authorize" type="button">authorize</button> applies <button class="fn" data-fn="routeAccess" type="button">routeAccess</button> to every request. The apps
+  call <button class="fn" data-fn="ts_getMe" type="button">getMe</button> on load: a 404 means auth is off, a 401 sends them to
+  their login screen.
+</p>
+
+<h3 class="sub">Admin — <code>balotachain/apps/admin</code>, at <code>/admin/</code></h3>
+<div class="tw"><table>
+  <thead><tr><th>Screen</th><th>Client call</th><th>Route</th><th>Handler</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Elections</td><td>listRuns</td><td><code>GET /runs</code></td><td>handleRuns</td><td><span class="role r-public">public</span></td></tr>
+    <tr><td>1 Election</td><td><button class="fn" data-fn="ts_generateElection" type="button">generateElection</button></td><td><code>POST /generate</code></td><td><button class="fn" data-fn="handleGenerate" type="button">handleGenerate</button></td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td>2 Population</td><td>checkPopulation · runStatus</td><td><code>GET /api/check/</code> · <code>/api/runs/&lt;id&gt;/status</code></td><td><button class="fn" data-fn="RunCheck" type="button">RunCheck</button></td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td>3 Run</td><td><button class="fn" data-fn="ts_startCeremony" type="button">startCeremony</button></td><td><code>POST /ceremony/start</code></td><td><button class="fn" data-fn="CeremonyStart" type="button">CeremonyStart</button></td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td>4 Ceremony</td><td>loadCeremony · <button class="fn" data-fn="ts_publishTally" type="button">publishTally</button></td><td><code>GET /api/ceremony/</code> · <code>POST /ceremony/publish</code></td><td><button class="fn" data-fn="CeremonyPublish" type="button">CeremonyPublish</button></td><td><span class="role r-signed">signed-in</span></td></tr>
+    <tr><td>5 Results</td><td>verifyRun · loadCorrectness</td><td><code>POST /verify</code> · <code>GET /export/…/correctness.csv</code></td><td><button class="fn" data-fn="verify" type="button">verify</button></td><td><span class="role r-admin">admin</span></td></tr>
+  </tbody>
+</table></div>
+<p class="small-note">Reopening an election picks its step with <button class="fn" data-fn="ts_stepFor" type="button">stepFor</button>; progress arrives on <code>GET /events</code> (signed-in).</p>
+
+<h3 class="sub">Trustee — <code>balotachain/apps/trustee</code>, at <code>/trustee/?run=</code></h3>
+<div class="tw"><table>
+  <thead><tr><th>Action</th><th>Client call</th><th>Route</th><th>Handler</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>See the quorum</td><td>loadCeremony</td><td><code>GET /api/ceremony/&lt;run&gt;</code></td><td><button class="fn" data-fn="CeremonyStatus" type="button">CeremonyStatus</button></td><td><span class="role r-public">public</span></td></tr>
+    <tr><td>Submit my share</td><td><button class="fn" data-fn="ts_submitPartialDecryption" type="button">submitPartialDecryption</button></td><td><code>POST /ceremony/submit</code></td><td><button class="fn" data-fn="handleCeremonySubmit" type="button">handleCeremonySubmit</button></td><td><span class="role r-trustee">trustee</span></td></tr>
+    <tr><td>Publish the tally</td><td>publishTally</td><td><code>POST /ceremony/publish</code></td><td><button class="fn" data-fn="CeremonyPublish" type="button">CeremonyPublish</button></td><td><span class="role r-signed">signed-in</span></td></tr>
+  </tbody>
+</table></div>
+<p class="small-note">A signed-in trustee acts only as the <code>trustee_id</code> in their session; the body's id must match or the console answers 403. An admin session is read-only here.</p>
+
+<h3 class="sub">Public board — <code>balotachain/apps/auditor</code>, at <code>/board/?run=</code></h3>
+<div class="tw"><table>
+  <thead><tr><th>Panel</th><th>Client call</th><th>Route</th><th>Handler</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Results, integrity, checks</td><td><button class="fn" data-fn="ts_loadBoard" type="button">loadBoard</button> <span class="muted">every 4 s</span></td><td><code>GET /api/board/&lt;run&gt;</code></td><td><button class="fn" data-fn="buildBoard" type="button">buildBoard</button></td><td><span class="role r-public">public</span></td></tr>
+    <tr><td>Verify my vote</td><td><button class="fn" data-fn="ts_verifyTrackingCode" type="button">verifyTrackingCode</button></td><td><code>GET /api/verify-code/&lt;run&gt;/&lt;code&gt;</code></td><td><button class="fn" data-fn="handleVerifyCode" type="button">handleVerifyCode</button></td><td><span class="role r-public">public</span></td></tr>
+    <tr><td>Downloads</td><td>exportUrl</td><td><code>GET /export/…</code></td><td>handleExport</td><td><span class="role r-admin">admin</span></td></tr>
+  </tbody>
+</table></div>
+<div class="note">
+  <strong>An open gap on the board.</strong> Its download links still point at
+  admin-only <code>/export/</code>, so an anonymous visitor gets 401 when auth is
+  on. The console already serves the public copy at
+  <code>GET /api/board/&lt;run&gt;/files/&lt;name&gt;</code>
+  (<button class="fn" data-fn="serveBoardFile" type="button">serveBoardFile</button>: sealed until the tally is published, ground truth
+  and voter ids stripped); the app has not switched to it yet.
+</div>
+
+<h2>Route and role table</h2>
+<p>
+  Every route the console registers, and who may call it when auth is on. A route
+  missing from <button class="fn" data-fn="routeAccess" type="button">routeAccess</button> fails closed to admin, and a test fails if
+  one is registered without an entry.
+</p>
+<div class="tw"><table class="routes">
+  <thead><tr><th>Route</th><th>Handler</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><code>/api/board/</code> · <code>/api/verify-code/</code></td><td>board.go handleBoard · handleVerifyCode</td><td><span class="role r-public">public</span></td></tr>
+    <tr><td><code>/trail/</code> · <code>/api/trail</code> · <code>/api/trail/</code></td><td>server.go handleTrailPage · handleTrailIndex · handleTrailAPI</td><td><span class="role r-public">public</span></td></tr>
+    <tr><td><code>/api/ceremony/</code> · <code>/api/capabilities</code> · <code>/runs</code></td><td>server.go handleCeremonyStatus · handleCapabilities · handleRuns</td><td><span class="role r-public">public</span></td></tr>
+    <tr><td><code>/api/login</code> · <code>/api/logout</code> · <code>/api/me</code></td><td>auth.go handleLogin · handleLogout · handleMe</td><td><span class="role r-public">public</span></td></tr>
+    <tr><td><code>/wizard</code> · <code>/board/</code> · <code>/trustee/</code> · <code>/admin/</code> · <code>/favicon.ico</code></td><td>server.go handleWizard · mountWebDir</td><td><span class="role r-public">public</span></td></tr>
+    <tr><td><code>/ceremony/publish</code> · <code>/events</code></td><td>server.go handleCeremonyPublish · handleEvents</td><td><span class="role r-signed">signed-in</span></td></tr>
+    <tr><td><code>/ceremony/submit</code></td><td>server.go handleCeremonySubmit</td><td><span class="role r-trustee">trustee</span></td></tr>
+    <tr><td><code>/generate</code> · <code>/submit</code> · <code>/verify</code> · <code>/run-all</code> · <code>/cancel</code></td><td>server.go</td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td><code>/ceremony/start</code> · <code>/scenarios</code> · <code>/attack</code></td><td>server.go · scenarios.go RunStagedAttack</td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td><code>/api/runs/</code> — status, resume, verify-only, pause, fault</td><td>server.go handleRunAction · timeline.go · fault.go</td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td><code>/api/check/</code> · <code>/api/scenarios/</code> · <code>/export/</code> · <code>/</code></td><td>server.go</td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td><code>/api/preflight</code> · <code>/api/ladder</code> · <code>/api/jobs/</code></td><td>preflight.go · jobs.go</td><td><span class="role r-admin">admin</span></td></tr>
+    <tr><td><code>/api/campaigns</code> · <code>/api/campaigns/</code> · <code>/api/network/reset</code></td><td>campaign.go · reset.go</td><td><span class="role r-admin">admin</span></td></tr>
+  </tbody>
+</table></div>
+
+<h2>Repository map</h2>
+<h3 class="sub">saksi — the framework</h3>
+<div class="tw"><table>
+  <thead><tr><th>Package</th><th>Language</th><th>Holds</th></tr></thead>
+  <tbody>
+    <tr><td><code>packages/saksi-crypto</code></td><td>Rust</td><td>ristretto255 ElGamal, CDS and Chaum-Pedersen proofs, Schnorr, DKG</td></tr>
+    <tr><td><code>packages/saksi-credentials</code></td><td>Rust</td><td>blind-signed credentials, presentations, per-position nullifiers</td></tr>
+    <tr><td><code>packages/saksi-protocol</code></td><td>protobuf · Rust · Go</td><td>the wire format (<code>wire.proto</code>) and golden test vectors</td></tr>
+    <tr><td><code>packages/saksi-auditor</code></td><td>Rust</td><td>the generator, the streaming auditor, ground truth</td></tr>
+    <tr><td><code>packages/saksi-demo</code></td><td>Rust</td><td>the CLI the console shells: <code>gen</code>, <code>gen-ground-truth</code>, <code>audit</code>, <code>audit-stream</code></td></tr>
+    <tr><td><code>packages/saksi-bulletin/chaincode</code></td><td>Go</td><td>the Fabric bulletin board: 14 contract functions, cdsverify, credverify, sigverify</td></tr>
+    <tr><td><code>packages/saksi-bulletin/client-sdk</code></td><td>Go</td><td>gateway connection, ledger receipts, chain walk, the <code>bench</code> driver</td></tr>
+    <tr><td><code>packages/saksi-bulletin/network</code></td><td>shell · YAML</td><td>the test network and its declared orderer batch parameters</td></tr>
+    <tr><td><code>packages/saksi-campaign</code></td><td>Go · HTML</td><td>the research console, the wizard, the study harness</td></tr>
+    <tr><td><code>packages/saksi-ffi-flutter</code> · <code>saksi-ffi-tauri</code></td><td>Rust</td><td>bindings for mobile and desktop clients; not on the console path</td></tr>
+    <tr><td><code>tools/</code></td><td>shell</td><td><code>up.sh</code>, <code>tier.sh</code>, <code>ladder.sh</code>, <code>t3-restart.sh</code></td></tr>
+  </tbody>
+</table></div>
+<h3 class="sub">balotachain — the application and the thesis evidence</h3>
+<div class="tw"><table>
+  <thead><tr><th>Directory</th><th>Status</th><th>Holds</th></tr></thead>
+  <tbody>
+    <tr><td><code>apps/admin</code> · <code>apps/trustee</code> · <code>apps/auditor</code></td><td><span class="role r-public">live</span></td><td>React + Vite web apps over the console API, built by <code>tools/build-web</code></td></tr>
+    <tr><td><code>packages/ui</code></td><td><span class="role r-public">live</span></td><td><code>@balotachain/ui</code>: tokens, nine components, icons</td></tr>
+    <tr><td><code>docs/</code></td><td><span class="role r-public">live</span></td><td>ADRs, plans, <code>CLAIMS.md</code>, manuscript amendments, desktop-run evidence, the cost model</td></tr>
+    <tr><td><code>apps/voter</code></td><td><span class="role r-legacy">legacy</span></td><td>Flutter screens writing a packed plaintext through <code>balota-encrypt</code>; not connected to the console</td></tr>
+    <tr><td><code>apps/*/src-tauri</code></td><td><span class="role r-legacy">legacy</span></td><td>Tauri shells over the file-backed store; no longer built</td></tr>
+    <tr><td><code>crates/bulletin-store</code> · <code>bulletin-gateway</code> · <code>balota-encrypt</code> · <code>e2e-runner</code></td><td><span class="role r-legacy">legacy</span></td><td>the one-voter demo path from before the console</td></tr>
+    <tr><td><code>services/fabric-adapter</code></td><td><span class="role r-legacy">legacy</span></td><td>read-only chain-to-JSON adapter; superseded by <code>/api/board</code> and <code>/api/trail</code></td></tr>
+  </tbody>
+</table></div>
+
+<h2>A real election, opened up</h2>
+<p>
+  Everything below is decoded from one actual run on the pinned commit —
+  <code>halalan-e2e-20260914-183507-1</code>, the offline election reported under
+  <em>Verified end to end</em>. These are its real bytes, decoded with the repo's
+  own <code>cmd/dumpwire</code>. Long values are shortened in the middle as
+  <code>head…tail</code>; nothing else is altered.
+</p>
+<p>
+  The point of reading it this way: most of these blobs are not encrypted at all.
+  They are protobuf, hex-encoded for transport. Only a few fields actually hide
+  something, and it is worth knowing exactly which.
+</p>
+
+<div class="tw"><table class="pipe">
+  <thead><tr><th>Stage</th><th>Takes</th><th>Produces</th><th>SHA-256 of the output</th></tr></thead>
+  <tbody>
+    <tr><td>Election</td><td>name, 3 trustees, threshold 2, 3&nbsp;×&nbsp;12 ballot, 1,000 voters</td>
+        <td><code>params</code> — 36 contest ids</td><td class="val"><code>—</code> <span class="muted">public, not digested</span></td></tr>
+    <tr><td>DKG</td><td>3 trustees, threshold 2</td>
+        <td>transcript, joint key derivable</td><td class="val"><code>2de9c828…5f1a20ea</code></td></tr>
+    <tr><td>Ballots</td><td>1,000 voters × 3 positions, plaintext choices</td>
+        <td>3,000 encrypted ballots + 36,000 CDS proofs</td><td class="val"><code>25064514…edfa6ea4</code></td></tr>
+    <tr><td>Ground truth</td><td>the same choices, counted directly</td>
+        <td><code>ground-truth-*.csv</code></td><td class="val"><code>3a81592b…fbf7805e</code></td></tr>
+    <tr><td>Aggregate</td><td>3,000 ballots, summed point-wise</td>
+        <td>36 aggregate ciphertexts</td><td class="val"><code>—</code> <span class="muted">derived, not stored</span></td></tr>
+    <tr><td>Trustees</td><td>2 of 3 key shares</td>
+        <td>108 partial decryptions + proofs</td><td class="val"><code>—</code> <span class="muted">inside the tally</span></td></tr>
+    <tr><td>Tally</td><td>the aggregates + a threshold of shares</td>
+        <td>36 plaintext totals + 3 trustee signatures</td><td class="val"><code>ab946f62…2a8af89a</code></td></tr>
+    <tr><td>Verify</td><td>the published record + the seeded ground truth</td>
+        <td><code>E = 0</code></td><td class="val"><code>—</code> <span class="muted">a verdict, not an artifact</span></td></tr>
+  </tbody>
+</table></div>
+
+<div class="note">
+  <strong>The two digests that matter most.</strong> <code>ballots_sha256</code>
+  pins the encrypted set an audit ran against, and
+  <code>ground_truth_ballots_sha256</code> pins the plaintext population it was
+  built from. The encryption is randomised, so ciphertexts can never link a run
+  back to its population — these digests are what does.
+</div>
+
+<div class="legend">
+  <div><span class="kind k-plain">plain</span> Readable once de-hexed. Carries no secret and is not meant to.</div>
+  <div><span class="kind k-cipher">ciphertext</span> An ElGamal pair. Hides a value only a threshold of trustees can recover.</div>
+  <div><span class="kind k-commit">commitment</span> Binds to a value without revealing it.</div>
+  <div><span class="kind k-proof">proof</span> Zero-knowledge — reveals nothing beyond the truth of one statement.</div>
+  <div><span class="kind k-tag">one-way tag</span> A PRF pseudonym. Catches a repeat; never points back to a person.</div>
+  <div><span class="kind k-hash">signature</span> A Schnorr signature: anyone can check it, only the key holder could make it.</div>
+</div>
+
+<div class="blobhead">
+  <h3>Election parameters</h3>
+  <span class="src">header.json <code>params</code> · 1,396 hex chars</span>
+</div>
+<p class="blurb">The public declaration. Every field is plain — this is what everyone must agree on.</p>
+<div class="io"><div class="in"><b>Input to Saksi</b><ul><li>election name <code>Halalan E2E</code></li><li>3 trustees, threshold <b>2</b></li><li>3 positions × 12 candidates</li><li>1,000 voters, <code>realistic</code></li></ul></div><div class="arrow">→</div><div class="out"><b>Output</b><ul><li><code>params</code>, 1,396 hex chars</li><li>36 contest ids, <code>president/cand0</code>&nbsp;…</li><li>the election id every later artifact binds to</li></ul></div></div>
+<div class="tw"><table>
+  <thead><tr><th>Field</th><th>Kind</th><th>Actual value</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>version</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>1</code></td><td>wire format</td></tr>
+    <tr><td><code>election_id</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>halalan-e2e-20260914-183507-1</code></td><td>the run id</td></tr>
+    <tr><td><code>threshold</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>2</code></td><td>the <em>t</em> in t-of-3</td></tr>
+    <tr><td><code>trustee_ids</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>1, 2, 3</code></td><td>aligned to COMELEC, Civil Society Watch, University IT</td></tr>
+    <tr><td><code>contest_ids</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>president/cand0, president/cand1, president/cand2, president/cand3, …</code></td><td>36 of them — 3 positions × 12 candidates</td></tr>
+  </tbody>
+</table></div>
+<figure><figcaption><span>the first and last bytes of that same blob, raw</span></figcaption>
+<pre><code>0801121d68616c616c616e2d…312201312201322201332802</code></pre></figure>
+
+<div class="blobhead">
+  <h3>DKG transcript</h3>
+  <span class="src">header.json <code>dkg</code> · 508 hex chars</span>
+</div>
+<p class="blurb">
+  Enough to <em>derive</em> the joint election key without the private key ever
+  being assembled. 0 complaints.
+</p>
+<div class="io"><div class="in"><b>Input to Saksi</b><ul><li>3 trustee identities</li><li>threshold 2 — the degree of each polynomial</li><li>each dealer's coefficients — fresh from <code>OsRng</code> for every election</li></ul></div><div class="arrow">→</div><div class="out"><b>Output</b><ul><li>2 coefficient commitments per trustee, 32 bytes each</li><li>the <b>joint public key</b>, summed from the constant terms</li><li>a trustee share each, held by the generator</li></ul></div></div>
+<div class="tw"><table>
+  <thead><tr><th>Field</th><th>Kind</th><th>Actual value</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>threshold</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>2</code></td><td>cross-checked against the parameters, on-chain and by the auditor</td></tr>
+    <tr><td><code>trustee_commitments[0].trustee_id</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>1</code></td><td>whose commitment</td></tr>
+    <tr><td><code>coefficient_commitments[0]</code></td><td><span class="kind k-commit">commitment</span></td><td class="val"><code>aa2a046c068e29a1…549e178ed1536a3b</code></td><td>the <b>constant term</b> — summing all three trustees' gives the joint public key</td></tr>
+    <tr><td><code>coefficient_commitments[1]</code></td><td><span class="kind k-commit">commitment</span></td><td class="val"><code>4a40bbbbeedf28d4…a28863dc1f4dec31</code></td><td>different in every election: the dealer polynomials are random</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blobhead">
+  <h3>Ballot</h3>
+  <span class="src">ballots.ndjson line 1 of 3,000 · 9,308 hex chars</span>
+</div>
+<p class="blurb">
+  The only blob that hides a vote. 3,000 lines = 1,000 voters × 3 positions, one
+  record per voter per race.
+</p>
+<div class="io"><div class="in"><b>Input to Saksi</b><ul><li><code>V-000001</code> picks <code>CAND_PRES_01</code> for President</li><li>the joint election key</li><li>that voter's blind-signed credential</li></ul></div><div class="arrow">→</div><div class="out"><b>Output</b><ul><li>12 ciphertexts — one per candidate, each 0 or 1</li><li>12 CDS proofs, 2 branches each</li><li>1 nullifier, <code>ae532403…96d8321b</code></li><li><b>9,308 hex chars</b> for this one record</li></ul></div></div>
+<div class="tw"><table>
+  <thead><tr><th>Field</th><th>Kind</th><th>Actual value</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>election_id</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>halalan-e2e-20260914-183507-1</code></td><td>which election</td></tr>
+    <tr><td><code>position_id</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>president</code></td><td>which race this record votes in</td></tr>
+    <tr><td><code>ciphertexts[0]</code></td><td><span class="kind k-cipher">ciphertext</span></td><td class="val"><code>pad&nbsp; ce518c875d2a529e…3ca440465590af4b<br>data 0ed3fa8dd3a37c02…5298984e2a98cf45</code></td><td>candidate 1 — encrypts 0 or 1</td></tr>
+    <tr><td><code>ciphertexts[1]</code></td><td><span class="kind k-cipher">ciphertext</span></td><td class="val"><code>pad&nbsp; 144f7291028e4f12…bcf132c0d7fdb417<br>data 80089b84de42c47b…b32050c4b406d422</code></td><td>candidate 2 — encrypts 0 or 1</td></tr>
+    <tr><td><code>ciphertexts[2]</code></td><td><span class="kind k-cipher">ciphertext</span></td><td class="val"><code>pad&nbsp; 482233f61a9adab2…cc7f4db277e9111e<br>data 4815283004cadad5…c946328f9ab1477c</code></td><td>candidate 3 — encrypts 0 or 1</td></tr>
+    <tr><td colspan="4" class="elide">… 9 more, one per remaining candidate. <strong>The vote is which of the 12 holds a 1</strong> — and that is exactly what is hidden.</td></tr>
+    <tr><td><code>branches[0]</code></td><td><span class="kind k-proof">proof</span></td><td class="val"><code>a 5e3630f2e789…a19635af9b56<br>b c82e1faf42a7…8c86b2cf3d05<br>c b6d5caa49ea1…ac07baad3501<br>s 5c326e1e2b70…c7fd4b8a3f05</code></td><td>the real branch, or the simulated one — indistinguishable</td></tr>
+    <tr><td><code>branches[1]</code></td><td><span class="kind k-proof">proof</span></td><td class="val"><code>a c4c52103121f…627504b2860c<br>b 064c885a531b…492031d73a7d<br>c acac44f44ba1…5bd9d7212803<br>s b5a74c616ae5…8c9772aa3f09</code></td><td>the other branch, equally convincing</td></tr>
+    <tr><td colspan="4" class="elide">… 12 CDS proofs in total, one per ciphertext, 2 branches each.</td></tr>
+    <tr><td><code>credential_commitment</code></td><td><span class="kind k-commit">commitment</span></td><td class="val"><code>c4476ad6ff7b9b02…68d98defaf691748</code></td><td>the voter's blind-signed credential, committed not revealed</td></tr>
+    <tr><td><code>issuer_public_key</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>8209b6afa32c700d…e87f8840a8efab0e</code></td><td>the registrar's key — the eligibility trust anchor, fresh per run</td></tr>
+    <tr><td><code>presentation_proof</code></td><td><span class="kind k-proof">proof</span></td><td class="val"><code>a03accf501c1a7c3…f77d82570c304605</code></td><td>202 bytes: a 64-byte issuer signature, then a Chaum-Pedersen proof</td></tr>
+    <tr><td><code>nullifier.value</code></td><td><span class="kind k-tag">tag</span></td><td class="val"><code>ae53240353ea0058ae25a9faea507553973e6090a9df393294f16c9396d8321b</code></td><td>32 bytes — the full value, nothing elided</td></tr>
+  </tbody>
+</table></div>
+
+<div class="note">
+  <strong>The same voter, the next race.</strong> Line 2 is <code>voter-0</code>
+  again, voting for <code>vice-president</code>:
+  <br><br>
+  <code class="wrapcode">president &nbsp; &nbsp; &nbsp;ae53240353ea0058ae25a9faea507553973e6090a9df393294f16c9396d8321b</code><br>
+  <code class="wrapcode">vice-president a0c470bb19b13003e3787a30c7f668f109f81196da9207232819e25eb9a5850f</code>
+  <br><br>
+  Two nullifiers from one credential, sharing no visible structure. That is
+  <code>PRF(credential_secret, election_id ‖ position_id)</code> doing its job: a
+  second vote in the <em>same</em> race is caught at once, while the two races
+  cannot be linked to each other — let alone to a person. The first four bytes,
+  <code>BC-AE53-2403</code> as a tracking code, are how the board finds a ballot.
+</div>
+
+<div class="blobhead">
+  <h3>Partial decryption</h3>
+  <span class="src">header.json <code>partial_decryptions[0]</code> · 108 of them</span>
+</div>
+<p class="blurb">
+  108 = 36 contests × 3 trustees. One share alone decrypts nothing; 2 of them
+  combine into a result.
+</p>
+<div class="io"><div class="in"><b>Input to Saksi</b><ul><li>the aggregate ciphertext for <code>president/cand0</code></li><li>trustee 1's private key share</li></ul></div><div class="arrow">→</div><div class="out"><b>Output</b><ul><li>a 32-byte share, <code>86ac972a…19d77f2f</code></li><li>a Chaum-Pedersen proof that the right key was used</li><li>still decrypts nothing on its own</li></ul></div></div>
+<div class="tw"><table>
+  <thead><tr><th>Field</th><th>Kind</th><th>Actual value</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>trustee_id</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>1</code></td><td>which trustee</td></tr>
+    <tr><td><code>contest_id</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>president/cand0</code></td><td>self-describing — never relies on array position</td></tr>
+    <tr><td><code>share</code></td><td><span class="kind k-commit">commitment</span></td><td class="val"><code>86ac972af08ba453…c9df91e719d77f2f</code></td><td>32 bytes: the trustee key share applied to the aggregate</td></tr>
+    <tr><td><code>proof.commitment_a</code> · <code>_b</code></td><td><span class="kind k-proof">proof</span></td><td class="val"><code>a aa381dea0919…b616237c8360<br>b 3e2e14495c00…300f56ad1816</code></td><td>Chaum-Pedersen: the share used the <em>same</em> secret the DKG committed to</td></tr>
+    <tr><td><code>proof.challenge</code></td><td><span class="kind k-proof">proof</span></td><td class="val"><code>aac320ea9b5c…3882c93e420e</code></td><td>Fiat-Shamir challenge</td></tr>
+    <tr><td><code>proof.response</code></td><td><span class="kind k-proof">proof</span></td><td class="val"><code>52147fb100fd…23a9615c1809</code></td><td>the response that closes the proof — verified by the auditor only</td></tr>
+  </tbody>
+</table></div>
+
+<div class="blobhead">
+  <h3>Tally result</h3>
+  <span class="src">header.json <code>tally</code> · 44,026 hex chars</span>
+</div>
+<p class="blurb">The published outcome — the one blob whose payload is meant to be read, now signed.</p>
+<div class="io"><div class="in"><b>Input to Saksi</b><ul><li>36 aggregate ciphertexts</li><li>2 of 3 partial decryptions per contest</li><li>Lagrange interpolation, then a bounded discrete log</li><li>each trustee's DKG share, to sign the totals</li></ul></div><div class="arrow">→</div><div class="out"><b>Output</b><ul><li>36 plaintext totals — <code>446, 61, 59, 57…</code></li><li>which match the seeded ground truth exactly</li><li>3 Schnorr signatures over those exact totals</li></ul></div></div>
+<div class="tw"><table>
+  <thead><tr><th>Field</th><th>Kind</th><th>Actual value</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>totals[0..11]</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>446, 61, 59, 57, 55, 52, 50, 48, 46, 44, 42, 40</code></td><td>the President race, in contest order — public by design</td></tr>
+    <tr><td><code>totals (count)</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>36</code></td><td>one per contest id, same order as the parameters</td></tr>
+    <tr><td><code>partial_decryptions</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>108</code></td><td>the shares it was opened with, so anyone can recheck the combination</td></tr>
+    <tr><td><code>signatures[0]</code></td><td><span class="kind k-hash">signature</span></td><td class="val"><code>trustee 1 · 08d0088c4fbab1db…1260c574a78b1b06</code></td><td>64 bytes, over <code>saksi.tally.sig.v1</code> ‖ election id ‖ totals</td></tr>
+    <tr><td><code>signatures[1]</code> · <code>[2]</code></td><td><span class="kind k-hash">signature</span></td><td class="val"><code>trustee 2 · ecf0b56f4de0423b…8cb8a2c970c49000<br>trustee 3 · 12575de1c74fce63…21b55043ed967908</code></td><td>the generator signs with all three; the ceremony publishes only the submitters'</td></tr>
+  </tbody>
+</table></div>
+
+<div class="note">
+  <strong>Where <code>E = 0</code> actually comes from.</strong> The tally's first
+  twelve totals are <code>446, 61, 59, 57, 55…</code> — and the seeded ground
+  truth in the same header reads <code>446, 61, 59, 57, 55…</code>. Those two were
+  produced by completely separate paths: one by threshold decryption of the
+  homomorphic aggregate, the other by counting the plaintext selections before
+  any encryption happened. They agree to the vote.
+</div>
+
+<div class="blobhead">
+  <h3>Header metadata</h3>
+  <span class="src">header.json — off-wire, never on the chain</span>
+</div>
+<div class="tw"><table>
+  <thead><tr><th>Field</th><th>Kind</th><th>Actual value</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>binding_context</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>saksi-auditor-v1</code></td><td>stored hex-encoded; it domain-separates every NIZK in this run</td></tr>
+    <tr><td><code>issuer_pk</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>8209b6afa32c700d…e87f8840a8efab0e</code></td><td>same key every ballot presents against</td></tr>
+    <tr><td><code>n</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>3,000</code></td><td>enforced as <code>stream.completeness</code> — the file must match exactly</td></tr>
+    <tr><td><code>ground_truth[0..11]</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>446, 61, 59, 57, 55, 52, 50, 48, 46, 44, 42, 40</code></td><td>the seeded answer key; the public board's copy has it emptied</td></tr>
+    <tr><td><code>voter_ids[0..3]</code></td><td><span class="kind k-plain">plain</span></td><td class="val"><code>voter-0, voter-0, voter-0, voter-1</code></td><td>one voter, three records — generation metadata, emptied on the public copy</td></tr>
+  </tbody>
+</table></div>
+
+<div class="note hard">
+  <strong>What you cannot get out of the blobs alone.</strong> Decode every blob
+  above and you still cannot say how <code>voter-0</code> voted: the choice lives
+  in which of the 12 ciphertexts encrypts a 1, and that opens only with the
+  election's secret key, which exists only as trustee shares: 2 of the 3 must
+  act. In this harness the generator process still holds every share — the
+  ceremony is simulated — so the secrecy shown is against everyone except that
+  process.
+</div>
+
+<h2>Verified end to end</h2>
+<p>
+  A complete offline run on the pinned commit, through the console's own API:
+  1,000 voters, 3 positions, 12 candidates, <code>realistic</code>, 3 senate seats,
+  3 trustees at threshold 2.
+</p>
+<div class="tw">
+  <table>
+    <thead><tr><th>Stage</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Generation</td><td class="num-cell">2,257 ms wall · 3,000 ballots · 1 chunk of 1,000 voters</td></tr>
+      <tr><td>Validation gate</td><td>7 of 7 checks pass · 1,000 rows · all 36 contests agree</td></tr>
+      <tr><td>Threshold gate</td><td><code>409</code> at 0/2 and 1/2 · <code>202</code> at 2/2</td></tr>
+      <tr><td>President</td><td class="num-cell">446 · 61 · 59 · 57 · 55 …</td></tr>
+      <tr><td>Vice President</td><td class="num-cell">446 · 60 · 59 · 57 · 55 …</td></tr>
+      <tr><td>Senator (3 seats)</td><td class="num-cell">431 · 65 · 62 · 61 · 58 … — cut clean, 62 &gt; 61</td></tr>
+      <tr><td>Accuracy</td><td><strong>E = 0</strong> on all 36 contests · ballots verified in 1,388 ms on 16 threads</td></tr>
+      <tr><td>Attacks</td><td>6 <span class="verdict v-pass">PASS</span>, each on its declared auditor check · 1 <span class="verdict v-skip">SKIPPED</span> (reordered-ballots: no gate exists)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Every function, browsable</h2>
+<p>
+  Click any function name anywhere on this page — in the prose, in a call path, or
+  in the lists below — and its complete source opens beside you, doc comment
+  included, exactly as it is at the pinned commit.
+</p>
+<h3 class="sub">Go — the console <span class="muted">saksi/packages/saksi-campaign/</span></h3>
+<div class="fnindex" id="idx-console"></div>
+<h3 class="sub">Rust — generation, crypto and the auditor <span class="muted">saksi/packages/saksi-auditor/ · saksi-demo/</span></h3>
+<div class="fnindex" id="idx-rust"></div>
+<h3 class="sub">Go — chaincode and ledger SDK <span class="muted">saksi/packages/saksi-bulletin/</span></h3>
+<div class="fnindex" id="idx-chain"></div>
+<h3 class="sub">TypeScript — the browser apps <span class="muted">balotachain/apps/</span></h3>
+<div class="fnindex" id="idx-apps"></div>
+
+<h2>Where each guarantee lives</h2>
+<p>
+  The single most useful thing to understand before demonstrating this: not every
+  guarantee is enforced in the same place, and one is enforced nowhere.
+</p>
+<div class="tw"><table>
+  <thead><tr><th>Guarantee</th><th>Enforced by</th><th>Seen at</th></tr></thead>
+  <tbody>
+    <tr><td>Ballot well-formedness</td><td>CDS proof — chaincode gate <code>cds</code> at endorsement, and auditor <code>ballot.cds_proof</code></td><td>4, 6, 7</td></tr>
+    <tr><td>Eligibility</td><td>issuer signature on the credential — chaincode <code>credential</code>, auditor <code>ballot.credential</code></td><td>4, 6</td></tr>
+    <tr><td>No double voting</td><td>per-position nullifier — chaincode <code>nullifier</code>, auditor <code>nullifier.unique</code></td><td>4, 6, 7</td></tr>
+    <tr><td>Data completeness</td><td>the console's validation gate, and auditor <code>stream.completeness</code></td><td>3, 6, 7</td></tr>
+    <tr><td>DKG transcript</td><td>chaincode checks shape, threshold and trustee count, one per election; only the auditor checks the commitments are valid points (<code>dkg.decode</code>)</td><td>4, 6, 7</td></tr>
+    <tr><td>Threshold t-of-n</td><td>console publish gate, chaincode signature gate, auditor <code>decryption.threshold</code> and <code>tally.signatures</code></td><td>5, 6</td></tr>
+    <tr><td>Partial-decryption correctness</td><td>auditor <code>decryption.cp_proof</code> only; the chaincode checks the proof is present</td><td>5, 6, 7</td></tr>
+    <tr><td>Tally correctness</td><td><code>E = T − G = 0</code> per contest, <code>tally.homomorphic_sum</code></td><td>6</td></tr>
+    <tr><td>Chain matches console</td><td>ledger dump and <code>ledger_matches_local</code>, on-chain runs</td><td>6</td></tr>
+    <tr><td>Ledger ordering</td><td><strong>nothing</strong> — reordering is not detected on-chain or by the auditor</td><td>7</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Declared limitations</h2>
+<p>
+  Recorded rather than discovered — each is stated here as it is in the code.
+</p>
+<div class="note">
+  <strong>Runs before saksi <code>1812139</code> used fixed DKG dealers.</strong> Their
+  election keys can be derived from the source, so they support correctness,
+  verifiability and performance results, not ballot secrecy. From that commit on,
+  every dealer polynomial is random.
+</div>
+<div class="note">
+  <strong>The ceremony is simulated.</strong> The generator produces every partial
+  decryption and signature in one process; the console forwards them when a
+  trustee acts, so that one process holds every key share. The cryptography is
+  real; separation between trustees is not exercised.
+</div>
+<div class="note">
+  <strong>The chaincode does not authorise callers.</strong> No contract function
+  reads the caller's identity, so anyone with a channel identity could create an
+  election under a chosen id first, or submit to one — a front-running denial of
+  service, not a forgery: every submission still passes the same gates.
+</div>
+<div class="note">
+  <strong>Ordering is not detected.</strong> Swapping ballot lines changes nothing
+  any verifier checks, so <code>reordered-ballots</code> is always SKIPPED.
+</div>
+<div class="note">
+  <strong>Chaum-Pedersen proofs are checked for presence on-chain.</strong> A share
+  with a wrong proof is recorded by the ledger and caught only by the auditor.
+</div>
+<div class="note">
+  <strong>Contest-mixing is narrowed, not closed.</strong> The three positions
+  usually differ under <code>realistic</code>, but in roughly 8.6% of
+  configurations they land on the same multiset of totals. On those,
+  <code>E = 0</code> could not tell one contest from another.
+</div>
+<div class="note">
+  <strong>One vote per position.</strong> Multi-seat races are decided by plurality
+  over a single selection each (single non-transferable vote). A ballot marking
+  several candidates for one position needs a proof that selections sum to N —
+  new cryptography, not configuration.
+</div>
+<div class="note">
+  <strong>One machine, not independent organisations.</strong> The chaincode has
+  no <code>DelState</code> and guards every write against overwrite, so the record
+  is append-only. But the test network's two organisations and single orderer run
+  on one computer; distributed immutability needs independent operators.
+</div>
+<div class="note">
+  <strong>No live voter.</strong> Ballots come from the generator. The Flutter
+  voter app is not connected to the console, and no route accepts a ballot cast
+  by a person.
+</div>
+
+<footer>
+  <p>
+    BalotaChain on the Saksi Framework · Western Mindanao State University,
+    undergraduate thesis. Sources extracted from <code>saksi@1812139</code> and
+    <code>balotachain@a79918d</code>; figures from run
+    <code>halalan-e2e-20260914-183507-1</code>, 15 September 2026.
+  </p>
+</footer>
+</div>
+
+<div id="scrim"></div>
+<aside id="side" role="dialog" aria-modal="true" aria-labelledby="side-name" hidden>
+  <header>
+    <div class="top">
+      <h4 id="side-name"></h4>
+      <button id="close" type="button" aria-label="Close">&times;</button>
+    </div>
+    <p class="loc" id="side-loc"></p>
+  </header>
+  <div class="why" id="side-why"></div>
+  <div class="src"><pre><code id="side-src"></code></pre></div>
+  <p class="foot">Verbatim from the pinned commit — extracted, not transcribed. Press <b>Esc</b> to close.</p>
+</aside>
