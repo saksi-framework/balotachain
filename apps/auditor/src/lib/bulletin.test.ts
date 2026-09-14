@@ -5,6 +5,7 @@ import {
   verifyTrackingCode,
   exportUrl,
   verifierUrl,
+  getCapabilities,
 } from "./bulletin";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -91,5 +92,14 @@ describe("console client", () => {
       "/export/run-1/correctness.csv",
     );
     expect(verifierUrl("run-1")).toBe("/trail/run-1");
+  });
+
+  it("reads capabilities", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ fabric: true, peer: "p:7051" }));
+    await expect(getCapabilities()).resolves.toEqual({
+      fabric: true,
+      peer: "p:7051",
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/capabilities");
   });
 });

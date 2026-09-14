@@ -1421,14 +1421,19 @@ export default function App() {
   }, [runId, refresh]);
 
   // SSE is a liveness cue only — the hub drops events for slow subscribers and
-  // has no replay, so nothing is derived from it.
+  // has no replay, so nothing is derived from it. With auth on, `/events`
+  // requires a session: don't open it while signed out, and reconnect when
+  // the signed-in identity changes (not just on mount / runId change), so a
+  // sign-in on this same page picks the stream up without a reload.
+  const sessionKey = auth.kind === "in" ? auth.session.username : null;
   useEffect(() => {
     if (!runId) return;
+    if (auth.kind === "checking" || auth.kind === "login") return;
     return subscribeEvents(runId, (e) => {
       if (e.phase !== "ceremony") return;
       setLive((prev) => [...prev.slice(-9), e.msg]);
     });
-  }, [runId]);
+  }, [runId, auth.kind, sessionKey]);
 
   // Restore the last identity used for this run — only without auth, where the
   // choice is the identity. With auth the session decides.

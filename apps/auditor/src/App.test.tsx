@@ -5,6 +5,7 @@ import type { Board, RunView, VerifyOutcome } from "./lib/bulletin";
 const listRunsMock = vi.fn();
 const loadBoardMock = vi.fn();
 const verifyTrackingCodeMock = vi.fn();
+const getCapabilitiesMock = vi.fn();
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
@@ -14,6 +15,7 @@ vi.mock("./lib/bulletin", async (importActual) => {
     loadBoard: (id: string) => loadBoardMock(id),
     verifyTrackingCode: (runId: string, code: string) =>
       verifyTrackingCodeMock(runId, code),
+    getCapabilities: () => getCapabilitiesMock(),
   };
 });
 
@@ -106,8 +108,10 @@ beforeEach(() => {
   listRunsMock.mockReset();
   loadBoardMock.mockReset();
   verifyTrackingCodeMock.mockReset();
+  getCapabilitiesMock.mockReset();
   listRunsMock.mockResolvedValue([run]);
   loadBoardMock.mockResolvedValue(board());
+  getCapabilitiesMock.mockResolvedValue({ fabric: false });
   vi.stubGlobal("history", { ...window.history, replaceState: vi.fn() });
 });
 
@@ -274,6 +278,37 @@ describe("bulletin board", () => {
   it("renders the tally fingerprint from the run's artifact digest", async () => {
     render(<App />);
     expect(await screen.findByText("sha256:f2193c71")).toBeInTheDocument();
+  });
+
+  // /trail/<id> dials Fabric, so a link that will only 502 is worse than none.
+  it("shows the verifier as unavailable for an offline run, with a reason", async () => {
+    // Default fixtures: board mode "offline", capabilities fabric: false.
+    render(<App />);
+    expect(await screen.findByText("Verifier unavailable")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /the on-chain verifier needs a Fabric network; this run was offline/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Open verifier/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the verifier as unavailable when the console has no Fabric driver, even on-chain", async () => {
+    loadBoardMock.mockResolvedValue(board({ mode: "onchain", on_chain: true }));
+    getCapabilitiesMock.mockResolvedValue({ fabric: false });
+    render(<App />);
+    expect(await screen.findByText("Verifier unavailable")).toBeInTheDocument();
+  });
+
+  it("links to the verifier for an on-chain run on a console with Fabric", async () => {
+    loadBoardMock.mockResolvedValue(board({ mode: "onchain", on_chain: true }));
+    getCapabilitiesMock.mockResolvedValue({ fabric: true, peer: "p:7051" });
+    render(<App />);
+    const link = await screen.findByRole("link", { name: /Open verifier/i });
+    expect(link).toHaveAttribute("href", "/trail/demo-2026-1");
+    expect(screen.queryByText("Verifier unavailable")).not.toBeInTheDocument();
   });
 });
 

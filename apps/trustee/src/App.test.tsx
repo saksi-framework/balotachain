@@ -9,6 +9,9 @@ const publishMock = vi.fn();
 const getMeMock = vi.fn();
 const loginMock = vi.fn();
 const logoutMock = vi.fn();
+const subscribeEventsMock = vi.fn(
+  (_runId: string, _onEvent: (e: unknown) => void) => () => {},
+);
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
@@ -19,7 +22,8 @@ vi.mock("./lib/bulletin", async (importActual) => {
     submitPartialDecryption: (runId: string, trusteeId: string) =>
       submitMock(runId, trusteeId),
     publishTally: (runId: string) => publishMock(runId),
-    subscribeEvents: () => () => {},
+    subscribeEvents: (runId: string, onEvent: (e: unknown) => void) =>
+      subscribeEventsMock(runId, onEvent),
     getMe: () => getMeMock(),
     login: (u: string, p: string) => loginMock(u, p),
     logout: () => logoutMock(),
@@ -93,6 +97,8 @@ beforeEach(() => {
   getMeMock.mockReset();
   loginMock.mockReset();
   logoutMock.mockReset();
+  subscribeEventsMock.mockReset();
+  subscribeEventsMock.mockImplementation(() => () => {});
   // Default: a console without auth routes, the behaviour PR #54 shipped.
   getMeMock.mockResolvedValue(null);
   loginMock.mockResolvedValue(undefined);
@@ -406,6 +412,31 @@ describe("trustee console with console auth on", () => {
       screen.queryByRole("button", { name: /Submit Partial Decryption/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Who are you?")).not.toBeInTheDocument();
+  });
+
+  it("opens the events stream after sign-in, without a reload", async () => {
+    getMeMock
+      .mockRejectedValueOnce(new ApiError(401, "login required"))
+      .mockResolvedValue(ppcrv);
+    render(<App />);
+    await screen.findByLabelText("Username");
+    // Signed out: /events must not be opened (it would 401).
+    expect(subscribeEventsMock).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "ppcrv" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "pw" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() =>
+      expect(subscribeEventsMock).toHaveBeenCalledWith(
+        "demo-2026-1",
+        expect.any(Function),
+      ),
+    );
   });
 
   it("signs out back to the sign-in screen", async () => {
