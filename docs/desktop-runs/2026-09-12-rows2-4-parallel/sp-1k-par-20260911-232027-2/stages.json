@@ -1,0 +1,49 @@
+{
+  "ballot_blocks": 20,
+  "ballots_per_block": 50.0,
+  "ledger_dump": {
+    "ballots": 1000,
+    "event": "ledger.dump",
+    "mono_ms": 628,
+    "ok": true,
+    "read_path": "batched",
+    "ts": "2026-09-11T23:20:43Z"
+  },
+  "lifecycle_tail_seconds": 6.0,
+  "lifecycle_tx": 24,
+  "run_id": "sp-1k-par-20260911-232027-2",
+  "run_seconds": 15.0,
+  "stage_seconds_total": 2.547,
+  "stages": {
+    "ballots": {
+      "end_mono_ms": 1258,
+      "ok": null,
+      "seconds": 1.258,
+      "start_mono_ms": 0
+    },
+    "bundle": {
+      "end_mono_ms": 1,
+      "ok": true,
+      "seconds": 0.001,
+      "start_mono_ms": 0
+    },
+    "check": {
+      "end_mono_ms": 2,
+      "ok": true,
+      "seconds": 0.002,
+      "start_mono_ms": 0
+    },
+    "generate": {
+      "end_mono_ms": 255,
+      "ok": true,
+      "seconds": 0.25,
+      "start_mono_ms": 5
+    },
+    "verify": {
+      "end_mono_ms": 1036,
+      "ok": true,
+      "seconds": 1.036,
+      "start_mono_ms": 0
+    }
+  }
+}

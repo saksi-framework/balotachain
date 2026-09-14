@@ -1,0 +1,43 @@
+{
+  "run_id": "sp-1k-val-20260912-041720-6",
+  "config": {
+    "name": "sp-1k-val",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 1,
+    "candidates": 4,
+    "voters": 1000,
+    "distribution": "realistic",
+    "mode": "onchain",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "window_s": 0,
+    "rep": {
+      "index": 4,
+      "kind": "measured"
+    },
+    "skip_attacks": false
+  },
+  "created_at": "2026-09-12T04:17:20.444605761Z",
+  "commit": {
+    "git_head_console": "076b7303af73a8d164d4c6dc38b9fd84de77699c",
+    "git_head_saksi": "076b7303af73a8d164d4c6dc38b9fd84de77699c"
+  }
+}

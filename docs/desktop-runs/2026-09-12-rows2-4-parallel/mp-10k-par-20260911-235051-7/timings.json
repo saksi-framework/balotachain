@@ -1,0 +1,7 @@
+{
+  "verify_ballots": 4574,
+  "aggregate": 44,
+  "combine": 1,
+  "decode": 9,
+  "verify_threads": 16
+}
