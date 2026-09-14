@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
+  ApiError,
+  getMe,
+  login,
+  logout,
   listRuns,
   loadCeremony,
   submitPartialDecryption,
@@ -77,5 +81,60 @@ describe("console client", () => {
 
   it("links to the board served by the same console", () => {
     expect(boardUrl("demo-1")).toBe("/board/?run=demo-1");
+  });
+});
+
+describe("session", () => {
+  it("reads the session from /api/me", async () => {
+    fetchMock.mockResolvedValue(
+      ok({ username: "ppcrv", role: "trustee", trustee_id: "2" }),
+    );
+    await expect(getMe()).resolves.toEqual({
+      username: "ppcrv",
+      role: "trustee",
+      trustee_id: "2",
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/me");
+  });
+
+  // A console without the auth routes answers from its 404 catch-all.
+  it("reads a 404 from /api/me as auth being off", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "404 page not found",
+    } as Response);
+    await expect(getMe()).resolves.toBeNull();
+  });
+
+  it("rejects with the status when there is no session", async () => {
+    fetchMock.mockResolvedValue(ok({ error: "login required" }, 401));
+    await expect(getMe()).rejects.toMatchObject({ status: 401 });
+    await expect(getMe()).rejects.toBeInstanceOf(ApiError);
+  });
+
+  it("logs in and out with POSTs", async () => {
+    fetchMock.mockResolvedValue(ok("", 204));
+    await login("ppcrv", "pw");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/login");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      username: "ppcrv",
+      password: "pw",
+    });
+    await logout();
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/logout");
+    expect(fetchMock.mock.calls[1][1].method).toBe("POST");
+  });
+
+  // Submitting another trustee's shares is refused with a JSON body; the
+  // sentence inside it is what the trustee should read.
+  it("surfaces a JSON 403 text verbatim with its status", async () => {
+    fetchMock.mockResolvedValue(
+      ok({ error: "trustees may submit only their own shares" }, 403),
+    );
+    await expect(submitPartialDecryption("demo-1", "3")).rejects.toMatchObject({
+      status: 403,
+      message: "trustees may submit only their own shares",
+    });
   });
 });

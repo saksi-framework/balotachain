@@ -3,6 +3,7 @@ import {
   useEffect,
   useState,
   type CSSProperties,
+  type FormEvent,
   type ReactNode,
 } from "react";
 import {
@@ -11,6 +12,7 @@ import {
   CopyButton,
   PrimaryButton,
   SecondaryButton,
+  TextInput,
   AlertIcon,
   CheckIcon,
   LockIcon,
@@ -19,6 +21,10 @@ import {
 import { Chip, type ChipVariant } from "./components/Chip";
 import { ProgressBar } from "./components/ProgressBar";
 import {
+  ApiError,
+  getMe,
+  login,
+  logout,
   listRuns,
   loadCeremony,
   submitPartialDecryption,
@@ -29,6 +35,7 @@ import {
   type CeremonyEvent,
   type CeremonyTrustee,
   type RunView,
+  type Session,
 } from "./lib/bulletin";
 
 type SubmitPhase = "idle" | "confirm" | "submitted";
@@ -39,6 +46,17 @@ const POLL_MS = 4000;
 const AFTER_SUBMIT_MS = 700;
 
 const STORAGE_KEY = "balota.trustee";
+
+/**
+ * `off` = the console has no auth routes (`/api/me` 404s): identity comes from
+ * `?trustee=` as before. `in` = identity comes from the session, and the URL's
+ * `?trustee=` is display only.
+ */
+type Auth =
+  | { kind: "checking" }
+  | { kind: "off" }
+  | { kind: "login" }
+  | { kind: "in"; session: Session };
 
 type Load =
   | { kind: "loading" }
@@ -215,12 +233,14 @@ function TopBar({
   you,
   ordinal,
   total,
-  onChangeIdentity,
+  actionLabel,
+  onAction,
 }: {
   you: CeremonyTrustee | null;
   ordinal: number;
   total: number;
-  onChangeIdentity: () => void;
+  actionLabel: string | null;
+  onAction: () => void;
 }) {
   return (
     <header
@@ -268,54 +288,60 @@ function TopBar({
           </span>
         </span>
 
-        {you ? (
+        {you || actionLabel ? (
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <span
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
+            {you ? (
               <span
-                aria-hidden
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: tokens.color.tealLight,
-                  color: tokens.color.tealDark,
-                  display: "inline-flex",
+                  display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 13,
-                  fontWeight: 700,
+                  gap: 10,
                 }}
               >
-                {initialsOf(you.name)}
+                <span
+                  aria-hidden
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    background: tokens.color.tealLight,
+                    color: tokens.color.tealDark,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  {initialsOf(you.name)}
+                </span>
+                <span style={{ lineHeight: 1.25 }}>
+                  <b
+                    style={{ fontSize: 14, fontWeight: 600, display: "block" }}
+                  >
+                    {you.name}
+                  </b>
+                  <small style={{ fontSize: 12, color: tokens.color.text2 }}>
+                    Trustee {ordinal} of {total}
+                  </small>
+                </span>
               </span>
-              <span style={{ lineHeight: 1.25 }}>
-                <b style={{ fontSize: 14, fontWeight: 600, display: "block" }}>
-                  {you.name}
-                </b>
-                <small style={{ fontSize: 12, color: tokens.color.text2 }}>
-                  Trustee {ordinal} of {total}
-                </small>
-              </span>
-            </span>
-            <SecondaryButton
-              onClick={onChangeIdentity}
-              style={{
-                minHeight: 34,
-                padding: "0 12px",
-                fontSize: 13,
-                borderRadius: tokens.radius.button,
-                border: `1px solid ${tokens.color.border}`,
-                color: tokens.color.text2,
-              }}
-            >
-              Not you?
-            </SecondaryButton>
+            ) : null}
+            {actionLabel ? (
+              <SecondaryButton
+                onClick={onAction}
+                style={{
+                  minHeight: 34,
+                  padding: "0 12px",
+                  fontSize: 13,
+                  borderRadius: tokens.radius.button,
+                  border: `1px solid ${tokens.color.border}`,
+                  color: tokens.color.text2,
+                }}
+              >
+                {actionLabel}
+              </SecondaryButton>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -909,10 +935,12 @@ function KeyShareCard({
   ceremony,
   you,
   ordinal,
+  session,
 }: {
   ceremony: Ceremony;
   you: CeremonyTrustee;
   ordinal: number;
+  session: Session | null;
 }) {
   const total = ceremony.trustees.length;
   return (
@@ -988,8 +1016,10 @@ function KeyShareCard({
         </span>
         Key share material is never shown here and never reaches the browser.
         Only a partial decryption — which reveals nothing on its own — is
-        recorded. This research console has no trustee authentication: anyone
-        who can open this page can act as any trustee.
+        recorded.{" "}
+        {session
+          ? `Signed in as ${session.username}: the console accepts this trustee's shares only from this account.`
+          : "This research console has no trustee authentication: anyone who can open this page can act as any trustee."}
       </div>
     </Card>
   );
@@ -1188,6 +1218,91 @@ function IdentityPicker({
   );
 }
 
+function Login({ onSignedIn }: { onSignedIn: () => void }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await login(username, password);
+      onSignedIn();
+    } catch (err) {
+      // "invalid credentials", or the lockout 429 — shown exactly as sent.
+      setError(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
+  }
+
+  const label: CSSProperties = {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 600,
+    color: tokens.color.text2,
+    marginBottom: 6,
+  };
+
+  return (
+    <main style={{ ...wrap, padding: "60px 28px", maxWidth: 520 }}>
+      <Card>
+        <CardHead title="Sign in" label="Trustee console" />
+        <p style={{ ...noteText, marginTop: 0 }}>
+          Sign in with the account for your institution. Your trustee identity
+          comes from this account, not from the link you opened.
+        </p>
+        <form
+          onSubmit={submit}
+          style={{ display: "flex", flexDirection: "column", gap: 16 }}
+        >
+          <label>
+            <span style={label}>Username</span>
+            <TextInput
+              value={username}
+              autoComplete="username"
+              onChange={(e) => setUsername(e.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <span style={label}>Password</span>
+            <TextInput
+              type="password"
+              value={password}
+              autoComplete="current-password"
+              onChange={(e) => setPassword(e.currentTarget.value)}
+            />
+          </label>
+          {error ? (
+            <span
+              role="alert"
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: tokens.color.error,
+              }}
+            >
+              {error}
+            </span>
+          ) : null}
+          <PrimaryButton
+            type="submit"
+            disabled={busy || !username || !password}
+          >
+            {busy ? "Signing in…" : "Sign in"}
+          </PrimaryButton>
+        </form>
+        <p style={{ ...noteText, marginBottom: 0 }}>
+          Demo-grade access control: accounts come from a file and sessions end
+          when the console restarts.
+        </p>
+      </Card>
+    </main>
+  );
+}
+
 function Notice({ children }: { children: ReactNode }) {
   return (
     <main style={{ ...wrap, padding: "60px 28px" }}>
@@ -1228,6 +1343,7 @@ function Footer() {
 }
 
 export default function App() {
+  const [auth, setAuth] = useState<Auth>({ kind: "checking" });
   const [runId, setRunId] = useState<string | null>(paramFromUrl("run"));
   const [trusteeId, setTrusteeId] = useState<string | null>(
     paramFromUrl("trustee"),
@@ -1237,6 +1353,24 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [live, setLive] = useState<string[]>([]);
+
+  // Anything other than "no session" (401) reads as auth off: a console that
+  // cannot answer /api/me will fail the ceremony load too, and say so there.
+  const checkSession = useCallback(() => {
+    getMe()
+      .then((session) =>
+        setAuth(session ? { kind: "in", session } : { kind: "off" }),
+      )
+      .catch((e) =>
+        setAuth(
+          e instanceof ApiError && e.status === 401
+            ? { kind: "login" }
+            : { kind: "off" },
+        ),
+      );
+  }, []);
+
+  useEffect(checkSession, [checkSession]);
 
   // Pick a run: the URL wins, otherwise the newest one with a ceremony.
   // Ground-truth runs encrypt nothing, so they have no ceremony at all.
@@ -1296,15 +1430,22 @@ export default function App() {
     });
   }, [runId]);
 
-  // Restore the last identity used for this run.
+  // Restore the last identity used for this run — only without auth, where the
+  // choice is the identity. With auth the session decides.
   useEffect(() => {
-    if (!runId || trusteeId) return;
+    if (auth.kind !== "off" || !runId || trusteeId) return;
     const saved = recall(runId);
     if (saved) {
       setTrusteeId(saved);
       setParamInUrl("trustee", saved);
     }
-  }, [runId, trusteeId]);
+  }, [auth.kind, runId, trusteeId]);
+
+  /** A 401 from any call means the session is gone: back to sign-in. */
+  function fail(e: unknown): string {
+    if (e instanceof ApiError && e.status === 401) setAuth({ kind: "login" });
+    return e instanceof Error ? e.message : String(e);
+  }
 
   function pickTrustee(id: string) {
     setTrusteeId(id);
@@ -1314,16 +1455,25 @@ export default function App() {
     setError(null);
   }
 
+  const session = auth.kind === "in" ? auth.session : null;
+  // With auth on, the acting trustee is the session's, whatever the link says.
+  const actingId = session
+    ? session.role === "trustee"
+      ? (session.trustee_id ?? null)
+      : null
+    : trusteeId;
+
   async function confirm() {
-    if (!runId || !trusteeId) return;
+    if (!runId || !actingId) return;
     setError(null);
     try {
-      await submitPartialDecryption(runId, trusteeId);
+      await submitPartialDecryption(runId, actingId);
       setPhase("submitted");
       // A 202 means accepted, not done — re-poll rather than assume.
       window.setTimeout(() => refresh(), AFTER_SUBMIT_MS);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // A 403 (not this session's shares) is already the right sentence.
+      setError(fail(e));
       setPhase("idle");
     }
   }
@@ -1337,16 +1487,32 @@ export default function App() {
       window.setTimeout(() => refresh(), AFTER_SUBMIT_MS);
     } catch (e) {
       // The console's below-threshold 409 body is already the right message.
-      setError(e instanceof Error ? e.message : String(e));
+      setError(fail(e));
     } finally {
       setPublishing(false);
     }
   }
 
+  async function signOut() {
+    try {
+      await logout();
+    } finally {
+      setPhase("idle");
+      setError(null);
+      setAuth({ kind: "login" });
+    }
+  }
+
   const ceremony = load.kind === "ready" ? load.ceremony : null;
-  const you = ceremony?.trustees.find((t) => t.id === trusteeId) ?? null;
+  const you = ceremony?.trustees.find((t) => t.id === actingId) ?? null;
   const ordinal = you ? ceremony!.trustees.indexOf(you) + 1 : 0;
-  const unknownIdentity = Boolean(ceremony && trusteeId && !you);
+  const unknownIdentity = Boolean(ceremony && actingId && !you);
+  // A signed-in trustee opened someone else's ?trustee= link.
+  const linked =
+    session?.role === "trustee" && trusteeId && trusteeId !== actingId
+      ? (ceremony?.trustees.find((t) => t.id === trusteeId) ?? null)
+      : null;
+  const showing = auth.kind === "off" || auth.kind === "in";
 
   return (
     <div
@@ -1360,24 +1526,38 @@ export default function App() {
       }}
     >
       <TopBar
-        you={you}
+        you={showing ? you : null}
         ordinal={ordinal}
         total={ceremony?.trustees.length ?? 0}
-        onChangeIdentity={() => setTrusteeId(null)}
+        actionLabel={
+          !showing ? null : session ? "Sign out" : you ? "Not you?" : null
+        }
+        onAction={session ? signOut : () => setTrusteeId(null)}
       />
 
-      {load.kind === "loading" ? <Notice>Loading the ceremony…</Notice> : null}
-      {load.kind === "empty" ? (
+      {auth.kind === "login" ? (
+        <Login
+          onSignedIn={() => {
+            setAuth({ kind: "checking" });
+            checkSession();
+          }}
+        />
+      ) : null}
+
+      {auth.kind === "checking" || (showing && load.kind === "loading") ? (
+        <Notice>Loading the ceremony…</Notice>
+      ) : null}
+      {showing && load.kind === "empty" ? (
         <Notice>
           No elections have been run on this console yet. Run one from the
-          console's wizard, then reload this page.
+          console&apos;s wizard, then reload this page.
         </Notice>
       ) : null}
-      {load.kind === "error" ? (
+      {showing && load.kind === "error" ? (
         <Notice>Could not reach the election console — {load.message}</Notice>
       ) : null}
 
-      {ceremony ? (
+      {showing && ceremony ? (
         <main style={wrap}>
           <div
             style={{
@@ -1451,10 +1631,40 @@ export default function App() {
             </span>
           </div>
 
+          {linked ? (
+            <div style={{ marginBottom: 22 }}>
+              <Card>
+                <p
+                  style={{ margin: 0, fontSize: 15, color: tokens.color.text2 }}
+                >
+                  This link is for trustee {linked.id} ({linked.name}). You are
+                  signed in as {session?.username}
+                  {you ? `, trustee ${you.id} (${you.name})` : ""}, so you can
+                  submit only {you ? `${you.name}'s` : "your own"} share, not{" "}
+                  {linked.name}&apos;s.
+                </p>
+              </Card>
+            </div>
+          ) : null}
+
+          {session?.role === "admin" ? (
+            <div style={{ marginBottom: 22 }}>
+              <Card>
+                <p
+                  style={{ margin: 0, fontSize: 15, color: tokens.color.text2 }}
+                >
+                  Signed in as {session.username}, an administrator. Trustees
+                  submit their own shares, so this page is read-only for you.
+                  Publish the tally from the admin console.
+                </p>
+              </Card>
+            </div>
+          ) : null}
+
           {unknownIdentity ? (
             <div style={{ marginBottom: 22 }}>
               <Notice>
-                No trustee {trusteeId} in this election. Valid ids are{" "}
+                No trustee {actingId} in this election. Valid ids are{" "}
                 {ceremony.trustees.map((t) => t.id).join(", ")}.
               </Notice>
             </div>
@@ -1470,7 +1680,7 @@ export default function App() {
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-              <ThresholdCard ceremony={ceremony} youId={trusteeId} />
+              <ThresholdCard ceremony={ceremony} youId={actingId} />
               {you ? (
                 <ActionCard
                   ceremony={ceremony}
@@ -1483,14 +1693,19 @@ export default function App() {
                   error={error}
                   publishing={publishing}
                 />
-              ) : (
+              ) : auth.kind === "off" ? (
                 <IdentityPicker ceremony={ceremony} onPick={pickTrustee} />
-              )}
+              ) : null}
               <VerificationCard ceremony={ceremony} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
               {you ? (
-                <KeyShareCard ceremony={ceremony} you={you} ordinal={ordinal} />
+                <KeyShareCard
+                  ceremony={ceremony}
+                  you={you}
+                  ordinal={ordinal}
+                  session={session}
+                />
               ) : null}
               <AuditLog events={ceremony.events} live={live} />
             </div>
