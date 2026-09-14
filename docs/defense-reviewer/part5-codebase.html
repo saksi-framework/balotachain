@@ -17,7 +17,7 @@
   h3 { font-size: 9.5pt; font-weight: bold; font-style: italic; margin: 9pt 0 4pt; break-after: avoid; }
   p { margin: 0 0 5pt; }
   ul { margin: 0 0 5pt; padding-left: 23pt; }
-  li { margin: 0 0 2pt; }
+  li { margin: 0 0 1pt; }
   .intro { font-size: 8.5pt; font-style: italic; margin: 0 0 6pt; }
   .note { font-size: 8.5pt; font-style: italic; color: #404040; background: #F7F7F7;
           margin: 3pt 0 8pt 10pt; padding: 2pt 4pt; break-inside: avoid; }
@@ -27,13 +27,13 @@
   th, td { border: 0.5pt solid #7F7F7F; padding: 3.5pt 4.5pt 4pt; text-align: left; vertical-align: top; }
   th { background: #D9E2F3; font-weight: bold; }
   table.dense { font-size: 8pt; }
-  .closing { font-style: italic; margin-top: 8pt; }
+  .closing { font-style: italic; margin-top: 4pt; }
 </style>
 </head>
 <body>
 
 <h1>Part 5: The Codebase, Saksi and BalotaChain</h1>
-<p class="intro">Everything in this part describes the code as built on 15 September 2026, at saksi commit 25d523f and balotachain commit a79918d, not the manuscript. Parts 1 to 4 tell you what the thesis promises; this part tells you where each promise lives in the repositories, what changed while building it, and where the code is weaker than the text. Paths are relative to each repository's root.</p>
+<p class="intro">Everything in this part describes the code as built on 15 September 2026, at saksi commit 1812139 and balotachain commit a79918d, not the manuscript. Parts 1 to 4 tell you what the thesis promises; this part tells you where each promise lives in the repositories, what changed while building it, and where the code is weaker than the text. Paths are relative to each repository's root.</p>
 
 <h2>The two repositories and what each holds</h2>
 <ul>
@@ -136,7 +136,7 @@
   <thead><tr><th style="width:36%">The manuscript says</th><th>The code does</th></tr></thead>
   <tbody>
     <tr><td>Flutter voter application; Tauri trustee console</td><td>Browser apps served by the console (admin, trustee, board). The Flutter and Tauri code is legacy. No person casts a ballot on the evaluated path; the generator builds every voter, as Chapter III's synthetic data design requires.</td></tr>
-    <tr><td>Private keys and nonces are uniformly random from the OS CSPRNG (Algorithms, pp. 39 to 42)</td><td>True for encryption nonces, proofs, credentials and the issuer key. Not true for the generator's DKG dealers, whose polynomial coefficients are fixed in fixtures.rs.</td></tr>
+    <tr><td>Private keys and nonces are uniformly random from the OS CSPRNG (Algorithms, pp. 39 to 42)</td><td>True, including every trustee's DKG polynomial since saksi #50 (commit 1812139), which replaced the generator's fixed dealer coefficients with Dealer::random. Runs generated before that commit used the fixed coefficients.</td></tr>
     <tr><td>Chaincode with three gates</td><td>Named gates. A ballot passes decode, shape, credential, election-exists, election-open, nullifier, dkg-missing and cds; DKG transcripts, partials and tallies have their own.</td></tr>
     <tr><td>Per-precinct sub-accumulators (Algorithm 4)</td><td>Not built. Aggregation happens in the verifier, so there is no hot key.</td></tr>
     <tr><td>Threshold enforced by the console, not the chaincode (this reviewer's Panel Q&amp;A)</td><td>Changed. The chaincode now refuses a tally unless every signature verifies and at least threshold distinct trustees signed. Chaum-Pedersen proofs are still only checked for presence on-chain.</td></tr>
@@ -153,7 +153,7 @@
     <tr><td>Does the chaincode verify proofs, or trust the client?</td><td>It verifies the CDS proof and the issuer's signature on the credential at endorsement, and refuses with a named gate. It does not verify partial-decryption proofs; the verifier does.</td><td>chaincode/contract.go (SubmitBallot); chaincode/cdsverify</td></tr>
     <tr><td>Is the verifier independent of the code that made the election?</td><td>It is a separate program that reads only published files, and for on-chain runs it also audits the chain's own copy. It shares Saksi's Rust crates with the generator, so the Go chaincode's proof check is the independent second implementation for ballots.</td><td>saksi-auditor/src/demo.rs; saksi-campaign/ledger_dump.go</td></tr>
     <tr><td>How do you know an attack was stopped by the right check?</td><td>Every refusal carries a gate id and a PASS needs the declared one; anything else is INCONCLUSIVE. Earlier on-chain verdicts scored without this were discarded, not reused.</td><td>saksi-campaign/scenarios.go (classifyLive, classifyAudit)</td></tr>
-    <tr><td>Could someone decrypt your generated elections without the trustees?</td><td>Yes, today. The generator's DKG dealers are fixed, so the secret key is derivable from the source. The runs demonstrate correctness and verifiability, not ballot secrecy. Say this before it is found.</td><td>saksi-auditor/src/fixtures.rs (gen_prologue)</td></tr>
+    <tr><td>Could someone decrypt your generated elections without the trustees?</td><td>Not from runs at saksi commit 1812139 or later: every dealer polynomial is random. Older runs used fixed dealers and are cited only for correctness, verifiability and performance. What remains is the simulated ceremony: one process holds every share.</td><td>saksi-crypto/src/dkg.rs (Dealer::random); saksi-auditor/src/fixtures.rs (gen_prologue)</td></tr>
     <tr><td>Who can submit to the chaincode?</td><td>Any identity on the channel; no function checks the caller. Every submission still passes the gates, so the risk is denial of service (claiming an election id first), not forgery.</td><td>chaincode/contract.go</td></tr>
     <tr><td>What happens if a peer fails mid-election?</td><td>The T3 fault stops the peer during submission. Resume submits only the ballots the chain does not hold, then closes the election, and verify-only reconciles the chain against the run.</td><td>saksi-campaign/fault.go; executor.go (resumeAndClose)</td></tr>
     <tr><td>Why is ballot ordering not protected?</td><td>The tally does not depend on order, and no check looks at it. Reordering is recorded as a SKIPPED attack instead of being claimed as detected.</td><td>saksi-campaign/scenarios.go (Registry)</td></tr>
@@ -163,8 +163,8 @@
 
 <h2>Known soft spots in the code (know these before a panelist finds them)</h2>
 <ul>
-  <li><b>Fixed DKG dealers.</b> The generator's dealer coefficients are fixed, so generated elections are not secret from anyone who reads the source. A run with real secrecy needs random dealer polynomials held by separate trustees.</li>
-  <li><b>The ceremony is simulated.</b> The generator produces every partial decryption and signature in one process, and the console forwards them when a trustee acts. The cryptography is real; separation between trustees is not exercised.</li>
+  <li><b>Older runs used fixed DKG dealers.</b> Runs made before saksi commit 1812139 have keys derivable from the source: cite them for correctness, verifiability and performance only (each run.json names its commit).</li>
+  <li><b>The ceremony is simulated.</b> The generator produces every partial decryption and signature in one process, and the console forwards them when a trustee acts, so that process holds every key share. The cryptography is real; separation between trustees is not exercised.</li>
   <li><b>No caller authorization in the chaincode.</b> Anyone on the channel can call any function; the gates still apply to what they submit.</li>
   <li><b>Ordering is not detected</b> on-chain or by the verifier.</li>
   <li><b>Chaum-Pedersen proofs are checked for presence on-chain.</b> A share with a wrong proof is recorded and caught only by the verifier.</li>
