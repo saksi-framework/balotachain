@@ -4,6 +4,22 @@ Orientation for coding agents. Read this first, then the latest update doc, then
 
 ## Latest update
 
+- **2026-09-10:** [Bulletin board + trustee console are dynamic](docs/updates/2026-09-10-dynamic-board-and-trustee.md).
+  `apps/auditor` and `apps/trustee` are now **browser apps served by the saksi-campaign
+  console** (`/board/?run=<id>`, `/trustee/?run=<id>&trustee=<n>`), driven by real elections
+  instead of the mockup's demo data. Both `src/lib/bulletin.ts` files stopped being Tauri
+  `invoke` adapters and became fetch clients; `src/mocks/` is deleted in both. Needs saksi PR
+  `feat/board-api`: `GET /api/board/<run>` (offline-first — `/api/trail` dials Fabric and 502s
+  without a network), `GET /api/verify-code/<run>/<code>` (tracking code = first 8 hex of a
+  ballot's nullifier), `--web-dir` static serving, and ceremony timestamps. Ranking (seats,
+  cut line, ties-reported-not-resolved) moved into Go so the wizard and the board share one
+  rule. Verified end-to-end against a live console: 20 voters x 3 positions x 4 candidates,
+  3-of-5 trustees, publish below threshold refused with 409, board flipped pending -> verified,
+  E = 0 on all 12 contests. Delivery path is the browser, not Tauri; no Rust changed, so the
+  Tauri crates are untouched, but they are no longer a working delivery path. (`cargo check` on
+  `apps/auditor/src-tauri` cannot run on this box — `dlltool.exe` is missing, so `windows-sys`
+  and `parking_lot_core` fail to build. Pre-existing environment gap, unrelated to this work.)
+
 - **2026-06-14:** Stage 2 — **read-path link to real Fabric done + CI-verified**. New
   `services/fabric-adapter/` (Go) connects to the saksi chaincode via client-sdk and serves
   `GET /bulletin` in the BalotaChain schema, so the auditor/bulletin board views a REAL on-chain
@@ -80,6 +96,17 @@ pnpm; Rust + Go live in Saksi.
 
 Containerized backend (Stage 1) is in and verified. Resume options:
 
+0. **Run the real demo** (current best path — the bulletin board and trustee console over a
+   real saksi election):
+   ```
+   ./tools/build-web.sh                       # -> dist-web/{board,trustee}
+   # in saksi: cargo build -p saksi-demo --release
+   #           cd packages/saksi-campaign && go build ./cmd/saksi-campaign
+   saksi-campaign serve --demo <saksi-demo> --web-dir <balotachain>/dist-web
+   ```
+   Run an election at `/wizard`, then open `/board/?run=<id>` and
+   `/trustee/?run=<id>&trustee=2`. See
+   `docs/updates/2026-09-10-dynamic-board-and-trustee.md`.
 1. **Run the containerized backend**: `docker compose up -d --build` (see `docker/README.md`),
    then start any client with `BALOTA_BULLETIN_URL=http://localhost:8080` to share state.
 2. **Run the demo locally** (file mode):

@@ -1,119 +1,168 @@
-// Typed adapter over the trustee Tauri commands. Mirrors the
-// `bulletin-store` Rust schema (see docs/bulletin-store-schema.md).
+/**
+ * Typed client for the saksi-campaign console HTTP API.
+ *
+ * The trustee console is served BY the console (see `--web-dir` in the console
+ * runbook), so in production every path here is same-origin — which is what
+ * keeps the console's cross-origin POST guard protecting `/ceremony/submit`
+ * and `/ceremony/publish`. In dev Vite proxies these prefixes and strips the
+ * browser's `Origin` header so the guard sees a non-browser caller.
+ *
+ * Field names mirror the Go structs in `saksi/packages/saksi-campaign`
+ * (`ceremonyview.go`, `ceremony.go`). Keep them in lock-step.
+ */
 
-import { invoke } from "@tauri-apps/api/core";
+const BASE: string = (import.meta.env.VITE_CONSOLE_URL ?? "").replace(
+  /\/$/,
+  "",
+);
 
-export type Ciphertext = {
-  pad: string;
-  data: string;
+export type RunView = {
+  run_id: string;
+  created_at: string;
+  config: {
+    name: string;
+    mode: string;
+    voters: number;
+    positions: number;
+    candidates: number;
+    threshold: number;
+  };
+  artifacts: string[] | null;
 };
 
-export type Ballot = {
-  tracking_code: string;
-  nullifier: string;
-  ciphertext: Ciphertext;
-  submitted_at: string;
-};
-
-export type PartialDecryption = {
-  trustee_id: string;
-  ballot_index: number;
-  share: string;
-  submitted_at: string;
-};
-
-export type TrusteeEntry = {
+/** One institution's row (Go `CeremonyTrustee`). Ids are "1".."n". */
+export type CeremonyTrustee = {
   id: string;
   name: string;
-  public_share: string;
+  submitted: boolean;
+  /** Partial decryptions this trustee owns — one per contest. */
+  contests: number;
+  submitted_at?: string;
 };
 
-export type Position = {
-  id: string;
-  label: string;
-  pick: number;
+export type CeremonyEvent = {
+  at?: string;
+  kind: "setup" | "trustee" | "published" | "chain";
+  who?: string;
+  text: string;
+  tx_id?: string;
+  block?: number;
 };
 
-export type Election = {
-  id: string;
-  name: string;
-  opens: string;
-  closes: string;
-  joint_public_key: string;
-  trustees: TrusteeEntry[];
+/** `GET /api/ceremony/<run>` (Go `CeremonyView`, embedding `CeremonyState`). */
+export type Ceremony = {
   threshold: number;
-  positions: Position[];
-};
-
-export type Voter = {
-  id: string;
-  email: string;
+  trustees: CeremonyTrustee[];
+  submitted: number;
+  unlocked: boolean;
+  published: boolean;
+  on_chain: boolean;
+  /** Setup has run and trustees may act. False = ceremony not started. */
+  ready: boolean;
+  started_at?: string;
+  closed_at?: string;
+  published_at?: string;
+  election_id: string;
   name: string;
+  mode: string;
+  positions: number;
+  position_ids?: string[];
+  contests: number;
+  ballot_records: number;
+  ballots_sha256?: string;
+  dkg_sha256?: string;
+  events: CeremonyEvent[];
 };
 
-export type Credential = {
-  voter_id: string;
-  nullifier: string;
-  token: string;
-  issued_at: string;
+/** A phase progress line from the console's SSE stream (Go `Event`). */
+export type ConsoleEvent = {
+  phase: string;
+  level: "info" | "error" | "done";
+  msg: string;
 };
 
-export type CandidateResult = {
-  id: string;
-  name: string;
-  party: string;
-  votes: number;
-  elected?: boolean;
-};
-
-export type RaceResult = {
-  candidates: CandidateResult[];
-};
-
-export type Tally = {
-  results: Record<string, RaceResult>;
-  fingerprint: string;
-  trustees_signed: number;
-  trustees_total: number;
-  closed_at: string;
-};
-
-export type Bulletin = {
-  version: number;
-  election: Election | null;
-  voters: Voter[];
-  credentials: Credential[];
-  ballots: Ballot[];
-  partial_decryptions: PartialDecryption[];
-  tally: Tally | null;
-};
-
-export function loadBulletin(): Promise<Bulletin> {
-  return invoke<Bulletin>("load_bulletin");
+async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(BASE + path, {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(
+      `${path} returned ${res.status}: ${(await res.text()).trim()}`,
+    );
+  }
+  return (await res.json()) as T;
 }
 
-export function saveBulletin(bulletin: Bulletin): Promise<void> {
-  return invoke<void>("save_bulletin", { bulletin });
+/**
+ * A phase POST returns 202 "accepted", not "done" — the console dispatches it
+ * asynchronously under the run's busy lock. The caller re-polls the ceremony to
+ * see the result. The console's error bodies are already user-facing prose (the
+ * threshold 409 in particular), so they are surfaced verbatim.
+ */
+async function post(path: string, body: unknown): Promise<void> {
+  const res = await fetch(BASE + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(
+      (await res.text()).trim() || `request failed (${res.status})`,
+    );
+  }
 }
 
+export function listRuns(signal?: AbortSignal): Promise<RunView[]> {
+  // /runs, not /api/trail: the trail index dials Fabric on every request and
+  // fails without a network, while /runs is a pure filesystem listing.
+  return get<RunView[]>("/runs", signal);
+}
+
+export function loadCeremony(
+  runId: string,
+  signal?: AbortSignal,
+): Promise<Ceremony> {
+  return get<Ceremony>(`/api/ceremony/${encodeURIComponent(runId)}`, signal);
+}
+
+/** Submits exactly one trustee's shares — one per contest. */
 export function submitPartialDecryption(
+  runId: string,
   trusteeId: string,
-  secretShare: number,
-  ballotIndex: number,
-): Promise<Bulletin> {
-  return invoke<Bulletin>("submit_partial_decryption", {
-    trusteeId,
-    secretShare,
-    ballotIndex,
-  });
+): Promise<void> {
+  return post("/ceremony/submit", { run_id: runId, trustee_id: trusteeId });
 }
 
-export function submitAllPartialDecryptions(
-  trusteeId: string,
-  secretShare: number,
-): Promise<Bulletin> {
-  return invoke<Bulletin>("submit_all_partial_decryptions", {
-    trusteeId,
-    secretShare,
-  });
+/** 409 below the threshold, with the console's own "needs N of M" message. */
+export function publishTally(runId: string): Promise<void> {
+  return post("/ceremony/publish", { run_id: runId });
+}
+
+/**
+ * Live progress lines. The console's hub drops events for a slow subscriber and
+ * has no replay, so this is only ever a liveness cue — the ceremony poll is the
+ * state of record.
+ */
+export function subscribeEvents(
+  runId: string,
+  onEvent: (e: ConsoleEvent) => void,
+): () => void {
+  if (typeof EventSource === "undefined") return () => {};
+  const source = new EventSource(
+    `${BASE}/events?run=${encodeURIComponent(runId)}`,
+  );
+  source.onmessage = (m) => {
+    try {
+      onEvent(JSON.parse(m.data) as ConsoleEvent);
+    } catch {
+      // A malformed frame is not worth breaking the stream over.
+    }
+  };
+  return () => source.close();
+}
+
+/** The public bulletin board for this election, served by the same console. */
+export function boardUrl(runId: string): string {
+  return `${BASE}/board/?run=${encodeURIComponent(runId)}`;
 }

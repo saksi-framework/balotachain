@@ -1,79 +1,81 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-const invokeMock = vi.fn();
-
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (...args: unknown[]) => invokeMock(...args),
-}));
-
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
-  loadBulletin,
-  saveBulletin,
+  listRuns,
+  loadCeremony,
   submitPartialDecryption,
-  submitAllPartialDecryptions,
-  type Bulletin,
+  publishTally,
+  boardUrl,
 } from "./bulletin";
 
-function emptyBulletin(): Bulletin {
+function ok(body: unknown, status = 200): Response {
   return {
-    version: 1,
-    election: null,
-    voters: [],
-    credentials: [],
-    ballots: [],
-    partial_decryptions: [],
-    tally: null,
-  };
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+    text: async () => JSON.stringify(body),
+  } as Response;
 }
 
-describe("bulletin adapter", () => {
-  beforeEach(() => {
-    invokeMock.mockReset();
+const fetchMock = vi.fn();
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  vi.stubGlobal("fetch", fetchMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("console client", () => {
+  it("lists runs from /runs, not the chain-dialling trail index", async () => {
+    fetchMock.mockResolvedValue(ok([]));
+    await listRuns();
+    expect(fetchMock.mock.calls[0][0]).toBe("/runs");
   });
 
-  it("loadBulletin invokes the load_bulletin command and returns its result", async () => {
-    const expected = emptyBulletin();
-    invokeMock.mockResolvedValueOnce(expected);
-
-    const result = await loadBulletin();
-
-    expect(invokeMock).toHaveBeenCalledWith("load_bulletin");
-    expect(result).toEqual(expected);
+  it("loads the ceremony for a run", async () => {
+    fetchMock.mockResolvedValue(ok({ election_id: "e1" }));
+    const c = await loadCeremony("demo-1");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/ceremony/demo-1");
+    expect(c.election_id).toBe("e1");
   });
 
-  it("saveBulletin invokes save_bulletin with the bulletin payload", async () => {
-    invokeMock.mockResolvedValueOnce(undefined);
-    const b = emptyBulletin();
-
-    await saveBulletin(b);
-
-    expect(invokeMock).toHaveBeenCalledWith("save_bulletin", { bulletin: b });
-  });
-
-  it("submitPartialDecryption invokes with camelCased args", async () => {
-    const updated = emptyBulletin();
-    invokeMock.mockResolvedValueOnce(updated);
-
-    const result = await submitPartialDecryption("t03", 17, 0);
-
-    expect(invokeMock).toHaveBeenCalledWith("submit_partial_decryption", {
-      trusteeId: "t03",
-      secretShare: 17,
-      ballotIndex: 0,
+  // The console holds every trustee's shares server-side, so the client sends
+  // only who is acting — never key material and never a secret scalar.
+  it("submits only the run and the trustee id", async () => {
+    fetchMock.mockResolvedValue(ok({ run_id: "demo-1" }, 202));
+    await submitPartialDecryption("demo-1", "2");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/ceremony/submit");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({
+      run_id: "demo-1",
+      trustee_id: "2",
     });
-    expect(result).toEqual(updated);
   });
 
-  it("submitAllPartialDecryptions invokes with trusteeId and secretShare", async () => {
-    const updated = emptyBulletin();
-    invokeMock.mockResolvedValueOnce(updated);
+  // The console's below-threshold message is already user-facing prose, so it
+  // must reach the UI unchanged rather than being replaced by a generic error.
+  it("surfaces the console's threshold refusal verbatim", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () =>
+        "the tally needs 3 of 5 trustees; 2 have contributed so far",
+    } as Response);
+    await expect(publishTally("demo-1")).rejects.toThrow(
+      "the tally needs 3 of 5 trustees; 2 have contributed so far",
+    );
+  });
 
-    const result = await submitAllPartialDecryptions("t03", 17);
+  it("publishes to the ceremony endpoint", async () => {
+    fetchMock.mockResolvedValue(ok({ run_id: "demo-1" }, 202));
+    await publishTally("demo-1");
+    expect(fetchMock.mock.calls[0][0]).toBe("/ceremony/publish");
+  });
 
-    expect(invokeMock).toHaveBeenCalledWith("submit_all_partial_decryptions", {
-      trusteeId: "t03",
-      secretShare: 17,
-    });
-    expect(result).toEqual(updated);
+  it("links to the board served by the same console", () => {
+    expect(boardUrl("demo-1")).toBe("/board/?run=demo-1");
   });
 });
