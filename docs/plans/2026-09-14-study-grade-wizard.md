@@ -55,8 +55,12 @@ Rules the build must enforce:
 3. **Measured repetitions never run attacks.** A campaign forces `skip_attacks`. A
    single election with attacks on is labelled a *security run*; its throughput is
    marked "perturbed — not for RQ3" in `perf.csv` and the UI.
-4. Earlier on-chain security verdicts produced through the post-close path are
-   re-run once this lands; offline (simulated) verdicts are unaffected.
+4. **Earlier evidence (amended after the W1 review).** Every on-chain attack row
+   from saksi ≤ `adba922` is discarded, not re-run: any rejection scored PASS and the
+   chaincode's reason never reached the console. Offline rows for
+   `corrupted-ballot-bytes` and `tamper-partial-decryption` are re-run (their
+   mutations were aimed at the wrong field). Offline `tamper-dkg-transcript`,
+   `tamper-ballot-proof`, `reused-nullifier` and `dropped-ballot` rows stay valid.
 
 ## 3. Decisions
 
@@ -94,7 +98,7 @@ Needing the user:
 | `GET /api/campaigns/<id>/export` | A zip of the thesis artifacts for every run (`run.json`, `perf.csv`, `correctness.csv`, `negative-tests.csv`, `summary.csv`, journal line 1, preflight snapshot). The same file set the desktop-run notes copy |
 | `ElectionConfig.attack_plan` `{stages: [...], ballots_at: 0.5}` (D1) | Single election only. The lifecycle pauses at each listed stage, runs that stage's scenarios with gate-matched verdicts, and continues |
 | `POST /api/network/reset` `{voters, positions, confirm: "RESET"}` (D2) | Runs `tools/tier.sh`; refused while busy; the console reloads its Fabric identity afterwards instead of needing a restart |
-| `POST /api/runs/<id>/fault` `{kind: "peer-restart", at: 0.5, down_s: 30}` (D2) | Security runs only; stamps the fault in the journal; the run then resumes or verifies-only as today |
+| `POST /api/runs/<id>/fault` `{kind: "peer-restart", at: 0.5, down_s: 30, confirm: "RESTART"}` (D2) | On-chain runs only, not a campaign repetition, no attack plan, `window_s` 0, armed before the ballots stage; arming makes the run a security run. Stamps the fault in the journal; the run ends with drops, then Resume (which closes the election) and Verify-only (required) |
 
 Existing and reused: `POST /api/runs/<id>/resume`, `POST /api/runs/<id>/verify-only`.
 

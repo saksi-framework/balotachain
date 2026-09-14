@@ -536,6 +536,36 @@ the T8 peak-load case; Caliper's fixed-rate rounds do not.
 
 ---
 
+## 10. Key generation in the evaluation harness
+
+The Algorithms section's shared facts state that private keys and nonces are
+uniformly random scalars from the operating system's CSPRNG. Until saksi #50
+(merge `1812139`, 15 September 2026) that was not true of the harness's DKG: the
+generator built every trustee's polynomial from fixed coefficients
+(`dealer_id × 13 + k + 1`, in `gen_prologue` and `happy_path_fixture`,
+`saksi/packages/saksi-auditor/src/fixtures.rs`), so the joint secret key of every
+generated election could be derived from the public source. From that commit on,
+every coefficient is drawn by `Dealer::random`
+(`saksi/packages/saksi-crypto/src/dkg.rs`) from `OsRng`, and the shared-facts
+sentence holds for the harness as written. The fixed polynomials that remain are
+the golden test vector's (`tally-sig-v1.hex`) and saksi-crypto's unit tests,
+whose keys are published test data by design.
+
+What this changes for the evidence:
+
+- Correctness, verifiability, integrity (attack) and performance results from
+  runs before `1812139` stand. None of them depends on the election key being
+  secret.
+- A statement about ballot secrecy or unlinkability demonstrated on generated
+  elections must cite runs generated at or after `1812139`. A run's generator
+  commit is recorded as `git_head_saksi` in its `run.json` and in line 1 of its
+  `journal.ndjson`.
+- The fix does not remove the §6 limitation. The ceremony is still simulated:
+  the generator process holds every trustee share, so the secrecy a harness run
+  demonstrates is against everyone except that process.
+
+---
+
 ## Cross-reference: audit ids answered here
 
 | Audit id | Section |
@@ -554,3 +584,4 @@ the T8 peak-load case; Caliper's fixed-rate rounds do not.
 | T5 | §4.1 |
 | T8 | §9 |
 | §2 item 4 (precinct fold) | §3 |
+| Algorithms shared facts (CSPRNG keys) | §10 |
