@@ -4,6 +4,14 @@ Orientation for coding agents. Read this first, then the latest update doc, then
 
 ## Latest update
 
+- **2026-09-15:** [State and next steps](docs/updates/2026-09-15-state-and-next-steps.md) —
+  start here on a new machine. The study runs from saksi's `/wizard` (campaigns, preflight,
+  attack timeline, network reset, T3 fault, resume, export); the admin, trustee and board apps
+  are served by that console; generator DKG keys are random from saksi `1812139` (older runs
+  support no secrecy claim); Defense Reviewer Part 5 covers the codebase. Open: saksi #52
+  (wizard W4c), then rewrite #48, then W6 validation on the desktop. Ledger:
+  `.superpowers/sdd/2026-09-14-study-grade-wizard/progress.md`.
+
 - **2026-09-10:** [Bulletin board + trustee console are dynamic](docs/updates/2026-09-10-dynamic-board-and-trustee.md).
   `apps/auditor` and `apps/trustee` are now **browser apps served by the saksi-campaign
   console** (`/board/?run=<id>`, `/trustee/?run=<id>&trustee=<n>`), driven by real elections
