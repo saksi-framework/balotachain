@@ -85,6 +85,9 @@ export type BoardCrypto = {
 
 export type BoardCheck = { name: string; pass: boolean; detail: string };
 
+/** `GET /api/capabilities` (`handleCapabilities`, server.go). */
+export type Capabilities = { fabric: boolean; peer?: string; channel?: string };
+
 export type Board = {
   election_id: string;
   name: string;
@@ -151,6 +154,10 @@ export function listRuns(signal?: AbortSignal): Promise<RunView[]> {
   // /runs, not /api/trail: the trail index dials Fabric on every request and
   // fails without a network, while /runs is a pure filesystem listing.
   return get<RunView[]>("/runs", signal);
+}
+
+export function getCapabilities(signal?: AbortSignal): Promise<Capabilities> {
+  return get<Capabilities>("/api/capabilities", signal);
 }
 
 export function loadBoard(runId: string, signal?: AbortSignal): Promise<Board> {

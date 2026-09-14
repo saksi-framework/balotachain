@@ -92,9 +92,12 @@ export function Stepper({ steps, current }: StepperProps) {
                   color: labelColor,
                   fontSize: tokens.type.body,
                   fontWeight: state === "active" ? 600 : 500,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  // The box has room for the full word at common desktop
+                  // widths (1280/1440) — nowrap+ellipsis was cutting labels
+                  // ("Populat…", "Ceremo…") that already fit. Let a label
+                  // wrap rather than truncate if a narrower window ever
+                  // leaves less room than a word needs.
+                  overflowWrap: "break-word",
                 }}
               >
                 {step.label}

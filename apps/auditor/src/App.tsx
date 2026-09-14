@@ -29,9 +29,11 @@ import {
   verifyTrackingCode,
   exportUrl,
   verifierUrl,
+  getCapabilities,
   type Board,
   type BoardCandidate,
   type BoardContest,
+  type Capabilities,
   type RunView,
 } from "./lib/bulletin";
 
@@ -989,13 +991,17 @@ function FooterLink({
   );
 }
 
-function Footer({ board }: { board: Board }) {
+function Footer({ board, caps }: { board: Board; caps: Capabilities | null }) {
   // The evidence set, in the console's own display order. Linking every
   // artifact beats one dead "download" button.
   const primary = ["correctness.csv", "election.csv", "ballots.csv"].filter(
     (a) => board.artifacts.includes(a),
   );
   const download = primary[0] ?? board.artifacts[0];
+
+  // /trail/<id> dials Fabric. For an offline run, or a console with no Fabric
+  // driver configured, it can only 502 — don't offer a link that errors.
+  const verifierAvailable = board.mode === "onchain" && !!caps?.fabric;
 
   return (
     <footer
@@ -1053,10 +1059,35 @@ function Footer({ board }: { board: Board }) {
               Download verification data
             </FooterLink>
           ) : null}
-          <FooterLink href={verifierUrl(board.election_id)} solid>
-            <CodeIcon size={16} strokeWidth={1.8} />
-            Open verifier
-          </FooterLink>
+          {verifierAvailable ? (
+            <FooterLink href={verifierUrl(board.election_id)} solid>
+              <CodeIcon size={16} strokeWidth={1.8} />
+              Open verifier
+            </FooterLink>
+          ) : (
+            <div style={{ textAlign: "right" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  border: `1.5px solid ${tokens.color.border}`,
+                  borderRadius: tokens.radius.button,
+                  padding: "10px 16px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: tokens.color.text2,
+                }}
+              >
+                <CodeIcon size={16} strokeWidth={1.8} />
+                Verifier unavailable
+              </span>
+              <p style={{ ...noteText, margin: "6px 0 0" }}>
+                the on-chain verifier needs a Fabric network; this run was
+                offline
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </footer>
@@ -1067,6 +1098,13 @@ function App() {
   const [runs, setRuns] = useState<RunView[]>([]);
   const [runId, setRunId] = useState<string | null>(runIdFromUrl());
   const [load, setLoad] = useState<Load>({ kind: "loading" });
+  const [caps, setCaps] = useState<Capabilities | null>(null);
+
+  useEffect(() => {
+    getCapabilities()
+      .then(setCaps)
+      .catch(() => setCaps({ fabric: false }));
+  }, []);
 
   // Pick a run: the URL wins, otherwise the newest talliable one. /runs is
   // already sorted newest-first by the console.
@@ -1319,7 +1357,7 @@ function App() {
             </div>
           </main>
 
-          <Footer board={board} />
+          <Footer board={board} caps={caps} />
         </>
       ) : null}
     </div>
