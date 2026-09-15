@@ -15,6 +15,7 @@ errors = []
 EXTRA_CSS = """
 <style>
   [hidden] { display: none !important; }
+  h2, h3 { scroll-margin-top: 20px; }
   .pin { font: 400 12px/1.6 "IBM Plex Mono", monospace; color: var(--ink-faint); margin: 18px 0 0; }
   .pin code { background: none; padding: 0; font-size: 12px; color: var(--ink-soft); }
   h3.sub { font: 600 15px/1.4 "IBM Plex Sans", sans-serif; margin: 30px 0 10px; text-wrap: balance; }
@@ -68,7 +69,8 @@ for k in sorted(used - fn.keys()):
 text = re.sub(r"<[^>]+>", " ", body)
 for stale in ["appendReceipt", "OfflineVoterCeiling", "check_nullifier_uniqueness", "six checks",
               "audit_with_evidence", "trail.json ", "multi_position_fixture", "halalan-e2e-20260830",
-              "halalan-e2e-20260914-174438", "25d523f", "fixed in the generator", "the dealers are fixed"]:
+              "halalan-e2e-20260914-174438", "25d523f", "fixed in the generator", "the dealers are fixed",
+              "1812139", "a79918d", "halalan-e2e-20260914-183507", "Version 8"]:
     if stale in text:
         errors.append(f"stale name still on the page: {stale}")
 
@@ -92,12 +94,13 @@ scripts = """
       last = null;
 
   function group(f) {
+    if (f.file.indexOf("balotachain/services/") === 0) return "legacy";
     if (f.file.indexOf("balotachain/") === 0) return "apps";
     if (f.file.indexOf("saksi-bulletin") > -1) return "chain";
     if (f.lang === "rust") return "rust";
     return "console";
   }
-  var groups = { console: [], rust: [], chain: [], apps: [] };
+  var groups = { console: [], rust: [], chain: [], apps: [], legacy: [] };
   Object.keys(FN).forEach(function (k) { groups[group(FN[k])].push(k); });
   Object.keys(groups).forEach(function (g) {
     var box = document.getElementById("idx-" + g);

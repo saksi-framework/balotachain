@@ -9,4 +9,4 @@ On 2026-09-15 the user asked for context to carry across devices. balotachain `d
 
 **Why:** Claude Code memory lives under `~/.claude` on one machine only.
 
-**How to apply:** after changing memory here, refresh the repo copy (`docs/context/sync-memory.sh` from this machine) and open a PR. On a new device, run the restore script once from the balotachain checkout. The Defense Reviewer PDF rebuilds with `docs/defense-reviewer/build.py`; the trace page is artifact https://claude.ai/code/artifact/207a6a9f-6bf8-4e40-afac-fe53a2b777b3. See [[study-grade-wizard-done]].
+**How to apply:** after changing memory here, refresh the repo copy (`docs/context/sync-memory.sh` from this machine) and open a PR. On a new device, run the restore script once from the balotachain checkout. The Defense Reviewer PDF rebuilds with `docs/defense-reviewer/build.py`; the trace page is artifact https://claude.ai/code/artifact/207a6a9f-6bf8-4e40-afac-fe53a2b777b3 (Version 9, pinned saksi `dca7776` / balotachain `b03d4ba`, run `halalan-e2e-20260915-063540-1`; `fn-data.json` and `saksi-trace.html` are build products and gitignored). See [[study-grade-wizard-done]].

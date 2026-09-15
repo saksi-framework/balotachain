@@ -925,5 +925,509 @@
   "symbol": "verifyTrackingCode",
   "why": "Checks a BC-XXXX-XXXX code's format in the browser, then asks the console whether a published ballot carries that nullifier prefix.",
   "name": "verifyTrackingCode"
+ },
+ {
+  "key": "GetElection",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetElection",
+  "why": "The election's terms as the chain holds them. Every later check — the contest ids, the trustee count, the threshold — is read from here, so an auditor never has to trust a local copy of the parameters.",
+  "name": "GetElection"
+ },
+ {
+  "key": "GetDKGTranscript",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetDKGTranscript",
+  "why": "The public key material the ballots were encrypted to, read back from the chain. Exactly one transcript may exist per election, so there is no second key an auditor could be shown instead.",
+  "name": "GetDKGTranscript"
+ },
+ {
+  "key": "GetBallot",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetBallot",
+  "why": "One ballot, addressed by its nullifier rather than by position. A voter holding a tracking code can be shown the exact bytes the chain recorded, without anyone having to vouch for a file.",
+  "name": "GetBallot"
+ },
+ {
+  "key": "GetBallots",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetBallots",
+  "why": "Reads a page of ballots by nullifier so a whole election can be re-verified from the chain. A missing ballot comes back as an empty entry rather than a shortened list, so a gap can never be mistaken for a different ballot.",
+  "name": "GetBallots"
+ },
+ {
+  "key": "ListNullifiers",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "ListNullifiers",
+  "why": "The committed set, paged. This is what makes the chain — not a local run folder — the authority on which ballots are in, and the mandatory pagination is what keeps that answer honest at a million ballots.",
+  "name": "ListNullifiers"
+ },
+ {
+  "key": "GetPartialDecryption",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetPartialDecryption",
+  "why": "Each trustee's share, keyed by election, contest and trustee. An auditor can redo the threshold combination from the chain instead of taking the published tally's word for it.",
+  "name": "GetPartialDecryption"
+ },
+ {
+  "key": "GetTally",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetTally",
+  "why": "The published result as the chain records it. Nothing here asserts the totals are correct — that is verified off-chain against the ballots — but it fixes exactly which totals were claimed.",
+  "name": "GetTally"
+ },
+ {
+  "key": "GetElectionStatus",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "GetElectionStatus",
+  "why": "Open or closed, and nothing more. The trail treats it as display only: whether an election is finished is decided by a tally that reads back from the chain, not by this string.",
+  "name": "GetElectionStatus"
+ },
+ {
+  "key": "CloseElection",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "CloseElection",
+  "why": "The one-way door. After it no ballot is accepted and threshold decryption may begin, and a second close is refused — the voting window cannot be reopened to admit a late vote.",
+  "name": "CloseElection"
+ },
+ {
+  "key": "loadElection",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "loadElection",
+  "why": "The single decode path the write gates share. The parameters are re-read from state rather than taken from the submission, so a ballot cannot arrive carrying its own idea of the contests or the threshold.",
+  "name": "loadElection"
+ },
+ {
+  "key": "VerifyIssuerSignature",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/credverify/credverify.go",
+  "lang": "go",
+  "symbol": "VerifyIssuerSignature",
+  "why": "The check that decides a ballot came from a registered voter. It recomputes the Merlin issuance challenge and verifies the issuer's Schnorr signature over the credential commitment on the peer, so a forged or unsigned credential is refused at endorsement rather than discovered at audit time.",
+  "name": "VerifyIssuerSignature"
+ },
+ {
+  "key": "VerifyChain",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "VerifyChain",
+  "why": "Walks a block range, checking that each block names its predecessor's recomputed header hash, and re-checks sampled receipts against the blocks as the peer serves them now. A fetch error leaves the status \"not run\", so an unwalked range can never read as a pass.",
+  "name": "VerifyChain"
+ },
+ {
+  "key": "verifyChain",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "verifyChain",
+  "why": "The same walk with block fetching parameterised, which is how the linkage check is tested without a live peer. It holds two blocks of state rather than the range, so the check is the same at five blocks and at five million.",
+  "name": "verifyChain"
+ },
+ {
+  "key": "ChainInfo",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "ChainInfo",
+  "why": "Height and current block hash straight from the peer's system chaincode. It is the anchor a stored receipt is compared against: if the chain has been rebuilt underneath a run, this is where it shows.",
+  "name": "ChainInfo"
+ },
+ {
+  "key": "receiptFromBlock",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "receiptFromBlock",
+  "why": "Recomputes a receipt's block hash from the header rather than copying a hash someone handed over. That is what makes a receipt checkable later instead of merely quotable.",
+  "name": "receiptFromBlock"
+ },
+ {
+  "key": "Receipt",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "type:Receipt",
+  "why": "What a client keeps as evidence a transaction committed: tx id, block number, and the three hashes that let the block be re-derived. The timestamp is the client's own proposal time, not consensus time — worth knowing before reading it as when a vote landed.",
+  "name": "Receipt"
+ },
+ {
+  "key": "ChainReport",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/ledger.go",
+  "lang": "go",
+  "symbol": "type:ChainReport",
+  "why": "The verdict of a chain walk. Status is never PASS unless the walk actually ran and both the linkage and the sampled receipts held, so a failed fetch cannot be mistaken for a clean chain.",
+  "name": "ChainReport"
+ },
+ {
+  "key": "sdk_ListNullifiers",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bulletin.go",
+  "lang": "go",
+  "symbol": "BulletinClient.ListNullifiers",
+  "why": "One page of the committed set as the clients see it. The page size is pinned to the chaincode's own cap, so a client cannot ask for more than the peer will honestly return.",
+  "name": "ListNullifiers"
+ },
+ {
+  "key": "sdk_CountCommittedBallots",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bulletin.go",
+  "lang": "go",
+  "symbol": "BulletinClient.CountCommittedBallots",
+  "why": "The chain-authoritative committed count, paged to the end. A run reconciles its submitted count against this, which is how a dropped or a double-counted ballot surfaces as a number rather than a suspicion.",
+  "name": "CountCommittedBallots"
+ },
+ {
+  "key": "sdk_GetBallots",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bulletin.go",
+  "lang": "go",
+  "symbol": "BulletinClient.GetBallots",
+  "why": "Fetches a batch of ballots for re-verification. An over-long page is refused on-chain instead of quietly trimmed, and a short reply is an error here — a client never receives fewer ballots than it asked for without being told.",
+  "name": "GetBallots"
+ },
+ {
+  "key": "sdk_GetElection",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bulletin.go",
+  "lang": "go",
+  "symbol": "BulletinClient.GetElection",
+  "why": "The clients' read of the election parameters. Every app that renders contests or counts trustees comes through here rather than through a local config file.",
+  "name": "GetElection"
+ },
+ {
+  "key": "sdk_GetDKGTranscript",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bulletin.go",
+  "lang": "go",
+  "symbol": "BulletinClient.GetDKGTranscript",
+  "why": "How a client obtains the election public key it will verify ballots against — from the chain, not from the ceremony's own output.",
+  "name": "GetDKGTranscript"
+ },
+ {
+  "key": "sdk_GetTally",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/bulletin.go",
+  "lang": "go",
+  "symbol": "BulletinClient.GetTally",
+  "why": "The published totals as the clients fetch them. Whether those totals are right is settled off-chain by the auditor; this settles only what was published, and for which election.",
+  "name": "GetTally"
+ },
+ {
+  "key": "ErrorText",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/client-sdk/errtext.go",
+  "lang": "go",
+  "symbol": "ErrorText",
+  "why": "Why a transaction was refused, not merely that it was. The chaincode's own words and its gate=<id> prefix travel only in the gateway's error details, so without this a refused attack would be indistinguishable from any other failure.",
+  "name": "ErrorText"
+ },
+ {
+  "key": "handleTrailAPI",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "handleTrailAPI",
+  "why": "The trail stays sealed until a tally is published. An operator may look early only from a loopback address and, with auth on, only with an admin session — so \"nobody saw the result before the close\" is enforced here rather than promised.",
+  "name": "handleTrailAPI"
+ },
+ {
+  "key": "handleTrailIndex",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "handleTrailIndex",
+  "why": "Lists every election this console recorded, each one checked against the ledger. The chaincode has no ListElections, so this is the run store cross-referenced with the chain and not the chain enumerating itself.",
+  "name": "handleTrailIndex"
+ },
+ {
+  "key": "handleScenarios",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/server.go",
+  "lang": "go",
+  "symbol": "handleScenarios",
+  "why": "The entry point for running the attack catalogue over a run. It passes the same run validation, phase check and single-run lock as every other phase, so an attack cannot slip past the lifecycle it is meant to test.",
+  "name": "handleScenarios"
+ },
+ {
+  "key": "buildTrail",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/trail.go",
+  "lang": "go",
+  "symbol": "buildTrail",
+  "why": "Assembles what the public trail shows, and fails closed. The gate is a tally read back from the chain, not the lifecycle status — the chaincode never sets a \"tallied\" status — and any read error keeps a non-operator sealed.",
+  "name": "buildTrail"
+ },
+ {
+  "key": "decodeTally",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/trail.go",
+  "lang": "go",
+  "symbol": "decodeTally",
+  "why": "Turns the on-chain TallyResult back into contest and candidate counts against the recorded election parameters. It is the step between bytes on a ledger and a number a reader can check.",
+  "name": "decodeTally"
+ },
+ {
+  "key": "handleBoard",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/board.go",
+  "lang": "go",
+  "symbol": "handleBoard",
+  "why": "Serves the public copy of a run's verification records. Nothing beneath it may ever require a role, which is the only reason picking the file action off the path is safe here.",
+  "name": "handleBoard"
+ },
+ {
+  "key": "ballotsDigest",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/csvexport.go",
+  "lang": "go",
+  "symbol": "ballotsDigest",
+  "why": "A single SHA-256 over every ballot's wire bytes in file order. It is order-dependent by construction: it fingerprints the ballot set as written, which is exactly why it moves when nothing but the order changes.",
+  "name": "ballotsDigest"
+ },
+ {
+  "key": "runDigests",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/csvexport.go",
+  "lang": "go",
+  "symbol": "runDigests",
+  "why": "Binds each correctness row to specific artifacts — the DKG transcript, the tally, the ballot set — so a published result cannot later be re-attached to different inputs.",
+  "name": "runDigests"
+ },
+ {
+  "key": "nullifierSetDigest",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ledger_dump.go",
+  "lang": "go",
+  "symbol": "nullifierSetDigest",
+  "why": "Identifies which ballots a stream holds, independent of the order they were written in. The per-nullifier hashes are added modulo 2^256, so a million ballots cost one running total — and two directories differing only in order digest identically.",
+  "name": "nullifierSetDigest"
+ },
+ {
+  "key": "aggregateDigest",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/ledger_dump.go",
+  "lang": "go",
+  "symbol": "aggregateDigest",
+  "why": "The SHA-256 of an audit's per-contest aggregate ciphertexts — the homomorphic sum the tally was decrypted from. It binds a verdict to the ballots that produced it, so two audits claiming the same result can be shown to have read the same ballots.",
+  "name": "aggregateDigest"
+ },
+ {
+  "key": "RunScenarios",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "RunScenarios",
+  "why": "Runs each selected attack on a fresh copy of the run, never the source, and pairs it with a positive control that must audit clean. A scenario that passes because nothing was actually mutated cannot read as a green.",
+  "name": "RunScenarios"
+ },
+ {
+  "key": "copyStream",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "copyStream",
+  "why": "Every scenario gets its own copy of header.json and the ballot stream. The original run folder is never touched, so an attack can never damage the evidence it is being judged against.",
+  "name": "copyStream"
+ },
+ {
+  "key": "mutateHeader",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "mutateHeader",
+  "why": "Rewrites one field of a copied header.json. It re-marshals the whole object, so a clean-versus-tampered comparison has to be made field by field — the file bytes differ wherever Go's key ordering does.",
+  "name": "mutateHeader"
+ },
+ {
+  "key": "tamperBallotProof",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "tamperBallotProof",
+  "why": "Flips one bit of a CDS branch response. The scalar stays canonical and nothing about the ballot looks malformed, so only proof verification can catch it — which is the whole point of the test.",
+  "name": "tamperBallotProof"
+ },
+ {
+  "key": "reuseNullifier",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "reuseNullifier",
+  "why": "The double-vote attempt. The credential signature covers the commitment and not the nullifier, so the ballot passes every check up to the uniqueness one — which is precisely where it has to be stopped.",
+  "name": "reuseNullifier"
+ },
+ {
+  "key": "corruptBallotWire",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "corruptBallotWire",
+  "why": "Sets a reserved protobuf wire type so the ballot fails to parse in every decoder, every time. A byte flipped at random would usually land inside a proof and re-test proof verification instead of the decode gate.",
+  "name": "corruptBallotWire"
+ },
+ {
+  "key": "tamperPartialProof",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "tamperPartialProof",
+  "why": "Flips a bit of a partial decryption's Chaum-Pedersen response: a well-formed proof that does not verify. It tests that a trustee cannot pass off a share that does not correspond to its key.",
+  "name": "tamperPartialProof"
+ },
+ {
+  "key": "tamperDKGCommitment",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "tamperDKGCommitment",
+  "why": "Flips the low bit of trustee 0's constant-term commitment. A canonical ristretto255 encoding has that bit clear, so the point stops decoding at all and the transcript is rejected before any ballot depends on it.",
+  "name": "tamperDKGCommitment"
+ },
+ {
+  "key": "writeNegativeTestsCSV",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "writeNegativeTestsCSV",
+  "why": "Records each attack's verdict with the gate that was expected to refuse it beside the gate that actually did. A rejection by the wrong gate is not evidence about the gate under test, and this is where that distinction survives into the record.",
+  "name": "writeNegativeTestsCSV"
+ },
+ {
+  "key": "ts_admin_listRuns",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "listRuns",
+  "why": "The admin app's run list. It reads /runs, a plain filesystem listing, so opening the app does not require the console to dial Fabric first.",
+  "name": "listRuns"
+ },
+ {
+  "key": "ts_admin_getCapabilities",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "getCapabilities",
+  "why": "Asks the console what this deployment can actually do — on-chain mode, tiers, auth — before the UI offers it, so the app never presents a control the server would refuse.",
+  "name": "getCapabilities"
+ },
+ {
+  "key": "ts_admin_loadElectionSummary",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "loadElectionSummary",
+  "why": "Reads the summary out of the exported election.csv rather than out of app state, so what the admin is shown is the same row an auditor downloads.",
+  "name": "loadElectionSummary"
+ },
+ {
+  "key": "ts_admin_loadCeremony",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "loadCeremony",
+  "why": "The admin's only view of decryption progress: which trustees have submitted a share and whether the threshold is met.",
+  "name": "loadCeremony"
+ },
+ {
+  "key": "ts_admin_verifyRun",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "verifyRun",
+  "why": "Asks the console to run its own verification pass over a run. The app computes no verdict of its own; it requests one and displays what comes back.",
+  "name": "verifyRun"
+ },
+ {
+  "key": "ts_admin_loadCorrectness",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "loadCorrectness",
+  "why": "Pulls correctness.csv into the results view — ground truth beside the decoded total, with E the difference. A non-zero E is visible in the app, not buried in a file nobody opens.",
+  "name": "loadCorrectness"
+ },
+ {
+  "key": "ts_admin_subscribeEvents",
+  "repo": "balotachain",
+  "path": "apps/admin/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "subscribeEvents",
+  "why": "Live progress over server-sent events. The console's hub drops events for a slow subscriber and has no replay, so this is a liveness cue and never the app's source of truth.",
+  "name": "subscribeEvents"
+ },
+ {
+  "key": "ts_trustee_listRuns",
+  "repo": "balotachain",
+  "path": "apps/trustee/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "listRuns",
+  "why": "The trustee app's run list, deliberately reading /runs rather than the trail index: the index dials Fabric on every request and fails outright with no network.",
+  "name": "listRuns"
+ },
+ {
+  "key": "ts_trustee_loadCeremony",
+  "repo": "balotachain",
+  "path": "apps/trustee/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "loadCeremony",
+  "why": "What a trustee sees of the ceremony: which shares are in, and whether the threshold is reached. It is polled rather than pushed, so a missed event cannot leave the app showing the wrong state.",
+  "name": "loadCeremony"
+ },
+ {
+  "key": "ts_trustee_publishTally",
+  "repo": "balotachain",
+  "path": "apps/trustee/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "publishTally",
+  "why": "Asks the console to publish. Below the threshold it answers 409 and the app shows why, so a tally cannot be published by a minority of trustees.",
+  "name": "publishTally"
+ },
+ {
+  "key": "ts_auditor_listRuns",
+  "repo": "balotachain",
+  "path": "apps/auditor/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "listRuns",
+  "why": "The auditor app's run list, reading the filesystem listing rather than the trail index so the public verifier still opens without a Fabric connection.",
+  "name": "listRuns"
+ },
+ {
+  "key": "ts_auditor_exportUrl",
+  "repo": "balotachain",
+  "path": "apps/auditor/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "exportUrl",
+  "why": "Builds the download link for a run's artifacts. The auditor takes the same files the console published — the app is a viewer over the evidence, not a second source of it.",
+  "name": "exportUrl"
+ },
+ {
+  "key": "BuildBulletin",
+  "repo": "balotachain",
+  "path": "services/fabric-adapter/mapping.go",
+  "lang": "go",
+  "symbol": "BuildBulletin",
+  "why": "The original read-path bridge: it turns the chaincode's hex ElectionParameters and TallyResult into BalotaChain's bulletin shape, which is how the auditor view was first pointed at a real on-chain election. Superseded by the console's direct chain reads, and kept here as the record of that link.",
+  "name": "BuildBulletin"
  }
 ]
