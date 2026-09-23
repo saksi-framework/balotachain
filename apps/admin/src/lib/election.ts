@@ -221,7 +221,18 @@ export function runState(run: RunView): {
     return { label: "Interrupted", variant: "warn" };
   }
   const has = (a: string) => run.artifacts?.includes(a) ?? false;
-  if (has("correctness.csv")) return { label: "Verified", variant: "success" };
+  // The audit's own verdict, not the existence of correctness.csv.
+  if (run.audit_overall === "pass") {
+    return { label: "Verified", variant: "success" };
+  }
+  if (run.audit_overall === "fail") {
+    const failed = run.audit_failed_checks ?? [];
+    return {
+      label: "Audit failed",
+      variant: "error",
+      ...(failed.length ? { detail: failed.join(", ") } : {}),
+    };
+  }
   if (has("election.csv")) return { label: "Generated", variant: "neutral" };
   return { label: "Not generated", variant: "warn" };
 }

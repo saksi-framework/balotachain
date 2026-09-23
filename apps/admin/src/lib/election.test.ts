@@ -268,9 +268,27 @@ describe("stepFor an existing run", () => {
         variant: "warn",
       });
     }
-    expect(runState(rv(["election.csv", "correctness.csv"]))).toEqual({
+    const verified = ["election.csv", "correctness.csv"];
+    expect(runState(rv(verified, { audit_overall: "pass" }))).toEqual({
       label: "Verified",
       variant: "success",
+    });
+    expect(
+      runState(
+        rv(verified, {
+          audit_overall: "fail",
+          audit_failed_checks: ["tally_signature", "threshold_signers"],
+        }),
+      ),
+    ).toEqual({
+      label: "Audit failed",
+      variant: "error",
+      detail: "tally_signature, threshold_signers",
+    });
+    // correctness.csv alone is no verdict: a verify can stop after writing it.
+    expect(runState(rv(verified))).toEqual({
+      label: "Generated",
+      variant: "neutral",
     });
     expect(runState(rv(["election.csv"]))).toEqual({
       label: "Generated",
