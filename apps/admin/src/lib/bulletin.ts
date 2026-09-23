@@ -10,6 +10,10 @@
  * type names the struct it maps. Keep them in lock-step.
  */
 
+/**
+ * The browser-side API base: "" (same origin) unless the app is served away
+ * from the console. The dev proxy's target is `VITE_CONSOLE_PROXY` instead.
+ */
 const BASE: string = (import.meta.env.VITE_CONSOLE_URL ?? "").replace(
   /\/$/,
   "",
@@ -59,13 +63,31 @@ export type ElectionConfig = {
   mode: Mode;
 };
 
-/** Go `runView` = `RunRecord{run_id, config, created_at}` + `artifacts` (server.go). */
+/** Go `runView` = `RunRecord{run_id, config, created_at}` + `artifacts` + state (server.go). */
 export type RunView = {
   run_id: string;
   created_at: string;
   config: ElectionConfig;
   /** Existing exportable files, in `exportOrder`. Go nil slice → null. */
   artifacts: string[] | null;
+  /** A phase holds the run's lock right now. */
+  busy: boolean;
+  /**
+   * "new": no journal yet. "interrupted": a ballot window the resume route
+   * would accept. "close-pending": every ballot landed but the close failed;
+   * the resume route retries the close.
+   */
+  status: "new" | "open" | "ended" | "failed" | "interrupted" | "close-pending";
+  /** run.end's failure text; sent to an admin session (or with auth off) only. */
+  reason?: string;
+  /** Exactly what `POST /api/runs/<id>/resume` would accept. */
+  resumable: boolean;
+  was_interrupted: boolean;
+  /** The attack stage a busy run is paused at. */
+  paused_stage?: string;
+  /** The latest completed Verify's verdict; absent if never verified. */
+  audit_overall?: "pass" | "fail";
+  audit_failed_checks?: string[];
 };
 
 /** `GET /api/capabilities` (`handleCapabilities`, server.go). */
@@ -113,6 +135,10 @@ export type CeremonyTrustee = {
   submitted: boolean;
   contests: number;
   submitted_at?: string;
+  /** This trustee's submit phase is running. */
+  submitting: boolean;
+  /** The last submit phase's error, cleared when a later one starts. */
+  submit_error?: string;
 };
 
 /** Go `CeremonyEvent` (ceremonyview.go). */
@@ -133,7 +159,10 @@ export type Ceremony = {
   unlocked: boolean;
   published: boolean;
   on_chain: boolean;
+  /** bundle.json exists AND the election is closed (`closed_at` is set). */
   ready: boolean;
+  /** The trustee id whose submit phase is running; absent when none. */
+  busy?: string;
   started_at?: string;
   closed_at?: string;
   published_at?: string;
@@ -319,6 +348,14 @@ export async function loadElectionSummary(
     issuer_public_key: r.issuer_public_key,
     ballots_sha256: r.ballots_sha256,
   };
+}
+
+/**
+ * Finishes an interrupted ballot window, or retries a failed close. 202 on
+ * accept; 409 with the reason when the run cannot be resumed.
+ */
+export async function resumeRun(runId: string) {
+  await post(`/api/runs/${run(runId)}/resume`);
 }
 
 export async function startCeremony(runId: string) {

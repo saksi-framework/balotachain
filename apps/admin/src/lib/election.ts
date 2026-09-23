@@ -10,6 +10,7 @@ import type {
   ElectionConfig,
   RunView,
 } from "./bulletin";
+import type { ChipVariant } from "../components/Chip";
 
 /** Number fields stay strings while typed, so a field can be cleared. */
 export type ElectionForm = {
@@ -46,8 +47,8 @@ export const DEFAULT_FORM: ElectionForm = {
 
 /** config.go MaxTrustees. */
 export const MAX_TRUSTEES = 15;
-/** config.go OfflineVoterCeiling. */
-const OFFLINE_VOTER_CEILING = 10000;
+/** config.go OfflineRecordCeiling: ballot records (voters x positions). */
+const OFFLINE_RECORD_CEILING = 3_524_078 * 3;
 
 function int(s: string): number {
   const n = Number.parseInt(s.trim(), 10);
@@ -91,8 +92,12 @@ export function validateConfig(c: ElectionConfig): string | null {
   if (c.senate_seats < 0 || c.senate_seats >= c.candidates) {
     return `senate seats must be 0..${c.candidates - 1} (got ${c.senate_seats})`;
   }
-  if (c.mode === "offline" && c.voters > OFFLINE_VOTER_CEILING) {
-    return `offline mode is capped at ${OFFLINE_VOTER_CEILING} voters (got ${c.voters}); use ground-truth mode for larger tiers until the streaming generator lands`;
+  // Divided, as config.go does (Go integer division, hence the floor).
+  if (
+    c.mode === "offline" &&
+    c.voters > Math.floor(OFFLINE_RECORD_CEILING / c.positions)
+  ) {
+    return `offline mode is bounded at ${OFFLINE_RECORD_CEILING} ballot records, the largest thesis tier (3,524,078 voters x 3 positions); got ${c.voters} voters x ${c.positions} positions`;
   }
   return null;
 }
@@ -176,10 +181,61 @@ export function contestLabel(contest: string): string {
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 
-/** Where to reopen an existing run: the furthest step it has reached. */
+/**
+ * Where to reopen an existing run: the furthest step it has reached, which is
+ * also the step of a phase running on it now. `ready` means the election is
+ * closed, so a bundled but unclosed election (still recording, interrupted, or
+ * failed mid-run) stays on the Run step rather than opening the ceremony.
+ */
 export function stepFor(run: RunView, ceremony: Ceremony | null): Step {
   if (run.artifacts?.includes("correctness.csv")) return 5;
   if (ceremony?.published) return 5;
   if (ceremony?.ready) return 4;
+  if (run.status === "interrupted" || run.status === "close-pending") return 3;
+  // Busy after generating (election.csv is written as Generate's last step):
+  // the Run phase holds it, even before it writes bundle.json.
+  if (run.busy && run.artifacts?.includes("election.csv")) return 3;
+  // Trustee contest counts are read from bundle.json, which the Run phase
+  // writes first; the view exposes no other sign of it.
+  if (ceremony?.trustees?.some((t) => t.contests > 0)) return 3;
   return 2;
+}
+
+/** The runs list's status chip, the wizard's runStatus in admin words. */
+export function runState(run: RunView): {
+  label: string;
+  variant: ChipVariant;
+  detail?: string;
+} {
+  if (run.busy) {
+    return {
+      label: run.paused_stage ? `Paused at ${run.paused_stage}` : "Running",
+      variant: "neutral",
+    };
+  }
+  if (run.status === "failed") {
+    return {
+      label: "Failed",
+      variant: "error",
+      ...(run.reason ? { detail: run.reason } : {}),
+    };
+  }
+  if (run.status === "interrupted" || run.status === "close-pending") {
+    return { label: "Interrupted", variant: "warn" };
+  }
+  const has = (a: string) => run.artifacts?.includes(a) ?? false;
+  // The audit's own verdict, not the existence of correctness.csv.
+  if (run.audit_overall === "pass") {
+    return { label: "Verified", variant: "success" };
+  }
+  if (run.audit_overall === "fail") {
+    const failed = run.audit_failed_checks ?? [];
+    return {
+      label: "Audit failed",
+      variant: "error",
+      ...(failed.length ? { detail: failed.join(", ") } : {}),
+    };
+  }
+  if (has("election.csv")) return { label: "Generated", variant: "neutral" };
+  return { label: "Not generated", variant: "warn" };
 }

@@ -56,7 +56,7 @@
 
 ### Split the Vite dev-proxy target from the browser client base URL
 
-**What:** `apps/{admin,auditor,trustee}/vite.config.ts` read `VITE_CONSOLE_URL` as the dev-server proxy target, while each app's `src/lib/bulletin.ts` reads the same name through `import.meta.env` as the browser-side API base. Rename the proxy target to a non-`VITE_` variable (e.g. `CONSOLE_URL`) in all three configs and document both.
+**What:** `apps/{admin,auditor,trustee}/vite.config.ts` read `VITE_CONSOLE_URL` as the dev-server proxy target, while each app's `src/lib/bulletin.ts` reads the same name through `import.meta.env` as the browser-side API base. Rename the proxy target to a non-`VITE_` variable (e.g. `CONSOLE_URL`) in all three configs and document both. **Admin done** (`fix/trustee-admin-state`): its proxy target is `VITE_CONSOLE_PROXY`; auditor and trustee still read `VITE_CONSOLE_URL` for both.
 
 **Why:** Setting the variable to point the dev proxy at another console also makes the browser call that console cross-origin directly, which CORS blocks and which, with console auth on, drops the session cookie. Inherited from PR #54 and extended by PR #56; the default (unset) flow is unaffected.
 
