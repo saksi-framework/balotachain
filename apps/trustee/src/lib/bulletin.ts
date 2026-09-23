@@ -38,6 +38,10 @@ export type CeremonyTrustee = {
   /** Partial decryptions this trustee owns — one per contest. */
   contests: number;
   submitted_at?: string;
+  /** True while this trustee's submit phase is running on the console. */
+  submitting?: boolean;
+  /** The last submit phase's error, cleared when a later one starts or succeeds. */
+  submit_error?: string;
 };
 
 export type CeremonyEvent = {
@@ -72,6 +76,8 @@ export type Ceremony = {
   ballots_sha256?: string;
   dkg_sha256?: string;
   events: CeremonyEvent[];
+  /** The trustee id whose submit phase is running now; absent when none. */
+  busy?: string;
 };
 
 /** A phase progress line from the console's SSE stream (Go `Event`). */
