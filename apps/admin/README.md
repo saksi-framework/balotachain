@@ -21,4 +21,6 @@ voter credentials. When the console has no auth routes (`/api/me` answers 404),
 the app runs without a login.
 
 Dev: `pnpm --filter admin dev` proxies the console prefixes to
-`http://127.0.0.1:8090`. The `src-tauri` crate is no longer a delivery path.
+`VITE_CONSOLE_PROXY` (default `http://127.0.0.1:8090`). `VITE_CONSOLE_URL` is
+the browser's API base: leave it unset (same origin, through the proxy) unless
+the app is served away from the console. The `src-tauri` crate is no longer a delivery path.

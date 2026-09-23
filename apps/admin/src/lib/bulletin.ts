@@ -10,6 +10,10 @@
  * type names the struct it maps. Keep them in lock-step.
  */
 
+/**
+ * The browser-side API base: "" (same origin) unless the app is served away
+ * from the console. The dev proxy's target is `VITE_CONSOLE_PROXY` instead.
+ */
 const BASE: string = (import.meta.env.VITE_CONSOLE_URL ?? "").replace(
   /\/$/,
   "",

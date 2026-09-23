@@ -4,12 +4,15 @@ import react from "@vitejs/plugin-react";
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 // @ts-expect-error process is a nodejs global
-const console_ = process.env.VITE_CONSOLE_URL || "http://127.0.0.1:8090";
+const console_ = process.env.VITE_CONSOLE_PROXY || "http://127.0.0.1:8090";
 
 /**
  * In production the saksi-campaign console serves this bundle itself at
  * `/admin/`, so every API call is same-origin and carries the session cookie.
- * In dev, Vite proxies the console's prefixes.
+ * In dev, Vite proxies the console's prefixes to `VITE_CONSOLE_PROXY`. That
+ * is deliberately not `VITE_CONSOLE_URL`, the browser's API base
+ * (src/lib/bulletin.ts): pointing the proxy elsewhere must not also make the
+ * browser call that console cross-origin, where CORS and the cookie fail.
  *
  * `removeHeader("origin")` is load-bearing: the console's guard() rejects any
  * POST whose Origin host differs from Host. `changeOrigin` rewrites Host to the
