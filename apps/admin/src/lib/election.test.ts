@@ -235,6 +235,11 @@ describe("stepFor an existing run", () => {
     expect(
       stepFor(busy, cer({ ...bundled, ready: true, published: true })),
     ).toBe(5);
+    // Generated, and the Run phase has not written bundle.json yet.
+    expect(stepFor(busy, cer(noBundle))).toBe(3);
+    expect(stepFor(busy, null)).toBe(3);
+    // Still generating: no election.csv yet.
+    expect(stepFor(rv(null, { busy: true }), cer(noBundle))).toBe(2);
   });
 
   it("reopens an interrupted or close-pending run on the Run step", () => {

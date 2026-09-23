@@ -1459,7 +1459,15 @@ function CeremonyStep({
           setPollError(null);
           if (reopenedBusy.current) {
             reopenedBusy.current = false;
-            if (!c.busy && c.unlocked && !c.published) setAction("waiting");
+            if (!c.busy && c.unlocked && !c.published) {
+              // The list row may be stale: follow a publish only while the
+              // run's lock is still held, or its end reads as a failure.
+              runStatus(runId)
+                .then((s) => {
+                  if (s.busy) setAction("waiting");
+                })
+                .catch((e) => setPollError(fail(e)));
+            }
           }
         })
         .catch((e) => setPollError(fail(e)));
@@ -1588,19 +1596,19 @@ function CeremonyStep({
                   <td style={cell}>
                     <Chip
                       variant={
-                        t.submitting
-                          ? "neutral"
-                          : t.submitted
-                            ? "success"
+                        t.submitted
+                          ? "success"
+                          : t.submitting
+                            ? "neutral"
                             : ceremony.ready
                               ? "warn"
                               : "neutral"
                       }
                     >
-                      {t.submitting
-                        ? "Recording…"
-                        : t.submitted
-                          ? "Submitted"
+                      {t.submitted
+                        ? "Submitted"
+                        : t.submitting
+                          ? "Recording…"
                           : ceremony.ready
                             ? "Pending"
                             : "Not started"}
@@ -1699,12 +1707,26 @@ function ResultsStep({
   /** A failed poll; the next successful one clears it. */
   const [pollError, setPollError] = useState<string | null>(null);
 
+  // The audit verdict is re-read until a read lands; a failed one is a poll
+  // error, cleared by the next success.
+  const [auditStale, setAuditStale] = useState(true);
+  useInterval(
+    () => {
+      listRuns()
+        .then((all) => {
+          setAudit(all.find((r) => r.run_id === runId));
+          setAuditStale(false);
+          setPollError(null);
+        })
+        .catch((e) => setPollError(fail(e)));
+    },
+    auditStale ? PHASE_POLL_MS : null,
+  );
+
   /** `verifyError` is set after a Verify ended: its SSE error, or null. */
   const load = useCallback(
     (verifyError?: string | null) => {
-      listRuns()
-        .then((all) => setAudit(all.find((r) => r.run_id === runId)))
-        .catch((e) => setError(fail(e)));
+      setAuditStale(true);
       loadCorrectness(runId)
         .then((r) => {
           setRows(r);

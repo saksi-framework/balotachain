@@ -631,6 +631,35 @@ describe("ceremony and results", () => {
     expect(publishMock).not.toHaveBeenCalled();
   }, 10000);
 
+  it("does not assume a publish when the run is no longer busy on reopen", async () => {
+    // Listed busy, but the phase ended before the step's first read.
+    listRunsMock.mockResolvedValue([run(["election.csv"], { busy: true })]);
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true }),
+    );
+    runStatusMock.mockResolvedValue({
+      run_id: "campus-election-1",
+      busy: false,
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    await waitFor(() => expect(runStatusMock).toHaveBeenCalled());
+    expect(
+      await screen.findByRole("button", { name: "Publish the tally" }),
+    ).toBeEnabled();
+    expect(screen.queryByText(/publish stopped/)).not.toBeInTheDocument();
+  });
+
+  it("shows a submitted trustee as Submitted even while flagged submitting", async () => {
+    const c = ceremony({ submitted: 2, unlocked: true });
+    c.trustees[0] = { ...c.trustees[0], submitted: true, submitting: true };
+    loadCeremonyMock.mockResolvedValue(c);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    expect(await screen.findByText("Submitted")).toBeInTheDocument();
+    expect(screen.queryByText("Recording…")).not.toBeInTheDocument();
+  });
+
   it("keeps Publish disabled below the threshold", async () => {
     loadCeremonyMock.mockResolvedValue(ceremony());
     render(<App />);
@@ -738,6 +767,35 @@ describe("ceremony and results", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText("E = 0 · PASS")).not.toBeInTheDocument();
+  });
+
+  it("clears a failed run-list read on the next poll", async () => {
+    listRunsMock.mockResolvedValueOnce([
+      run(["election.csv", "correctness.csv"], { audit_overall: "pass" }),
+    ]); // the Elections list
+    listRunsMock.mockRejectedValueOnce(new ApiError(502, "console restarting"));
+    listRunsMock.mockResolvedValue([
+      run(["election.csv", "correctness.csv"], { audit_overall: "pass" }),
+    ]);
+    correctnessMock.mockResolvedValue([passing]);
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true, published: true }),
+    );
+    runStatusMock.mockResolvedValue({
+      run_id: "campus-election-1",
+      busy: false,
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    expect(await screen.findByText("console restarting")).toBeInTheDocument();
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByText("console restarting"),
+        ).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    );
+    expect(screen.getByText("E = 0 · PASS")).toBeInTheDocument();
   });
 
   it("reads an empty correctness.csv as not verified, not FAIL", async () => {

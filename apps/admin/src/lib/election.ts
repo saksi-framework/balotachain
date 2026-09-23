@@ -192,6 +192,9 @@ export function stepFor(run: RunView, ceremony: Ceremony | null): Step {
   if (ceremony?.published) return 5;
   if (ceremony?.ready) return 4;
   if (run.status === "interrupted" || run.status === "close-pending") return 3;
+  // Busy after generating (election.csv is written as Generate's last step):
+  // the Run phase holds it, even before it writes bundle.json.
+  if (run.busy && run.artifacts?.includes("election.csv")) return 3;
   // Trustee contest counts are read from bundle.json, which the Run phase
   // writes first; the view exposes no other sign of it.
   if (ceremony?.trustees?.some((t) => t.contests > 0)) return 3;
