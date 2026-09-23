@@ -1539,9 +1539,16 @@ export default function App() {
     try {
       await submitPartialDecryption(runId, actingId);
     } catch (e) {
-      // 409: a phase is already running (this trustee's or another's). That is
-      // not a failure of this click; the next poll says which.
-      if (!(e instanceof ApiError && e.status === 409)) {
+      // Only these two 409s mean a phase is already running (this trustee's
+      // or another's): not a failure of this click; the next poll says which.
+      // Every other 409 (election not closed, network reset, peer fault) is.
+      const inFlight =
+        e instanceof ApiError &&
+        e.status === 409 &&
+        (e.message ===
+          `trustee ${actingId}'s shares are already being recorded` ||
+          e.message === "a phase is already running on this run");
+      if (!inFlight) {
         // A 403 (not this session's shares) is already the right sentence.
         setError(fail(e));
         setPhase("idle");

@@ -319,6 +319,26 @@ describe("trustee console", () => {
     );
   });
 
+  it("shows any other 409 on submit as an error, not as in flight", async () => {
+    submitMock.mockRejectedValue(
+      new ApiError(
+        409,
+        "the election is not closed yet: trustees can submit after Encrypt & record finishes",
+      ),
+    );
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Yes, submit my share/i }),
+    );
+    expect(
+      await screen.findByText(/the election is not closed yet/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Recording your share…")).not.toBeInTheDocument();
+  });
+
   it("can be cancelled", async () => {
     render(<App />);
     fireEvent.click(
