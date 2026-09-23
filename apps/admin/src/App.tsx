@@ -19,7 +19,7 @@ import {
   CopyIcon,
   AlertIcon,
 } from "@balotachain/ui";
-import { Chip, type ChipVariant } from "./components/Chip";
+import { Chip } from "./components/Chip";
 import { Stepper } from "./components/Stepper";
 import {
   ApiError,
@@ -32,6 +32,7 @@ import {
   checkPopulation,
   loadElectionSummary,
   runStatus,
+  resumeRun,
   startCeremony,
   loadCeremony,
   publishTally,
@@ -57,6 +58,7 @@ import {
   contestLabel,
   positionLabels,
   reduceProgress,
+  runState,
   stepFor,
   toElectionConfig,
   validateConfig,
@@ -76,7 +78,8 @@ type Auth =
 /** Turns a failed call into display text; a 401 also sends the app to login. */
 type Fail = (e: unknown) => string;
 
-type Active = { runId: string; config: ElectionConfig };
+/** `run` is the list row an existing election was opened from. */
+type Active = { runId: string; config: ElectionConfig; run?: RunView };
 
 // The Stepper badge already carries the number; five "1 Election"-style
 // labels truncate at the page width.
@@ -709,12 +712,11 @@ function Login({ onSignedIn }: { onSignedIn: () => void }) {
   );
 }
 
-function runState(run: RunView): { label: string; variant: ChipVariant } {
-  const has = (a: string) => run.artifacts?.includes(a) ?? false;
-  if (has("correctness.csv")) return { label: "Verified", variant: "success" };
-  if (has("election.csv")) return { label: "Generated", variant: "neutral" };
-  return { label: "Not generated", variant: "warn" };
-}
+const rowButton: CSSProperties = {
+  minHeight: 36,
+  padding: "0 14px",
+  fontSize: 14,
+};
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -740,6 +742,21 @@ function Elections({
 }) {
   const [runs, setRuns] = useState<RunView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [resuming, setResuming] = useState(false);
+
+  async function resume(r: RunView) {
+    setError(null);
+    setResuming(true);
+    try {
+      await resumeRun(r.run_id);
+      // Accepted: the phase now holds the run, so follow it on the Run step.
+      onOpen({ ...r, busy: true, resumable: false });
+    } catch (e) {
+      // The route's 409 names why the run cannot be resumed.
+      setError(fail(e));
+      setResuming(false);
+    }
+  }
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -789,14 +806,36 @@ function Elections({
                 <td style={cell}>{formatDate(r.created_at)}</td>
                 <td style={cell}>
                   <Chip variant={s.variant}>{s.label}</Chip>
+                  {s.detail ? (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: tokens.color.text2,
+                        marginTop: 4,
+                      }}
+                    >
+                      {s.detail}
+                    </div>
+                  ) : null}
                 </td>
                 <td style={cell}>
-                  <SecondaryButton
-                    onClick={() => onOpen(r)}
-                    style={{ minHeight: 36, padding: "0 14px", fontSize: 14 }}
-                  >
-                    Open
-                  </SecondaryButton>
+                  <div style={{ display: "flex", gap: tokens.space.xs }}>
+                    {r.resumable && !r.busy ? (
+                      <PrimaryButton
+                        onClick={() => resume(r)}
+                        disabled={resuming}
+                        style={rowButton}
+                      >
+                        Resume
+                      </PrimaryButton>
+                    ) : null}
+                    <SecondaryButton
+                      onClick={() => onOpen(r)}
+                      style={rowButton}
+                    >
+                      Open
+                    </SecondaryButton>
+                  </div>
                 </td>
               </tr>
             );
@@ -1231,19 +1270,24 @@ function PopulationStep({
 function RunStep({
   runId,
   onChain,
+  opened,
   fail,
   onBack,
   onNext,
 }: {
   runId: string;
   onChain: boolean;
+  /** The list row this run was opened from, if any. */
+  opened?: RunView;
   fail: Fail;
   onBack: () => void;
   onNext: () => void;
 }) {
   const [progress, setProgress] = usePhaseEvents(runId, "ceremony");
   const [ready, setReady] = useState<boolean | null>(null);
-  const [started, setStarted] = useState(false);
+  // Opened while a phase holds the run: follow it instead of offering to start.
+  const [started, setStarted] = useState(opened?.busy ?? false);
+  const [resumable, setResumable] = useState(opened?.resumable ?? false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1252,11 +1296,14 @@ function RunStep({
       .catch((e) => setError(fail(e)));
   }, [runId, fail]);
 
-  // CeremonyStart writes ceremony.json with ready=true before it releases the
-  // run's lock, so "ready" first, then "not busy" means it stopped short.
+  // `ready` means the election is closed: CeremonyStart (and a resume) stamp
+  // closed_at as their last step, before releasing the run's lock. So the lock
+  // is read first; once it is free, a ceremony still not ready means the phase
+  // stopped short.
   useInterval(
     () => {
-      Promise.all([loadCeremony(runId), runStatus(runId)])
+      runStatus(runId)
+        .then(async (s) => [await loadCeremony(runId), s] as const)
         .then(([c, s]) => {
           if (c.ready) {
             setReady(true);
@@ -1281,7 +1328,12 @@ function RunStep({
     setError(null);
     setProgress({ ...IDLE_PROGRESS, status: "running" });
     try {
-      await startCeremony(runId);
+      if (resumable) {
+        await resumeRun(runId);
+        setResumable(false);
+      } else {
+        await startCeremony(runId);
+      }
       setStarted(true);
     } catch (e) {
       setError(fail(e));
@@ -1310,9 +1362,23 @@ function RunStep({
         </Banner>
       ) : null}
 
+      {resumable && !started ? (
+        <Banner variant="note">
+          {opened?.status === "close-pending"
+            ? "Every ballot is recorded, but closing the election failed. Resume retries the close."
+            : "The ballot window was interrupted before the election was closed. Resume records the ballots the chain is missing, then closes it."}
+        </Banner>
+      ) : null}
+
       {!ready ? (
         <PrimaryButton onClick={start} disabled={started || ready === null}>
-          {started ? "Running…" : "Encrypt and record"}
+          {started
+            ? onChain
+              ? "Recording on-chain…"
+              : "Running…"
+            : resumable
+              ? "Resume"
+              : "Encrypt and record"}
         </PrimaryButton>
       ) : null}
 
@@ -1452,19 +1518,34 @@ function CeremonyStep({
                   <td style={cell}>
                     <Chip
                       variant={
-                        t.submitted
-                          ? "success"
-                          : ceremony.ready
-                            ? "warn"
-                            : "neutral"
+                        t.submitting
+                          ? "neutral"
+                          : t.submitted
+                            ? "success"
+                            : ceremony.ready
+                              ? "warn"
+                              : "neutral"
                       }
                     >
-                      {t.submitted
-                        ? "Submitted"
-                        : ceremony.ready
-                          ? "Pending"
-                          : "Not started"}
+                      {t.submitting
+                        ? "Recording…"
+                        : t.submitted
+                          ? "Submitted"
+                          : ceremony.ready
+                            ? "Pending"
+                            : "Not started"}
                     </Chip>
+                    {t.submit_error ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: tokens.color.error,
+                          marginTop: 4,
+                        }}
+                      >
+                        {t.submit_error}
+                      </div>
+                    ) : null}
                   </td>
                   <td style={cell}>
                     <div
@@ -1487,7 +1568,9 @@ function CeremonyStep({
             <div>
               <PrimaryButton
                 onClick={publish}
-                disabled={!ceremony.unlocked || publishing}
+                disabled={
+                  !ceremony.unlocked || publishing || Boolean(ceremony.busy)
+                }
               >
                 {publishing ? "Publishing…" : "Publish the tally"}
               </PrimaryButton>
@@ -1517,12 +1600,14 @@ function CeremonyStep({
 function ResultsStep({
   runId,
   onChain,
+  opened,
   fail,
   onBack,
   onDone,
 }: {
   runId: string;
   onChain: boolean;
+  opened?: RunView;
   fail: Fail;
   onBack: () => void;
   onDone: () => void;
@@ -1530,7 +1615,8 @@ function ResultsStep({
   const [progress, setProgress] = usePhaseEvents(runId, "verify");
   const [rows, setRows] = useState<ContestResult[] | null>(null);
   const [unverified, setUnverified] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  // Opened while Verify holds the run: poll for its outcome.
+  const [verifying, setVerifying] = useState(opened?.busy ?? false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(
@@ -1733,7 +1819,7 @@ export default function App() {
 
   async function open(run: RunView) {
     const ceremony = await loadCeremony(run.run_id).catch(() => null);
-    setActive({ runId: run.run_id, config: run.config });
+    setActive({ runId: run.run_id, config: run.config, run });
     setStep(stepFor(run, ceremony));
   }
 
@@ -1810,6 +1896,7 @@ export default function App() {
           <RunStep
             runId={active.runId}
             onChain={onChain}
+            opened={active.run}
             fail={fail}
             onBack={() => setStep(2)}
             onNext={() => setStep(4)}
@@ -1827,6 +1914,7 @@ export default function App() {
           <ResultsStep
             runId={active.runId}
             onChain={onChain}
+            opened={active.run}
             fail={fail}
             onBack={() => setStep(4)}
             onDone={toList}

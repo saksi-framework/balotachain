@@ -10,6 +10,7 @@ import {
   checkPopulation,
   loadElectionSummary,
   runStatus,
+  resumeRun,
   startCeremony,
   loadCeremony,
   publishTally,
@@ -164,6 +165,21 @@ describe("election routes", () => {
       busy: false,
     });
     expect(lastCall()[0]).toBe("/api/runs/demo-1/status");
+  });
+
+  it("resumes an interrupted run, and shows the 409 reason verbatim", async () => {
+    fetchMock.mockResolvedValue(res(202, { run_id: "demo-1", remaining: 3 }));
+    await resumeRun("demo-1");
+    expect(lastCall()[0]).toBe("/api/runs/demo-1/resume");
+    expect(lastCall()[1]?.method).toBe("POST");
+
+    fetchMock.mockResolvedValue(
+      res(409, "a phase is already running on this run\n"),
+    );
+    await expect(resumeRun("demo-1")).rejects.toMatchObject({
+      status: 409,
+      message: "a phase is already running on this run",
+    });
   });
 
   it("parses election.csv, including a quoted name with a comma", async () => {

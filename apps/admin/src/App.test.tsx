@@ -24,6 +24,7 @@ const loadCeremonyMock = vi.fn();
 const publishMock = vi.fn();
 const verifyMock = vi.fn();
 const correctnessMock = vi.fn();
+const resumeMock = vi.fn();
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
@@ -43,6 +44,7 @@ vi.mock("./lib/bulletin", async (importActual) => {
     publishTally: (id: string) => publishMock(id),
     verifyRun: (id: string) => verifyMock(id),
     loadCorrectness: (id: string) => correctnessMock(id),
+    resumeRun: (id: string) => resumeMock(id),
     subscribeEvents: () => () => {},
   };
 });
@@ -61,20 +63,46 @@ const config: ElectionConfig = {
   mode: "offline",
 };
 
-const run = (artifacts: string[] | null = ["election.csv"]): RunView => ({
+const run = (
+  artifacts: string[] | null = ["election.csv"],
+  over: Partial<RunView> = {},
+): RunView => ({
   run_id: "campus-election-1",
   created_at: "2026-09-14T02:00:00Z",
   config,
   artifacts,
+  busy: false,
+  status: "open",
+  resumable: false,
+  was_interrupted: false,
+  ...over,
 });
 
 function ceremony(over: Partial<Ceremony> = {}): Ceremony {
   return {
     threshold: 2,
     trustees: [
-      { id: "1", name: "COMELEC", submitted: true, contests: 12 },
-      { id: "2", name: "PPCRV", submitted: false, contests: 12 },
-      { id: "3", name: "NAMFREL", submitted: false, contests: 12 },
+      {
+        id: "1",
+        name: "COMELEC",
+        submitted: true,
+        submitting: false,
+        contests: 12,
+      },
+      {
+        id: "2",
+        name: "PPCRV",
+        submitted: false,
+        submitting: false,
+        contests: 12,
+      },
+      {
+        id: "3",
+        name: "NAMFREL",
+        submitted: false,
+        submitting: false,
+        contests: 12,
+      },
     ],
     submitted: 1,
     unlocked: false,
@@ -91,6 +119,18 @@ function ceremony(over: Partial<Ceremony> = {}): Ceremony {
     ...over,
   };
 }
+
+/** Before the Run step: no bundle.json yet, so no per-trustee contest counts. */
+const unbundled = (): Ceremony =>
+  ceremony({
+    ready: false,
+    submitted: 0,
+    trustees: ceremony().trustees.map((t) => ({
+      ...t,
+      submitted: false,
+      contests: 0,
+    })),
+  });
 
 const report: CheckReport = {
   pass: true,
@@ -137,6 +177,7 @@ beforeEach(() => {
     publishMock,
     verifyMock,
     correctnessMock,
+    resumeMock,
   ]) {
     m.mockReset();
   }
@@ -146,7 +187,7 @@ beforeEach(() => {
   runStatusMock.mockResolvedValue({ run_id: "campus-election-1", busy: false });
   checkMock.mockResolvedValue(report);
   summaryMock.mockResolvedValue(summary);
-  loadCeremonyMock.mockResolvedValue(ceremony({ ready: false, submitted: 0 }));
+  loadCeremonyMock.mockResolvedValue(unbundled());
   loginMock.mockResolvedValue(undefined);
   logoutMock.mockResolvedValue(undefined);
   publishMock.mockResolvedValue(undefined);
@@ -314,13 +355,119 @@ describe("elections", () => {
       pass: false,
       checks: [{ name: "Recount matches", pass: false, detail: "off by one" }],
     });
-    loadCeremonyMock.mockResolvedValue(ceremony({ ready: false }));
+    loadCeremonyMock.mockResolvedValue(unbundled());
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "Open" }));
     expect(await screen.findByText("Validation failed")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Next: run the election/ }),
     ).toBeDisabled();
+  });
+});
+
+describe("run state", () => {
+  const onchain: ElectionConfig = { ...config, mode: "onchain" };
+
+  it("labels failed, interrupted, close-pending and busy runs", async () => {
+    listRunsMock.mockResolvedValue([
+      run(["election.csv"], {
+        run_id: "f",
+        status: "failed",
+        reason: "connect to Fabric: dial timeout",
+      }),
+      run(["election.csv"], {
+        run_id: "i",
+        config: onchain,
+        status: "interrupted",
+        resumable: true,
+      }),
+      run(["election.csv"], {
+        run_id: "c",
+        config: onchain,
+        status: "close-pending",
+        resumable: true,
+      }),
+      run(["election.csv"], { run_id: "b", busy: true }),
+    ]);
+    render(<App />);
+    expect(await screen.findByText("Failed")).toBeInTheDocument();
+    expect(
+      screen.getByText("connect to Fabric: dial timeout"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Interrupted")).toHaveLength(2);
+    expect(screen.getByText("Running")).toBeInTheDocument();
+    // Resume where the route would take it, and never on a busy run.
+    expect(screen.getAllByRole("button", { name: "Resume" })).toHaveLength(2);
+  });
+
+  it("resumes an interrupted run and follows it on the Run step", async () => {
+    listRunsMock.mockResolvedValue([
+      run(["election.csv"], {
+        config: onchain,
+        status: "interrupted",
+        resumable: true,
+      }),
+    ]);
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ ready: false, submitted: 0 }),
+    );
+    runStatusMock.mockResolvedValue({
+      run_id: "campus-election-1",
+      busy: true,
+    });
+    resumeMock.mockResolvedValue(undefined);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Resume" }));
+
+    await waitFor(() =>
+      expect(resumeMock).toHaveBeenCalledWith("campus-election-1"),
+    );
+    expect(await screen.findByText("Run the election")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Recording on-chain…" }),
+    ).toBeDisabled();
+  });
+
+  it("shows the resume route's refusal in the list", async () => {
+    listRunsMock.mockResolvedValue([
+      run(["election.csv"], {
+        config: onchain,
+        status: "interrupted",
+        resumable: true,
+      }),
+    ]);
+    resumeMock.mockRejectedValue(
+      new ApiError(409, "a phase is already running on this run"),
+    );
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Resume" }));
+    expect(
+      await screen.findByText("a phase is already running on this run"),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps a bundled but unclosed election on the Run step", async () => {
+    listRunsMock.mockResolvedValue([
+      run(["election.csv"], { config: onchain, busy: true }),
+    ]);
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ ready: false, submitted: 0 }),
+    );
+    runStatusMock.mockResolvedValue({
+      run_id: "campus-election-1",
+      busy: true,
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+
+    expect(await screen.findByText("Run the election")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Recording on-chain…" }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByText(/The election is closed to new ballots/),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Trustee ceremony")).not.toBeInTheDocument();
   });
 });
 
@@ -350,6 +497,27 @@ describe("ceremony and results", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Open" }));
     expect(
       await screen.findByRole("button", { name: "Publish the tally" }),
+    ).toBeDisabled();
+  });
+
+  it("shows a share being recorded and a failed submit on the roster", async () => {
+    const c = ceremony({ submitted: 2, unlocked: true, busy: "2" });
+    c.trustees[1] = { ...c.trustees[1], submitting: true };
+    c.trustees[2] = {
+      ...c.trustees[2],
+      submit_error: "connect to Fabric: dial timeout",
+    };
+    loadCeremonyMock.mockResolvedValue(c);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+
+    expect(await screen.findByText("Recording…")).toBeInTheDocument();
+    expect(
+      screen.getByText("connect to Fabric: dial timeout"),
+    ).toBeInTheDocument();
+    // A share still being recorded keeps Publish shut even at threshold.
+    expect(
+      screen.getByRole("button", { name: "Publish the tally" }),
     ).toBeDisabled();
   });
 

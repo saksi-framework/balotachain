@@ -10,6 +10,7 @@ import type {
   ElectionConfig,
   RunView,
 } from "./bulletin";
+import type { ChipVariant } from "../components/Chip";
 
 /** Number fields stay strings while typed, so a field can be cleared. */
 export type ElectionForm = {
@@ -176,10 +177,47 @@ export function contestLabel(contest: string): string {
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 
-/** Where to reopen an existing run: the furthest step it has reached. */
+/**
+ * Where to reopen an existing run: the furthest step it has reached, which is
+ * also the step of a phase running on it now. `ready` means the election is
+ * closed, so a bundled but unclosed election (still recording, interrupted, or
+ * failed mid-run) stays on the Run step rather than opening the ceremony.
+ */
 export function stepFor(run: RunView, ceremony: Ceremony | null): Step {
   if (run.artifacts?.includes("correctness.csv")) return 5;
   if (ceremony?.published) return 5;
   if (ceremony?.ready) return 4;
+  if (run.status === "interrupted" || run.status === "close-pending") return 3;
+  // Trustee contest counts are read from bundle.json, which the Run phase
+  // writes first; the view exposes no other sign of it.
+  if (ceremony?.trustees?.some((t) => t.contests > 0)) return 3;
   return 2;
+}
+
+/** The runs list's status chip, the wizard's runStatus in admin words. */
+export function runState(run: RunView): {
+  label: string;
+  variant: ChipVariant;
+  detail?: string;
+} {
+  if (run.busy) {
+    return {
+      label: run.paused_stage ? `Paused at ${run.paused_stage}` : "Running",
+      variant: "neutral",
+    };
+  }
+  if (run.status === "failed") {
+    return {
+      label: "Failed",
+      variant: "error",
+      ...(run.reason ? { detail: run.reason } : {}),
+    };
+  }
+  if (run.status === "interrupted" || run.status === "close-pending") {
+    return { label: "Interrupted", variant: "warn" };
+  }
+  const has = (a: string) => run.artifacts?.includes(a) ?? false;
+  if (has("correctness.csv")) return { label: "Verified", variant: "success" };
+  if (has("election.csv")) return { label: "Generated", variant: "neutral" };
+  return { label: "Not generated", variant: "warn" };
 }

@@ -5,6 +5,7 @@ import {
   contestLabel,
   positionLabels,
   reduceProgress,
+  runState,
   stepFor,
   toElectionConfig,
   validateConfig,
@@ -179,19 +180,95 @@ describe("labels", () => {
 });
 
 describe("stepFor an existing run", () => {
-  const rv = (artifacts: string[] | null): RunView => ({
+  const rv = (
+    artifacts: string[] | null,
+    over: Partial<RunView> = {},
+  ): RunView => ({
     run_id: "r",
     created_at: "",
     config: toElectionConfig(DEFAULT_FORM),
     artifacts,
+    busy: false,
+    status: "open",
+    resumable: false,
+    was_interrupted: false,
+    ...over,
   });
   const cer = (over: Partial<Ceremony>) => over as Ceremony;
+  const trustee = (contests: number) => ({
+    id: "1",
+    name: "COMELEC",
+    submitted: false,
+    submitting: false,
+    contests,
+  });
+  /** The per-trustee contest counts come from bundle.json. */
+  const bundled = { ready: false, published: false, trustees: [trustee(12)] };
+  const noBundle = { ready: false, published: false, trustees: [trustee(0)] };
 
   it("lands on the furthest step the run has reached", () => {
     expect(stepFor(rv(["correctness.csv"]), null)).toBe(5);
     expect(stepFor(rv([]), cer({ ready: true, published: true }))).toBe(5);
     expect(stepFor(rv([]), cer({ ready: true, published: false }))).toBe(4);
-    expect(stepFor(rv(null), cer({ ready: false, published: false }))).toBe(2);
+    expect(stepFor(rv(null), cer(noBundle))).toBe(2);
     expect(stepFor(rv(null), null)).toBe(2);
+  });
+
+  it("keeps a bundled but not yet closed election on the Run step", () => {
+    expect(stepFor(rv(["election.csv"]), cer(bundled))).toBe(3);
+  });
+
+  it("reopens a busy run at the step of its running phase", () => {
+    const busy = rv(["election.csv"], { busy: true });
+    expect(stepFor(busy, cer(bundled))).toBe(3);
+    expect(stepFor(busy, cer({ ...bundled, ready: true }))).toBe(4);
+    expect(
+      stepFor(busy, cer({ ...bundled, ready: true, published: true })),
+    ).toBe(5);
+  });
+
+  it("reopens an interrupted or close-pending run on the Run step", () => {
+    for (const status of ["interrupted", "close-pending"] as const) {
+      const r = rv(["election.csv"], { status, resumable: true });
+      expect(stepFor(r, cer(bundled))).toBe(3);
+      expect(stepFor(r, null)).toBe(3);
+    }
+  });
+
+  it("reopens a failed run where it stopped", () => {
+    const failed = rv(["election.csv"], { status: "failed", reason: "boom" });
+    expect(stepFor(failed, cer(bundled))).toBe(3);
+    expect(stepFor(failed, cer(noBundle))).toBe(2);
+  });
+
+  it("labels each run state for the list", () => {
+    expect(runState(rv(["election.csv"], { busy: true }))).toEqual({
+      label: "Running",
+      variant: "neutral",
+    });
+    expect(
+      runState(rv(["election.csv"], { busy: true, paused_stage: "ballots" })),
+    ).toEqual({ label: "Paused at ballots", variant: "neutral" });
+    expect(
+      runState(rv(["election.csv"], { status: "failed", reason: "boom" })),
+    ).toEqual({ label: "Failed", variant: "error", detail: "boom" });
+    for (const status of ["interrupted", "close-pending"] as const) {
+      expect(runState(rv(["election.csv"], { status }))).toEqual({
+        label: "Interrupted",
+        variant: "warn",
+      });
+    }
+    expect(runState(rv(["election.csv", "correctness.csv"]))).toEqual({
+      label: "Verified",
+      variant: "success",
+    });
+    expect(runState(rv(["election.csv"]))).toEqual({
+      label: "Generated",
+      variant: "neutral",
+    });
+    expect(runState(rv(null))).toEqual({
+      label: "Not generated",
+      variant: "warn",
+    });
   });
 });
