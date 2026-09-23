@@ -47,8 +47,8 @@ export const DEFAULT_FORM: ElectionForm = {
 
 /** config.go MaxTrustees. */
 export const MAX_TRUSTEES = 15;
-/** config.go OfflineVoterCeiling. */
-const OFFLINE_VOTER_CEILING = 10000;
+/** config.go OfflineRecordCeiling: ballot records (voters x positions). */
+const OFFLINE_RECORD_CEILING = 3_524_078 * 3;
 
 function int(s: string): number {
   const n = Number.parseInt(s.trim(), 10);
@@ -92,8 +92,12 @@ export function validateConfig(c: ElectionConfig): string | null {
   if (c.senate_seats < 0 || c.senate_seats >= c.candidates) {
     return `senate seats must be 0..${c.candidates - 1} (got ${c.senate_seats})`;
   }
-  if (c.mode === "offline" && c.voters > OFFLINE_VOTER_CEILING) {
-    return `offline mode is capped at ${OFFLINE_VOTER_CEILING} voters (got ${c.voters}); use ground-truth mode for larger tiers until the streaming generator lands`;
+  // Divided, as config.go does (Go integer division, hence the floor).
+  if (
+    c.mode === "offline" &&
+    c.voters > Math.floor(OFFLINE_RECORD_CEILING / c.positions)
+  ) {
+    return `offline mode is bounded at ${OFFLINE_RECORD_CEILING} ballot records, the largest thesis tier (3,524,078 voters x 3 positions); got ${c.voters} voters x ${c.positions} positions`;
   }
   return null;
 }

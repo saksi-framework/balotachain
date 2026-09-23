@@ -93,11 +93,21 @@ describe("validateConfig mirrors config.go Validate", () => {
       "senate seats must be 0..2 (got 3)",
     ],
     [
-      { voters: "10001" },
-      "offline mode is capped at 10000 voters (got 10001); use ground-truth mode for larger tiers until the streaming generator lands",
+      { voters: "3524079" },
+      "offline mode is bounded at 10572234 ballot records, the largest thesis tier (3,524,078 voters x 3 positions); got 3524079 voters x 3 positions",
+    ],
+    [
+      { voters: "5286118", positions: "2" },
+      "offline mode is bounded at 10572234 ballot records, the largest thesis tier (3,524,078 voters x 3 positions); got 5286118 voters x 2 positions",
     ],
   ])("%o → %s", (over, message) => {
     expect(v(over)).toBe(message);
+  });
+
+  it("admits the largest offline tier and the per-position bound exactly", () => {
+    expect(v({ voters: "3524078" })).toBeNull();
+    expect(v({ voters: "5286117", positions: "2" })).toBeNull();
+    expect(v({ voters: "10001" })).toBeNull();
   });
 
   it("does not cap on-chain voters (the ladder and disk gates are server-side)", () => {
