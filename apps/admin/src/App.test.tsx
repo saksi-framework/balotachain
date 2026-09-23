@@ -606,6 +606,31 @@ describe("ceremony and results", () => {
     expect(publishMock).not.toHaveBeenCalled();
   });
 
+  it("reopens a run busy with a trustee's share as that, not a publish", async () => {
+    listRunsMock.mockResolvedValue([run(["election.csv"], { busy: true })]);
+    const recording = ceremony({ submitted: 2, unlocked: true, busy: "2" });
+    loadCeremonyMock
+      .mockResolvedValueOnce(recording) // App.open
+      .mockResolvedValueOnce(recording) // the step's first read
+      .mockResolvedValue(ceremony({ submitted: 2, unlocked: true }));
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    expect(
+      await screen.findByRole("button", { name: "Publish the tally" }),
+    ).toBeDisabled();
+    expect(screen.queryByText("Publishing…")).not.toBeInTheDocument();
+    // The share lands (next 4 s ceremony poll): Publish opens, no failure.
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole("button", { name: "Publish the tally" }),
+        ).toBeEnabled(),
+      { timeout: 6000 },
+    );
+    expect(screen.queryByText(/publish stopped/)).not.toBeInTheDocument();
+    expect(publishMock).not.toHaveBeenCalled();
+  }, 10000);
+
   it("keeps Publish disabled below the threshold", async () => {
     loadCeremonyMock.mockResolvedValue(ceremony());
     render(<App />);

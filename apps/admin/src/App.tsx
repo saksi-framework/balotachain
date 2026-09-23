@@ -1445,10 +1445,10 @@ function CeremonyStep({
   const [error, setError] = useState<string | null>(null);
   /** A failed poll; the next successful one clears it. */
   const [pollError, setPollError] = useState<string | null>(null);
-  // Opened while a publish holds the run: follow it instead of offering it.
-  const [action, setAction] = useState<Action>(
-    opened?.busy ? "waiting" : "idle",
-  );
+  const [action, setAction] = useState<Action>("idle");
+  // Opened while a phase holds the run: the first read tells a publish (no
+  // trustee recording, unlocked, not published) from a trustee's submit.
+  const reopenedBusy = useRef(opened?.busy ?? false);
   const publishing = action !== "idle";
 
   useInterval(
@@ -1457,6 +1457,10 @@ function CeremonyStep({
         .then((c) => {
           setCeremony(c);
           setPollError(null);
+          if (reopenedBusy.current) {
+            reopenedBusy.current = false;
+            if (!c.busy && c.unlocked && !c.published) setAction("waiting");
+          }
         })
         .catch((e) => setPollError(fail(e)));
     },
