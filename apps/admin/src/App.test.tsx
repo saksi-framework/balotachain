@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import {
   ApiError,
   type Ceremony,
+  type ConsoleEvent,
   type CheckReport,
   type ContestResult,
   type ElectionConfig,
@@ -25,6 +32,9 @@ const publishMock = vi.fn();
 const verifyMock = vi.fn();
 const correctnessMock = vi.fn();
 const resumeMock = vi.fn();
+/** Every open SSE subscription; `emit` feeds one event to all of them. */
+const sse: ((e: ConsoleEvent) => void)[] = [];
+const emit = (e: ConsoleEvent) => act(() => sse.forEach((h) => h(e)));
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
@@ -45,7 +55,10 @@ vi.mock("./lib/bulletin", async (importActual) => {
     verifyRun: (id: string) => verifyMock(id),
     loadCorrectness: (id: string) => correctnessMock(id),
     resumeRun: (id: string) => resumeMock(id),
-    subscribeEvents: () => () => {},
+    subscribeEvents: (_id: string, handler: (e: ConsoleEvent) => void) => {
+      sse.push(handler);
+      return () => void sse.splice(sse.indexOf(handler), 1);
+    },
   };
 });
 
@@ -191,6 +204,7 @@ beforeEach(() => {
   loginMock.mockResolvedValue(undefined);
   logoutMock.mockResolvedValue(undefined);
   publishMock.mockResolvedValue(undefined);
+  sse.length = 0;
 });
 
 describe("login", () => {
@@ -257,6 +271,20 @@ describe("login", () => {
     ).toBeInTheDocument();
   });
 
+  it("retries after the console could not be reached", async () => {
+    getMeMock
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValue({ username: "ops", role: "admin" });
+    render(<App />);
+    expect(
+      await screen.findByText(/Could not reach the election console/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByRole("heading", { name: "Elections" }),
+    ).toBeInTheDocument();
+  });
+
   it("shows a 403 verbatim", async () => {
     listRunsMock.mockRejectedValue(new ApiError(403, "admin role required"));
     render(<App />);
@@ -280,7 +308,7 @@ describe("login", () => {
 describe("elections", () => {
   it("lists runs with their status and hides ground-truth runs", async () => {
     listRunsMock.mockResolvedValue([
-      run(["election.csv", "correctness.csv"]),
+      run(["election.csv", "correctness.csv"], { audit_overall: "pass" }),
       {
         ...run(),
         run_id: "gt-1",
@@ -469,6 +497,44 @@ describe("run state", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Trustee ceremony")).not.toBeInTheDocument();
   });
+
+  it("sends one start for a double click", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ ready: false, submitted: 0 }),
+    );
+    startCeremonyMock.mockReturnValue(new Promise(() => {}));
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    const start = await screen.findByRole("button", {
+      name: "Encrypt and record",
+    });
+    await waitFor(() => expect(start).toBeEnabled());
+    fireEvent.click(start);
+    fireEvent.click(start);
+    await waitFor(() => expect(startCeremonyMock).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("button", { name: "Running…" })).toBeDisabled();
+  });
+
+  it("retries a failed first ceremony read and clears its error", async () => {
+    const bundled = ceremony({ ready: false, submitted: 0 });
+    loadCeremonyMock
+      .mockResolvedValueOnce(bundled) // App.open
+      .mockRejectedValueOnce(new ApiError(502, "console restarting"))
+      .mockResolvedValue(bundled);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    expect(await screen.findByText("console restarting")).toBeInTheDocument();
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByText("console restarting"),
+        ).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    );
+    expect(
+      screen.getByRole("button", { name: "Encrypt and record" }),
+    ).toBeEnabled();
+  });
 });
 
 describe("ceremony and results", () => {
@@ -489,6 +555,36 @@ describe("ceremony and results", () => {
     await waitFor(() =>
       expect(publishMock).toHaveBeenCalledWith("campus-election-1"),
     );
+  });
+
+  it("keeps Publishing… until the phase ends, then shows its error", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true }),
+    );
+    let finish: (s: { run_id: string; busy: boolean }) => void = () => {};
+    runStatusMock.mockImplementation(
+      () => new Promise((resolve) => (finish = resolve)),
+    );
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    const publish = await screen.findByRole("button", {
+      name: "Publish the tally",
+    });
+    fireEvent.click(publish);
+    fireEvent.click(publish);
+    await waitFor(() => expect(runStatusMock).toHaveBeenCalled());
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    // Accepted (202) but not finished: still publishing.
+    expect(screen.getByRole("button", { name: "Publishing…" })).toBeDisabled();
+
+    emit({ phase: "ceremony", level: "error", msg: "publish: tally mismatch" });
+    await act(async () => finish({ run_id: "campus-election-1", busy: false }));
+    expect(
+      await screen.findByText("publish: tally mismatch"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Publish the tally" }),
+    ).toBeEnabled();
   });
 
   it("keeps Publish disabled below the threshold", async () => {
@@ -535,12 +631,15 @@ describe("ceremony and results", () => {
         ledger_matches_local: "",
       },
     ];
-    listRunsMock.mockResolvedValue([run(["election.csv", "correctness.csv"])]);
+    listRunsMock.mockResolvedValue([
+      run(["election.csv", "correctness.csv"], { audit_overall: "pass" }),
+    ]);
     correctnessMock.mockResolvedValue(rows);
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "Open" }));
 
     expect(await screen.findByText("E = 0 · PASS")).toBeInTheDocument();
+    expect(screen.queryByText(/Failed checks/)).not.toBeInTheDocument();
     expect(screen.getByText("President · Candidate 1")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Open the public bulletin board" }),
@@ -563,5 +662,91 @@ describe("ceremony and results", () => {
     await waitFor(() =>
       expect(verifyMock).toHaveBeenCalledWith("campus-election-1"),
     );
+  });
+
+  const passing: ContestResult = {
+    contest: "president/cand0",
+    ground_truth: 40,
+    decoded: 40,
+    E: 0,
+    pass: true,
+    published_tally: 40,
+    tally_sha256: "t1",
+    source: "local",
+    ledger_matches_local: "",
+  };
+
+  it("takes the audit's overall verdict and lists its failed checks", async () => {
+    listRunsMock.mockResolvedValue([
+      run(["election.csv", "correctness.csv"], {
+        audit_overall: "fail",
+        audit_failed_checks: ["threshold_signers", "tally_signature"],
+      }),
+    ]);
+    // Every contest decodes correctly; the audit still failed.
+    correctnessMock.mockResolvedValue([passing]);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    expect(await screen.findByText("FAIL")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Failed checks: threshold_signers, tally_signature",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("E = 0 · PASS")).not.toBeInTheDocument();
+  });
+
+  it("reads an empty correctness.csv as not verified, not FAIL", async () => {
+    listRunsMock.mockResolvedValue([run(["election.csv", "correctness.csv"])]);
+    correctnessMock.mockResolvedValue([]);
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    expect(await screen.findByText("Not verified yet")).toBeInTheDocument();
+    expect(screen.queryByText("FAIL")).not.toBeInTheDocument();
+  });
+
+  it("sends one verify for a double click", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true, published: true }),
+    );
+    correctnessMock.mockRejectedValue(new ApiError(404, "404 page not found"));
+    verifyMock.mockReturnValue(new Promise(() => {}));
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    const verify = await screen.findByRole("button", {
+      name: "Run verification",
+    });
+    fireEvent.click(verify);
+    fireEvent.click(verify);
+    await waitFor(() => expect(verifyMock).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("button", { name: "Verifying…" })).toBeDisabled();
+  });
+
+  it("shows the verify phase's error, not the missing file's 404", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true, published: true }),
+    );
+    correctnessMock.mockRejectedValue(new ApiError(404, "404 page not found"));
+    verifyMock.mockResolvedValue(undefined);
+    let finish: (s: { run_id: string; busy: boolean }) => void = () => {};
+    runStatusMock.mockImplementation(
+      () => new Promise((resolve) => (finish = resolve)),
+    );
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Run verification" }),
+    );
+    await waitFor(() => expect(runStatusMock).toHaveBeenCalled());
+    emit({
+      phase: "verify",
+      level: "error",
+      msg: "auditor: bundle unreadable",
+    });
+    await act(async () => finish({ run_id: "campus-election-1", busy: false }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "auditor: bundle unreadable",
+    );
+    expect(screen.queryByText("404 page not found")).not.toBeInTheDocument();
   });
 });

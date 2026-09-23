@@ -97,8 +97,14 @@ const FIELD_MAX = 480;
 const PHASE_POLL_MS = 1500;
 /** The console's own ceremony poll interval. */
 const CEREMONY_POLL_MS = 4000;
-/** A publish returns 202; give the dispatch a moment before re-reading. */
-const AFTER_POST_MS = 700;
+
+/**
+ * A phase-starting button: "posting" while its POST is in flight (so a second
+ * click cannot send another), "waiting" once the console accepted it and the
+ * step polls for the phase's outcome. The poll starts only after the 202,
+ * because the console claims the run's lock before answering.
+ */
+type Action = "idle" | "posting" | "waiting";
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -116,9 +122,15 @@ function useInterval(fn: () => void, ms: number | null) {
   }, [ms]);
 }
 
-/** Folds one phase's SSE stream into a Progress for as long as it is mounted. */
+/**
+ * Folds one phase's SSE stream into a Progress for as long as it is mounted.
+ * `latest` is the same Progress as of the last render, for a poll's callback
+ * that resolves after the render it was started from.
+ */
 function usePhaseEvents(runId: string, phase: string) {
   const [progress, setProgress] = useState<Progress>(IDLE_PROGRESS);
+  const latest = useRef(progress);
+  latest.current = progress;
   useEffect(
     () =>
       subscribeEvents(runId, (e) =>
@@ -126,7 +138,7 @@ function usePhaseEvents(runId: string, phase: string) {
       ),
     [runId, phase],
   );
-  return [progress, setProgress] as const;
+  return [progress, setProgress, latest] as const;
 }
 
 function Header({ auth, onSignOut }: { auth: Auth; onSignOut: () => void }) {
@@ -1283,18 +1295,30 @@ function RunStep({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const [progress, setProgress] = usePhaseEvents(runId, "ceremony");
+  const [progress, setProgress, latest] = usePhaseEvents(runId, "ceremony");
   const [ready, setReady] = useState<boolean | null>(null);
   // Opened while a phase holds the run: follow it instead of offering to start.
-  const [started, setStarted] = useState(opened?.busy ?? false);
+  const [action, setAction] = useState<Action>(
+    opened?.busy ? "waiting" : "idle",
+  );
+  const started = action !== "idle";
   const [resumable, setResumable] = useState(opened?.resumable ?? false);
   const [error, setError] = useState<string | null>(null);
+  /** A failed poll; the next successful one clears it. */
+  const [pollError, setPollError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadCeremony(runId)
-      .then((c) => setReady(c.ready))
-      .catch((e) => setError(fail(e)));
-  }, [runId, fail]);
+  // The first read, retried on the poll interval until it lands.
+  useInterval(
+    () => {
+      loadCeremony(runId)
+        .then((c) => {
+          setReady(c.ready);
+          setPollError(null);
+        })
+        .catch((e) => setPollError(fail(e)));
+    },
+    ready === null && action !== "waiting" ? PHASE_POLL_MS : null,
+  );
 
   // `ready` means the election is closed: CeremonyStart (and a resume) stamp
   // closed_at as their last step, before releasing the run's lock. So the lock
@@ -1305,26 +1329,25 @@ function RunStep({
       runStatus(runId)
         .then(async (s) => [await loadCeremony(runId), s] as const)
         .then(([c, s]) => {
+          setPollError(null);
+          setReady(c.ready);
           if (c.ready) {
-            setReady(true);
-            setStarted(false);
+            setAction("idle");
           } else if (!s.busy) {
-            setStarted(false);
+            setAction("idle");
             setError(
-              progress.error ??
+              latest.current.error ??
                 "The run stopped before the election was closed — see the console log.",
             );
           }
         })
-        .catch((e) => {
-          setStarted(false);
-          setError(fail(e));
-        });
+        .catch((e) => setPollError(fail(e)));
     },
-    started ? PHASE_POLL_MS : null,
+    action === "waiting" ? PHASE_POLL_MS : null,
   );
 
   async function start() {
+    setAction("posting");
     setError(null);
     setProgress({ ...IDLE_PROGRESS, status: "running" });
     try {
@@ -1334,8 +1357,9 @@ function RunStep({
       } else {
         await startCeremony(runId);
       }
-      setStarted(true);
+      setAction("waiting");
     } catch (e) {
+      setAction("idle");
       setError(fail(e));
     }
   }
@@ -1355,7 +1379,9 @@ function RunStep({
           </Chip>
         }
       />
-      {error && <Banner variant="error">{error}</Banner>}
+      {(error ?? pollError) && (
+        <Banner variant="error">{error ?? pollError}</Banner>
+      )}
       {ready ? (
         <Banner variant="success">
           The election is closed to new ballots. Trustees may now contribute.
@@ -1411,29 +1437,61 @@ function CeremonyStep({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const [, setProgress, latest] = usePhaseEvents(runId, "ceremony");
   const [ceremony, setCeremony] = useState<Ceremony | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState(false);
+  /** A failed poll; the next successful one clears it. */
+  const [pollError, setPollError] = useState<string | null>(null);
+  const [action, setAction] = useState<Action>("idle");
+  const publishing = action !== "idle";
 
-  const refresh = useCallback(() => {
-    loadCeremony(runId)
-      .then(setCeremony)
-      .catch((e) => setError(fail(e)));
-  }, [runId, fail]);
+  useInterval(
+    () => {
+      loadCeremony(runId)
+        .then((c) => {
+          setCeremony(c);
+          setPollError(null);
+        })
+        .catch((e) => setPollError(fail(e)));
+    },
+    ceremony?.published || publishing ? null : CEREMONY_POLL_MS,
+  );
 
-  useInterval(refresh, ceremony?.published ? null : CEREMONY_POLL_MS);
+  // The publish is done when the tally reads published, and failed when the
+  // run's lock is free without that: the lock is read first, as in RunStep.
+  useInterval(
+    () => {
+      runStatus(runId)
+        .then(async (s) => [await loadCeremony(runId), s] as const)
+        .then(([c, s]) => {
+          setCeremony(c);
+          setPollError(null);
+          if (c.published) {
+            setAction("idle");
+          } else if (!s.busy) {
+            setAction("idle");
+            setError(
+              latest.current.error ??
+                "The publish stopped before the tally was published — see the console log.",
+            );
+          }
+        })
+        .catch((e) => setPollError(fail(e)));
+    },
+    action === "waiting" ? PHASE_POLL_MS : null,
+  );
 
   async function publish() {
+    setAction("posting");
     setError(null);
-    setPublishing(true);
+    setProgress({ ...IDLE_PROGRESS, status: "running" });
     try {
       await publishTally(runId);
-      window.setTimeout(refresh, AFTER_POST_MS);
+      setAction("waiting");
     } catch (e) {
       // The below-threshold 409 is already the right sentence.
+      setAction("idle");
       setError(fail(e));
-    } finally {
-      setPublishing(false);
     }
   }
 
@@ -1462,8 +1520,10 @@ function CeremonyStep({
           ) : null
         }
       />
-      {error && <Banner variant="error">{error}</Banner>}
-      {!ceremony && !error ? (
+      {(error ?? pollError) && (
+        <Banner variant="error">{error ?? pollError}</Banner>
+      )}
+      {!ceremony && !error && !pollError ? (
         <p style={{ margin: 0, color: tokens.color.text2 }}>Loading…</p>
       ) : null}
 
@@ -1556,7 +1616,10 @@ function CeremonyStep({
                       }}
                     >
                       <MonoText style={{ fontSize: 12 }}>{link}</MonoText>
-                      <CopyButton value={origin + link} />
+                      {/* An empty client base gives a same-origin path. */}
+                      <CopyButton
+                        value={link.startsWith("/") ? origin + link : link}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -1612,62 +1675,89 @@ function ResultsStep({
   onBack: () => void;
   onDone: () => void;
 }) {
-  const [progress, setProgress] = usePhaseEvents(runId, "verify");
+  const [progress, setProgress, latest] = usePhaseEvents(runId, "verify");
   const [rows, setRows] = useState<ContestResult[] | null>(null);
+  /** This run's list row, for the audit's own verdict. */
+  const [audit, setAudit] = useState<RunView | undefined>(opened);
   const [unverified, setUnverified] = useState(false);
   // Opened while Verify holds the run: poll for its outcome.
-  const [verifying, setVerifying] = useState(opened?.busy ?? false);
+  const [action, setAction] = useState<Action>(
+    opened?.busy ? "waiting" : "idle",
+  );
+  const verifying = action !== "idle";
   const [error, setError] = useState<string | null>(null);
+  /** A failed poll; the next successful one clears it. */
+  const [pollError, setPollError] = useState<string | null>(null);
 
+  /** `verifyError` is set after a Verify ended: its SSE error, or null. */
   const load = useCallback(
-    (afterVerify: boolean) => {
+    (verifyError?: string | null) => {
+      listRuns()
+        .then((all) => setAudit(all.find((r) => r.run_id === runId)))
+        .catch((e) => setError(fail(e)));
       loadCorrectness(runId)
         .then((r) => {
           setRows(r);
           setUnverified(false);
         })
         .catch((e) => {
-          if (e instanceof ApiError && e.status === 404 && !afterVerify) {
-            setUnverified(true);
-          } else {
+          if (!(e instanceof ApiError && e.status === 404)) {
             setError(fail(e));
+            return;
+          }
+          setUnverified(true);
+          // No correctness.csv after a Verify: it failed, and its own error
+          // says why better than the export route's 404 does.
+          if (verifyError !== undefined) {
+            setError(
+              verifyError ??
+                "Verification did not complete — correctness.csv is missing. See the console log.",
+            );
           }
         });
     },
     [runId, fail],
   );
 
-  useEffect(() => load(false), [load]);
+  useEffect(() => load(), [load]);
 
   useInterval(
     () => {
       runStatus(runId)
         .then((s) => {
+          setPollError(null);
           if (s.busy) return;
-          setVerifying(false);
-          load(true);
+          setAction("idle");
+          load(latest.current.error);
         })
-        .catch((e) => {
-          setVerifying(false);
-          setError(fail(e));
-        });
+        .catch((e) => setPollError(fail(e)));
     },
-    verifying ? PHASE_POLL_MS : null,
+    action === "waiting" ? PHASE_POLL_MS : null,
   );
 
   async function verify() {
+    setAction("posting");
     setError(null);
     setProgress({ ...IDLE_PROGRESS, status: "running" });
     try {
       await verifyRun(runId);
-      setVerifying(true);
+      setAction("waiting");
     } catch (e) {
+      setAction("idle");
       setError(fail(e));
     }
   }
 
   const local = rows?.filter((r) => r.source !== "ledger") ?? [];
-  const pass = local.length > 0 && local.every((r) => r.pass);
+  // The audit's overall verdict covers checks beyond the per-contest rows;
+  // the rows decide only for a console that does not report one.
+  const verdict =
+    local.length === 0
+      ? null
+      : (audit?.audit_overall ??
+        (local.every((r) => r.pass) ? "pass" : "fail"));
+  const failedChecks =
+    verdict === "fail" ? (audit?.audit_failed_checks ?? []) : [];
   const ledger = rows?.[0]?.ledger_matches_local ?? "";
 
   return (
@@ -1677,13 +1767,24 @@ function ResultsStep({
         subtitle="The independent auditor recomputes every contest from the ballots and the trustees' shares and holds it against the ground truth."
         aside={
           rows ? (
-            <Chip variant={pass ? "success" : "error"}>
-              {pass ? "E = 0 · PASS" : "FAIL"}
-            </Chip>
+            verdict === null ? (
+              <Chip variant="neutral">Not verified yet</Chip>
+            ) : (
+              <Chip variant={verdict === "pass" ? "success" : "error"}>
+                {verdict === "pass" ? "E = 0 · PASS" : "FAIL"}
+              </Chip>
+            )
           ) : null
         }
       />
-      {error && <Banner variant="error">{error}</Banner>}
+      {(error ?? pollError) && (
+        <Banner variant="error">{error ?? pollError}</Banner>
+      )}
+      {failedChecks.length > 0 ? (
+        <Banner variant="error">
+          {`Failed checks: ${failedChecks.join(", ")}`}
+        </Banner>
+      ) : null}
 
       {unverified ? (
         <>
@@ -1837,9 +1938,21 @@ export default function App() {
     );
   } else if (auth.kind === "unreachable") {
     body = (
-      <Banner variant="error">
-        Could not reach the election console — {auth.message}
-      </Banner>
+      <>
+        <Banner variant="error">
+          Could not reach the election console — {auth.message}
+        </Banner>
+        <div>
+          <SecondaryButton
+            onClick={() => {
+              setAuth({ kind: "checking" });
+              checkSession();
+            }}
+          >
+            Try again
+          </SecondaryButton>
+        </div>
+      </>
     );
   } else if (auth.kind === "login") {
     body = (
