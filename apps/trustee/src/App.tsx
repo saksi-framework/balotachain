@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type FormEvent,
@@ -38,10 +39,17 @@ import {
   type Session,
 } from "./lib/bulletin";
 
-type SubmitPhase = "idle" | "confirm" | "submitted";
+/**
+ * `sent` = this page's submit was accepted (or refused 409 as already running)
+ * and the next poll has not answered yet. Success itself is only ever read from
+ * the console's `submitted`.
+ */
+type SubmitPhase = "idle" | "confirm" | "sent";
 
 /** The console's own ceremony poll interval — the state of record. */
 const POLL_MS = 4000;
+/** Poll faster while a submit phase is running or has just been sent. */
+const BUSY_POLL_MS = 1500;
 /** A submit returns 202; give the dispatch a moment before the first re-poll. */
 const AFTER_SUBMIT_MS = 700;
 
@@ -515,7 +523,11 @@ function ActionCard({
   error: string | null;
   publishing: boolean;
 }) {
-  const done = you.submitted || phase === "submitted";
+  const done = you.submitted;
+  const inFlight = !done && (you.submitting || phase === "sent");
+  const failed = !done && !inFlight && Boolean(you.submit_error);
+  // Another trustee's phase is running; the console would refuse with a 409.
+  const waiting = Boolean(ceremony.busy) && ceremony.busy !== you.id;
 
   return (
     <Card
@@ -587,9 +599,40 @@ function ActionCard({
           </p>
         ) : null}
 
-        {ceremony.ready && !done ? (
+        {ceremony.ready && inFlight ? (
+          <p style={{ ...noteText, margin: 0, fontWeight: 600 }}>
+            Recording your share…
+          </p>
+        ) : null}
+
+        {ceremony.ready && failed ? (
+          <div style={{ display: "grid", gap: tokens.space.sm }}>
+            <p
+              style={{
+                ...noteText,
+                margin: 0,
+                color: tokens.color.warnText,
+              }}
+            >
+              Your last submission failed: {you.submit_error}
+            </p>
+            <div>
+              <PrimaryButton
+                onClick={onStart}
+                disabled={phase === "confirm" || waiting}
+              >
+                Try again
+              </PrimaryButton>
+            </div>
+          </div>
+        ) : null}
+
+        {ceremony.ready && !done && !inFlight && !failed ? (
           <>
-            <PrimaryButton onClick={onStart} disabled={phase === "confirm"}>
+            <PrimaryButton
+              onClick={onStart}
+              disabled={phase === "confirm" || waiting}
+            >
               <LockIcon size={20} strokeWidth={1.7} />
               Submit Partial Decryption
             </PrimaryButton>
@@ -612,6 +655,13 @@ function ActionCard({
               public bulletin board.
             </div>
           </>
+        ) : null}
+
+        {ceremony.ready && !done && !inFlight && waiting ? (
+          <p style={{ ...noteText, margin: "10px 0 0" }}>
+            Another trustee&apos;s share is being recorded; this unlocks when it
+            finishes.
+          </p>
         ) : null}
 
         {phase === "confirm" ? (
@@ -1353,6 +1403,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [live, setLive] = useState<string[]>([]);
+  /** When this page last sent a submit; a poll started after it ends `sent`. */
+  const sentAt = useRef(0);
 
   // Anything other than "no session" (401) reads as auth off: a console that
   // cannot answer /api/me will fail the ceremony load too, and say so there.
@@ -1397,8 +1449,14 @@ export default function App() {
   const refresh = useCallback(
     (signal?: AbortSignal) => {
       if (!runId) return;
+      const started = Date.now();
       loadCeremony(runId, signal)
-        .then((ceremony) => setLoad({ kind: "ready", ceremony }))
+        .then((ceremony) => {
+          setLoad({ kind: "ready", ceremony });
+          // The console has now seen the submit: its state takes over.
+          if (started >= sentAt.current)
+            setPhase((p) => (p === "sent" ? "idle" : p));
+        })
         .catch((e: Error) => {
           if (signal?.aborted) return;
           setLoad({ kind: "error", message: e.message });
@@ -1413,12 +1471,19 @@ export default function App() {
     if (!runId) return;
     const ctrl = new AbortController();
     refresh(ctrl.signal);
-    const timer = window.setInterval(() => refresh(), POLL_MS);
-    return () => {
-      ctrl.abort();
-      window.clearInterval(timer);
-    };
+    return () => ctrl.abort();
   }, [runId, refresh]);
+
+  const fast =
+    phase === "sent" || (load.kind === "ready" && Boolean(load.ceremony.busy));
+  useEffect(() => {
+    if (!runId) return;
+    const timer = window.setInterval(
+      () => refresh(),
+      fast ? BUSY_POLL_MS : POLL_MS,
+    );
+    return () => window.clearInterval(timer);
+  }, [runId, refresh, fast]);
 
   // SSE is a liveness cue only — the hub drops events for slow subscribers and
   // has no replay, so nothing is derived from it. With auth on, `/events`
@@ -1473,14 +1538,20 @@ export default function App() {
     setError(null);
     try {
       await submitPartialDecryption(runId, actingId);
-      setPhase("submitted");
-      // A 202 means accepted, not done — re-poll rather than assume.
-      window.setTimeout(() => refresh(), AFTER_SUBMIT_MS);
     } catch (e) {
-      // A 403 (not this session's shares) is already the right sentence.
-      setError(fail(e));
-      setPhase("idle");
+      // 409: a phase is already running (this trustee's or another's). That is
+      // not a failure of this click; the next poll says which.
+      if (!(e instanceof ApiError && e.status === 409)) {
+        // A 403 (not this session's shares) is already the right sentence.
+        setError(fail(e));
+        setPhase("idle");
+        return;
+      }
     }
+    sentAt.current = Date.now();
+    setPhase("sent");
+    // A 202 means accepted, not done — re-poll rather than assume.
+    window.setTimeout(() => refresh(), AFTER_SUBMIT_MS);
   }
 
   async function onPublish() {

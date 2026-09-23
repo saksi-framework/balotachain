@@ -194,9 +194,129 @@ describe("trustee console", () => {
     await waitFor(() => {
       expect(submitMock).toHaveBeenCalledWith("demo-2026-1", "2");
     });
+    // Success comes from the console's `submitted`, never from the 202 alone.
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({
+        submitted: 2,
+        trustees: ceremony().trustees.map((t) =>
+          t.id === "2" ? { ...t, submitted: true } : t,
+        ),
+      }),
+    );
     expect(
       await screen.findByText("Partial decryption submitted"),
     ).toBeInTheDocument();
+  });
+
+  const withYou = (over: Record<string, unknown>, id = "2") =>
+    ceremony().trustees.map((t) => (t.id === id ? { ...t, ...over } : t));
+
+  it("shows the in-flight panel, not the button, while your share is recording", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ busy: "2", trustees: withYou({ submitting: true }) }),
+    );
+    render(<App />);
+    expect(
+      await screen.findByText("Recording your share…"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Submit Partial Decryption/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not offer the button again after confirm while the poll says not submitted", async () => {
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Yes, submit my share/i }),
+    );
+    // The console now reports the phase as running, still not submitted.
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ busy: "2", trustees: withYou({ submitting: true }) }),
+    );
+    expect(
+      await screen.findByText("Recording your share…"),
+    ).toBeInTheDocument();
+    const before = loadCeremonyMock.mock.calls.length;
+    await waitFor(() =>
+      expect(loadCeremonyMock.mock.calls.length).toBeGreaterThan(before),
+    );
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getByText("Recording your share…")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Submit Partial Decryption/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Partial decryption submitted"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a failed submit with Try again, which re-submits", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({
+        trustees: withYou({ submit_error: "endorsement timed out" }),
+      }),
+    );
+    render(<App />);
+    expect(
+      await screen.findByText(/endorsement timed out/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Yes, submit my share/i }),
+    );
+    await waitFor(() =>
+      expect(submitMock).toHaveBeenCalledWith("demo-2026-1", "2"),
+    );
+  });
+
+  it("disables the button while another trustee's share is recording", async () => {
+    setUrl("?run=demo-2026-1&trustee=1");
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({
+        busy: "2",
+        trustees: ceremony()
+          .trustees.map((t) => (t.id === "1" ? { ...t, submitted: false } : t))
+          .map((t) => (t.id === "2" ? { ...t, submitting: true } : t)),
+      }),
+    );
+    render(<App />);
+    expect(
+      await screen.findByRole("button", { name: /Submit Partial Decryption/i }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Another trustee's share is being recorded; this unlocks when it finishes.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("treats a 409 on submit as in flight and re-polls, with no error", async () => {
+    submitMock.mockRejectedValue(
+      new ApiError(409, "trustee 2's shares are already being recorded"),
+    );
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Submit Partial Decryption/i }),
+    );
+    const before = loadCeremonyMock.mock.calls.length;
+    fireEvent.click(
+      screen.getByRole("button", { name: /Yes, submit my share/i }),
+    );
+    expect(
+      await screen.findByText("Recording your share…"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/already being recorded/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Submit Partial Decryption/i }),
+    ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(loadCeremonyMock.mock.calls.length).toBeGreaterThan(before),
+    );
   });
 
   it("can be cancelled", async () => {
