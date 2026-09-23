@@ -1428,11 +1428,14 @@ function RunStep({
 
 function CeremonyStep({
   runId,
+  opened,
   fail,
   onBack,
   onNext,
 }: {
   runId: string;
+  /** The list row this run was opened from, if any. */
+  opened?: RunView;
   fail: Fail;
   onBack: () => void;
   onNext: () => void;
@@ -1442,7 +1445,10 @@ function CeremonyStep({
   const [error, setError] = useState<string | null>(null);
   /** A failed poll; the next successful one clears it. */
   const [pollError, setPollError] = useState<string | null>(null);
-  const [action, setAction] = useState<Action>("idle");
+  // Opened while a publish holds the run: follow it instead of offering it.
+  const [action, setAction] = useState<Action>(
+    opened?.busy ? "waiting" : "idle",
+  );
   const publishing = action !== "idle";
 
   useInterval(
@@ -2018,6 +2024,7 @@ export default function App() {
         {active && step === 4 && (
           <CeremonyStep
             runId={active.runId}
+            opened={active.run}
             fail={fail}
             onBack={() => setStep(3)}
             onNext={() => setStep(5)}

@@ -587,6 +587,25 @@ describe("ceremony and results", () => {
     ).toBeEnabled();
   });
 
+  it("reopens a run with a publish in flight as Publishing…", async () => {
+    listRunsMock.mockResolvedValue([run(["election.csv"], { busy: true })]);
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true }),
+    );
+    runStatusMock.mockResolvedValue({
+      run_id: "campus-election-1",
+      busy: true,
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open" }));
+    const publishing = await screen.findByRole("button", {
+      name: "Publishing…",
+    });
+    expect(publishing).toBeDisabled();
+    fireEvent.click(publishing);
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
   it("keeps Publish disabled below the threshold", async () => {
     loadCeremonyMock.mockResolvedValue(ceremony());
     render(<App />);
