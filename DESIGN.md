@@ -154,7 +154,7 @@ the trustee console's pattern.
 ## Colors
 
 **Strategy:** Restrained. Teal (`primary`) is the only colour that means "you can act here". Semantic
-colours appear only for state: success for recorded and verified, warning for waiting and interrupted,
+colours appear only for state: success for recorded and verified, warning for interrupted,
 error for refused and failed.
 
 **Light or dark:** light only. The scenes are a projector in a lit room at the defense, trustee
@@ -229,7 +229,7 @@ All shared React components live in `packages/ui`; apps do not keep their own co
 - **TopBar.** App name, election name, the signed-in role on the right. One component for admin,
   trustee and board.
 - **VerifiableValue.** Mono text on `neutral-fill`, a CopyButton, and a "Check" link when the value
-  has a public check (tracking code to `/api/verify-code`, tx id to the trail). Copy confirms with a
+  has a public check (tx id to the trail; a tracking code is checked in the board's Verify card). Copy confirms with a
   label change for 2s, not a toast.
 - **Card.** White, `border`, `lg` radius, 24px padding. Title in `heading`.
 - **States.** Every data view designs four states: loading (skeleton lines, not a spinner alone),
