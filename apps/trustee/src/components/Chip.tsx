@@ -44,7 +44,7 @@ function palette(variant: ChipVariant): {
         bg: "#F0F2F1",
         fg: tokens.color.text2,
         border: tokens.color.border,
-        dot: tokens.color.muted,
+        dot: tokens.color.neutralDot,
       };
   }
 }

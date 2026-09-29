@@ -1,19 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import { tokens } from "../tokens.js";
-import { CopyIcon } from "./Icon.js";
+import { CheckIcon, CopyIcon } from "./Icon.js";
 
 export type CopyButtonProps = {
   /** Text placed on the clipboard. */
   value: string;
   /** Accessible name; defaults to "Copy". */
   label?: string;
-  /** `md` on the bulletin board's hash row, `sm` in the trustee console. */
-  size?: "sm" | "md";
+  /**
+   * `md` on the bulletin board's hash row, `sm` in the trustee console and
+   * inside VerifiableValue, `xs` in admin's dense tables.
+   */
+  size?: "xs" | "sm" | "md";
 };
 
+const geometry = {
+  xs: { gap: 4, radius: 8, padding: "4px 8px", font: 12, icon: 14 },
+  sm: {
+    gap: 6,
+    radius: 10,
+    padding: "7px 11px",
+    font: tokens.type.small,
+    icon: 15,
+  },
+  md: {
+    gap: 7,
+    radius: tokens.radius.button,
+    padding: "10px 15px",
+    font: 14,
+    icon: 17,
+  },
+} as const;
+
 /**
- * The outlined copy control shared by the auditor and trustee mockups: it
- * flashes teal and reads "Copied" for 1.8s after a successful copy.
+ * The outlined copy control. After a successful copy it turns teal and reads
+ * "Copied" for 2 s; if the clipboard refuses, it stays on "Copy" rather than
+ * claim a copy that did not happen.
  */
 export function CopyButton({
   value,
@@ -33,28 +55,29 @@ export function CopyButton({
 
   async function onCopy() {
     try {
-      await navigator.clipboard?.writeText(value);
+      await navigator.clipboard.writeText(value);
     } catch {
-      // Clipboard is unavailable in some sandboxed webviews; still confirm.
+      return; // clipboard unavailable (insecure origin, sandboxed webview)
     }
     setCopied(true);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 1800);
+    timer.current = setTimeout(() => setCopied(false), 2000);
   }
 
-  const sm = size === "sm";
+  const g = geometry[size];
+  const Glyph = copied ? CheckIcon : CopyIcon;
   return (
     <button
       type="button"
       onClick={onCopy}
-      aria-label={label}
+      aria-label={copied ? "Copied" : label}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         flexShrink: 0,
         display: "inline-flex",
         alignItems: "center",
-        gap: sm ? 6 : 7,
+        gap: g.gap,
         background: copied ? tokens.color.tealLight : tokens.color.surface,
         border: `1.5px solid ${
           copied
@@ -63,17 +86,18 @@ export function CopyButton({
               ? tokens.color.borderHover
               : tokens.color.border
         }`,
-        borderRadius: sm ? 10 : tokens.radius.button,
-        padding: sm ? "7px 11px" : "10px 15px",
-        fontSize: sm ? tokens.type.small : 14,
+        borderRadius: g.radius,
+        padding: g.padding,
+        fontSize: g.font,
         fontWeight: 600,
         fontFamily: tokens.type.fontFamily,
-        color: copied ? tokens.color.teal : tokens.color.text1,
+        lineHeight: 1.2,
+        color: copied ? tokens.color.tealDark : tokens.color.text1,
         cursor: "pointer",
-        transition: "background 150ms, border-color 150ms, color 150ms",
+        transition: "background 100ms, border-color 100ms, color 100ms",
       }}
     >
-      <CopyIcon size={sm ? 15 : 17} />
+      <Glyph size={g.icon} />
       {copied ? "Copied" : "Copy"}
     </button>
   );

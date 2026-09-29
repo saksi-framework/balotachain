@@ -29,8 +29,10 @@ export const tokens = {
     neutralFill: "#EEF1F0",
     /** Muted teal for non-leading result bars. */
     neutralBar: "#9FBFBF",
-    /** Placeholder text and offline dots. */
-    muted: "#9AA6A5",
+    /** Placeholders and secondary metadata (DESIGN.md `text-subtle`, 4.9:1 on white). */
+    textSubtle: "#677473",
+    /** Decorative fill only (offline dots); never text. Was `muted`. */
+    neutralDot: "#9AA6A5",
   },
   radius: { card: 16, button: 12, pill: 9999 },
   space: { xs: 8, sm: 16, md: 24, lg: 32 },
@@ -44,8 +46,25 @@ export const tokens = {
     small: 13,
     button: 18,
     lineHeight: 1.5,
-    fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif`,
-    mono: `ui-monospace, 'SF Mono', Menlo, Consolas, monospace`,
+    fontFamily: `"Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif`,
+    mono: `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Consolas, monospace`,
+  },
+  /** DESIGN.md type roles, ready to spread into a style object. */
+  typeRole: {
+    /** Names a section: 13px, 600, tracked, uppercase. Never a kicker above a heading. */
+    label: {
+      fontSize: 13,
+      fontWeight: 600,
+      letterSpacing: "0.04em",
+      textTransform: "uppercase",
+    },
+    /** Every value a person compares character by character. */
+    mono: {
+      fontFamily: `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Consolas, monospace`,
+      fontSize: 14,
+      fontWeight: 400,
+      fontVariantNumeric: "tabular-nums",
+    },
   },
   shadow: {
     card: "0 2px 10px -4px rgba(26,37,38,0.10)",

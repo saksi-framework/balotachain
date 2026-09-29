@@ -1,3 +1,6 @@
+@import "@fontsource-variable/source-sans-3/index.css";
+@import "@fontsource-variable/jetbrains-mono/index.css";
+
 :root {
   --bc-color-teal: #0f6e6e;
   --bc-color-teal-dark: #0a5252;
@@ -22,7 +25,10 @@
   --bc-color-border-hover: #c9d0ce;
   --bc-color-neutral-fill: #eef1f0;
   --bc-color-neutral-bar: #9fbfbf;
-  --bc-color-muted: #9aa6a5;
+  /* Placeholders and secondary metadata. */
+  --bc-color-text-subtle: #677473;
+  /* Decorative fill only (offline dots); never text. */
+  --bc-color-neutral-dot: #9aa6a5;
 
   --bc-radius-card: 16px;
   --bc-radius-button: 12px;
@@ -42,8 +48,10 @@
   --bc-type-button: 18px;
   --bc-line-height: 1.5;
   --bc-font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --bc-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    "Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif;
+  --bc-font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Consolas,
+    monospace;
 
   --bc-shadow-card: 0 2px 10px -4px rgba(26, 37, 38, 0.1);
   --bc-shadow-subtle: 0 1px 2px rgba(26, 37, 38, 0.04);
@@ -80,6 +88,34 @@ button {
 
 .bc-mono {
   font-family: var(--bc-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section label: 13px, 600, tracked, uppercase. */
+.bc-label {
+  font-size: var(--bc-type-small);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:focus-visible {
+  outline: 2px solid var(--bc-color-teal);
+  outline-offset: 2px;
+}
+
+/* Desktop content column: 1200px max, 24px gutters, 16px below 720px. */
+.bc-wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--bc-space-md);
+}
+
+@media (max-width: 719px) {
+  .bc-wrap {
+    padding: 0 var(--bc-space-sm);
+  }
 }
 
 /* Live "secure session" indicator — expanding ring behind a solid dot. */
@@ -124,5 +160,12 @@ button {
   .bc-pulse::after,
   .bc-log-in {
     animation: none;
+  }
+
+  /* Transitions drop to opacity only; !important beats inline styles. */
+  *,
+  *::before,
+  *::after {
+    transition-property: opacity !important;
   }
 }
