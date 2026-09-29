@@ -10,7 +10,7 @@ import type {
   ElectionConfig,
   RunView,
 } from "./bulletin";
-import type { ChipVariant } from "../components/Chip";
+import type { ChipVariant } from "@balotachain/ui";
 
 /** Number fields stay strings while typed, so a field can be cleared. */
 export type ElectionForm = {
@@ -210,7 +210,7 @@ export function runState(run: RunView): {
   if (run.busy) {
     return {
       label: run.paused_stage ? `Paused at ${run.paused_stage}` : "Running",
-      variant: "neutral",
+      variant: "active",
     };
   }
   if (run.status === "failed") {
@@ -221,7 +221,7 @@ export function runState(run: RunView): {
     };
   }
   if (run.status === "interrupted" || run.status === "close-pending") {
-    return { label: "Interrupted", variant: "warn" };
+    return { label: "Interrupted", variant: "warning" };
   }
   const has = (a: string) => run.artifacts?.includes(a) ?? false;
   // The audit's own verdict, not the existence of correctness.csv.
@@ -237,5 +237,5 @@ export function runState(run: RunView): {
     };
   }
   if (has("election.csv")) return { label: "Generated", variant: "neutral" };
-  return { label: "Not generated", variant: "warn" };
+  return { label: "Not generated", variant: "warning" };
 }

@@ -285,6 +285,18 @@ describe("login", () => {
     ).toBeInTheDocument();
   });
 
+  it("retries a failed election list with the console's text", async () => {
+    getMeMock.mockResolvedValue(null);
+    listRunsMock
+      .mockRejectedValueOnce(new Error("console restarting"))
+      .mockResolvedValue([run(["election.csv"])]);
+    render(<App />);
+    expect(await screen.findByText("console restarting")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("Campus Election")).toBeInTheDocument();
+    expect(screen.queryByText("console restarting")).not.toBeInTheDocument();
+  });
+
   it("shows a 403 verbatim", async () => {
     listRunsMock.mockRejectedValue(new ApiError(403, "admin role required"));
     render(<App />);
@@ -551,9 +563,18 @@ describe("ceremony and results", () => {
       screen.getByText("/trustee/?run=campus-election-1&trustee=2"),
     ).toBeInTheDocument();
 
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({ submitted: 2, unlocked: true, published: true }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Publish the tally" }));
     await waitFor(() =>
       expect(publishMock).toHaveBeenCalledWith("campus-election-1"),
+    );
+    // Announced once the console reads published, not on the 202.
+    await waitFor(() =>
+      expect(document.querySelector("[aria-live=polite]")!.textContent).toBe(
+        "Tally published",
+      ),
     );
   });
 
@@ -650,13 +671,13 @@ describe("ceremony and results", () => {
     expect(screen.queryByText(/publish stopped/)).not.toBeInTheDocument();
   });
 
-  it("shows a submitted trustee as Submitted even while flagged submitting", async () => {
+  it("shows a submitted trustee as Recorded even while flagged submitting", async () => {
     const c = ceremony({ submitted: 2, unlocked: true });
     c.trustees[0] = { ...c.trustees[0], submitted: true, submitting: true };
     loadCeremonyMock.mockResolvedValue(c);
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "Open" }));
-    expect(await screen.findByText("Submitted")).toBeInTheDocument();
+    expect(await screen.findByText("Recorded")).toBeInTheDocument();
     expect(screen.queryByText("Recording…")).not.toBeInTheDocument();
   });
 
@@ -681,6 +702,7 @@ describe("ceremony and results", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Open" }));
 
     expect(await screen.findByText("Recording…")).toBeInTheDocument();
+    expect(screen.getByText("Failed")).toBeInTheDocument();
     expect(
       screen.getByText("connect to Fabric: dial timeout"),
     ).toBeInTheDocument();
@@ -713,6 +735,10 @@ describe("ceremony and results", () => {
 
     expect(await screen.findByText("E = 0 · PASS")).toBeInTheDocument();
     expect(screen.queryByText(/Failed checks/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy tally SHA-256" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("t1", { selector: "code" })).toBeInTheDocument();
     expect(screen.getByText("President · Candidate 1")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Open the public bulletin board" }),
