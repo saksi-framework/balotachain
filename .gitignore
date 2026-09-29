@@ -332,3 +332,7 @@ dist-web/
 # Local tool state: gstack browser locks, agent worktrees
 .gstack/
 .claude/worktrees/
+
+# Execution-trace build products (regenerate with extract_fns.py then build.py)
+docs/context/execution-trace/fn-data.json
+docs/context/execution-trace/saksi-trace.html
