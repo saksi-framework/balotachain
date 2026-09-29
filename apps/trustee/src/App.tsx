@@ -10,7 +10,7 @@ import {
 import {
   tokens,
   Card,
-  CopyButton,
+  Chip,
   PrimaryButton,
   SecondaryButton,
   TextInput,
@@ -18,8 +18,11 @@ import {
   CheckIcon,
   LockIcon,
   ShieldCheckIcon,
+  Skeleton,
+  TopBar,
+  VerifiableValue,
+  type ChipVariant,
 } from "@balotachain/ui";
-import { Chip, type ChipVariant } from "./components/Chip";
 import { ProgressBar } from "./components/ProgressBar";
 import {
   ApiError,
@@ -32,6 +35,7 @@ import {
   publishTally,
   subscribeEvents,
   boardUrl,
+  trailUrl,
   type Ceremony,
   type CeremonyEvent,
   type CeremonyTrustee,
@@ -72,13 +76,6 @@ type Load =
   | { kind: "error"; message: string }
   | { kind: "ready"; ceremony: Ceremony };
 
-const wrap: CSSProperties = {
-  maxWidth: 1240,
-  margin: "0 auto",
-  padding: "0 28px",
-  width: "100%",
-};
-
 const cardLabel: CSSProperties = {
   fontSize: 12.5,
   fontWeight: 600,
@@ -96,25 +93,22 @@ const noteText: CSSProperties = {
 /**
  * The console has no trustee presence concept — a trustee is a name in a run's
  * config, never a connected client — so there is no honest "Offline" state.
- * Before setup runs, nobody can act; after it, a trustee has contributed or
- * has not.
+ * A row says what the console says about that trustee's share: recorded,
+ * being recorded, failed, or not yet (Waiting, also before setup).
  */
-type RosterStatus = "Submitted" | "Pending" | "Not started";
+type RosterStatus = "Waiting" | "Recording…" | "Recorded" | "Failed";
 
-function statusVariant(status: RosterStatus): ChipVariant {
-  switch (status) {
-    case "Submitted":
-      return "success";
-    case "Pending":
-      return "warn";
-    case "Not started":
-      return "neutral";
-  }
-}
+const statusVariant: Record<RosterStatus, ChipVariant> = {
+  Waiting: "neutral",
+  "Recording…": "active",
+  Recorded: "success",
+  Failed: "error",
+};
 
-function rosterStatus(t: CeremonyTrustee, ready: boolean): RosterStatus {
-  if (t.submitted) return "Submitted";
-  return ready ? "Pending" : "Not started";
+function rosterStatus(t: CeremonyTrustee, sending: boolean): RosterStatus {
+  if (t.submitted) return "Recorded";
+  if (t.submitting || sending) return "Recording…";
+  return t.submit_error ? "Failed" : "Waiting";
 }
 
 /** "Roberto Lim" -> "RL". */
@@ -237,7 +231,8 @@ function CardHead({
   );
 }
 
-function TopBar({
+/** The signed-in trustee and the Sign out / Not you? control, for the TopBar. */
+function RoleSlot({
   you,
   ordinal,
   total,
@@ -250,119 +245,66 @@ function TopBar({
   actionLabel: string | null;
   onAction: () => void;
 }) {
+  if (!you && !actionLabel) return null;
   return (
-    <header
-      style={{
-        background: tokens.color.surface,
-        borderBottom: `1px solid ${tokens.color.border}`,
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-      }}
-    >
-      <div
-        style={{
-          ...wrap,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: tokens.space.sm,
-          minHeight: 64,
-          flexWrap: "wrap",
-        }}
-      >
-        <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
+    <>
+      {you ? (
+        <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span
             aria-hidden
             style={{
               width: 34,
               height: 34,
               borderRadius: 10,
-              background: tokens.color.teal,
-              color: tokens.color.surface,
+              background: tokens.color.tealLight,
+              color: tokens.color.tealDark,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              flexShrink: 0,
+              fontSize: 13,
+              fontWeight: 700,
             }}
           >
-            <ShieldCheckIcon size={20} strokeWidth={1.7} />
+            {initialsOf(you.name)}
           </span>
-          <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0.1 }}>
-            BalotaChain{" "}
-            <span style={{ color: tokens.color.text2, fontWeight: 500 }}>
-              — Trustee Console
-            </span>
+          <span style={{ lineHeight: 1.25 }}>
+            <b style={{ fontSize: 14, fontWeight: 600, display: "block" }}>
+              {you.name}
+            </b>
+            <small style={{ fontSize: 12, color: tokens.color.text2 }}>
+              Trustee {ordinal} of {total}
+            </small>
           </span>
         </span>
-
-        {you || actionLabel ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            {you ? (
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span
-                  aria-hidden
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: tokens.color.tealLight,
-                    color: tokens.color.tealDark,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}
-                >
-                  {initialsOf(you.name)}
-                </span>
-                <span style={{ lineHeight: 1.25 }}>
-                  <b
-                    style={{ fontSize: 14, fontWeight: 600, display: "block" }}
-                  >
-                    {you.name}
-                  </b>
-                  <small style={{ fontSize: 12, color: tokens.color.text2 }}>
-                    Trustee {ordinal} of {total}
-                  </small>
-                </span>
-              </span>
-            ) : null}
-            {actionLabel ? (
-              <SecondaryButton
-                onClick={onAction}
-                style={{
-                  minHeight: 34,
-                  padding: "0 12px",
-                  fontSize: 13,
-                  borderRadius: tokens.radius.button,
-                  border: `1px solid ${tokens.color.border}`,
-                  color: tokens.color.text2,
-                }}
-              >
-                {actionLabel}
-              </SecondaryButton>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </header>
+      ) : null}
+      {actionLabel ? (
+        <SecondaryButton
+          onClick={onAction}
+          style={{
+            minHeight: 34,
+            padding: "0 12px",
+            fontSize: 13,
+            borderRadius: tokens.radius.button,
+            border: `1px solid ${tokens.color.border}`,
+            color: tokens.color.text2,
+          }}
+        >
+          {actionLabel}
+        </SecondaryButton>
+      ) : null}
+    </>
   );
 }
 
 function ThresholdCard({
   ceremony,
   youId,
+  sending,
 }: {
   ceremony: Ceremony;
   youId: string | null;
+  /** This page sent your submit and the console has not answered yet. */
+  sending: boolean;
 }) {
   const { threshold, trustees, submitted, unlocked } = ceremony;
   const total = trustees.length;
@@ -424,7 +366,7 @@ function ThresholdCard({
         }}
       >
         {trustees.map((t, i) => {
-          const status = rosterStatus(t, ceremony.ready);
+          const status = rosterStatus(t, sending && t.id === youId);
           return (
             <div
               key={t.id}
@@ -485,7 +427,7 @@ function ThresholdCard({
                   {t.submitted_at ? ` · ${formatStamp(t.submitted_at)}` : ""}
                 </div>
               </div>
-              <Chip variant={statusVariant(status)} dot>
+              <Chip variant={statusVariant[status]} dot>
                 {status}
               </Chip>
             </div>
@@ -647,7 +589,7 @@ function ActionCard({
               }}
             >
               <span
-                style={{ color: tokens.color.warn, display: "inline-flex" }}
+                style={{ color: tokens.color.warnText, display: "inline-flex" }}
               >
                 <AlertIcon size={16} strokeWidth={1.7} />
               </span>
@@ -825,7 +767,7 @@ function ActionCard({
           >
             <span
               style={{
-                color: tokens.color.warn,
+                color: tokens.color.warnText,
                 flexShrink: 0,
                 display: "flex",
               }}
@@ -890,31 +832,20 @@ function VerificationCard({ ceremony }: { ceremony: Ceremony }) {
     <Card>
       <CardHead title="What is being decrypted" label="Verification context" />
 
-      <VcLine label="Encrypted ballot set — fingerprint" first>
-        {fingerprint ? (
-          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              className="bc-mono"
-              style={{
-                fontSize: 13.5,
-                color: tokens.color.tealDark,
-                wordBreak: "break-all",
-              }}
-            >
-              {fingerprint}
-            </span>
-            <CopyButton
-              value={fingerprint}
-              label="Copy ballot set fingerprint"
-              size="sm"
-            />
-          </span>
-        ) : (
+      {fingerprint ? (
+        <div style={{ padding: "4px 0 15px" }}>
+          <VerifiableValue
+            label="Encrypted ballot set fingerprint"
+            value={fingerprint}
+          />
+        </div>
+      ) : (
+        <VcLine label="Encrypted ballot set — fingerprint" first>
           <span style={{ color: tokens.color.text2, fontWeight: 400 }}>
             not available yet
           </span>
-        )}
-      </VcLine>
+        </VcLine>
+      )}
 
       <VcLine label="Ballots aggregated">
         {ceremony.ballot_records.toLocaleString("en-US")}{" "}
@@ -1033,13 +964,23 @@ function KeyShareCard({
           {you.contests} of {ceremony.contests} contests
         </span>
       </KsLine>
-      <KsLine label="DKG transcript">
-        <span className="bc-mono" style={{ fontSize: 13, fontWeight: 600 }}>
-          {ceremony.dkg_sha256
-            ? `sha256:${ceremony.dkg_sha256.slice(0, 16)}…`
-            : "—"}
-        </span>
-      </KsLine>
+      {ceremony.dkg_sha256 ? (
+        <div
+          style={{
+            padding: "13px 0",
+            borderTop: `1px solid ${tokens.color.border}`,
+          }}
+        >
+          <VerifiableValue
+            label="DKG transcript"
+            value={`sha256:${ceremony.dkg_sha256}`}
+          />
+        </div>
+      ) : (
+        <KsLine label="DKG transcript">
+          <span style={{ fontWeight: 600 }}>—</span>
+        </KsLine>
+      )}
       <KsLine label="Ceremony opened">
         <span style={{ fontWeight: 600 }}>
           {formatStamp(ceremony.started_at) || "not started"}
@@ -1078,25 +1019,26 @@ function KeyShareCard({
 function AuditLog({
   events,
   live,
+  trail,
 }: {
   events: CeremonyEvent[];
   live: string[];
+  /** The console's trail page, where a tx id can be checked. */
+  trail: string;
 }) {
   const rows: {
     key: string;
     ts: string;
     lead: string;
     detail?: string;
+    txId?: string;
     kind?: string;
   }[] = events.map((e, i) => ({
     key: `e${i}`,
     ts: formatStamp(e.at) || "—",
     lead: e.who ? e.who : e.text,
-    detail: e.who
-      ? e.text
-      : e.tx_id
-        ? `block ${e.block} · ${e.tx_id.slice(0, 16)}…`
-        : undefined,
+    detail: e.who ? e.text : e.tx_id ? `block ${e.block}` : undefined,
+    txId: e.tx_id,
     kind:
       e.kind === "published" ? "ok" : e.kind === "chain" ? undefined : "teal",
   }));
@@ -1179,7 +1121,7 @@ function AuditLog({
                   />
                 )}
               </span>
-              <span style={{ paddingBottom: 2 }}>
+              <span style={{ paddingBottom: 2, flex: 1, minWidth: 0 }}>
                 <span
                   className="bc-mono"
                   style={{
@@ -1203,6 +1145,16 @@ function AuditLog({
                   <b style={{ fontWeight: 600 }}>{e.lead}</b>
                   {e.detail ? ` — ${e.detail}` : ""}
                 </span>
+                {e.txId ? (
+                  <span style={{ display: "block", marginTop: 6 }}>
+                    <VerifiableValue
+                      label="TX id"
+                      value={e.txId}
+                      checkHref={trail}
+                      truncate
+                    />
+                  </span>
+                ) : null}
               </span>
             </li>
           );
@@ -1297,7 +1249,10 @@ function Login({ onSignedIn }: { onSignedIn: () => void }) {
   };
 
   return (
-    <main style={{ ...wrap, padding: "60px 28px", maxWidth: 520 }}>
+    <main
+      className="bc-wrap"
+      style={{ paddingTop: 60, paddingBottom: 60, maxWidth: 520 }}
+    >
       <Card>
         <CardHead title="Sign in" label="Trustee console" />
         <p style={{ ...noteText, marginTop: 0 }}>
@@ -1353,13 +1308,31 @@ function Login({ onSignedIn }: { onSignedIn: () => void }) {
   );
 }
 
-function Notice({ children }: { children: ReactNode }) {
+function Notice({
+  children,
+  onRetry,
+}: {
+  children: ReactNode;
+  onRetry?: () => void;
+}) {
   return (
-    <main style={{ ...wrap, padding: "60px 28px" }}>
+    <main className="bc-wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
       <Card>
-        <p style={{ margin: 0, fontSize: 15, color: tokens.color.text2 }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 15,
+            color: tokens.color.text2,
+            overflowWrap: "anywhere",
+          }}
+        >
           {children}
         </p>
+        {onRetry ? (
+          <div style={{ marginTop: tokens.space.sm }}>
+            <SecondaryButton onClick={onRetry}>Retry</SecondaryButton>
+          </div>
+        ) : null}
       </Card>
     </main>
   );
@@ -1375,8 +1348,8 @@ function Footer() {
       }}
     >
       <div
+        className="bc-wrap"
         style={{
-          ...wrap,
           display: "flex",
           alignItems: "center",
           gap: 12,
@@ -1403,6 +1376,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [live, setLive] = useState<string[]>([]);
+  /** Bumped by Retry so the run list and the ceremony load run again. */
+  const [attempt, setAttempt] = useState(0);
+  /** The one aria-live region's text: state changes read from the console. */
+  const [announce, setAnnounce] = useState("");
   /** When this page last sent a submit; a poll started after it ends `sent`. */
   const sentAt = useRef(0);
 
@@ -1444,7 +1421,7 @@ export default function App() {
         setLoad({ kind: "error", message: e.message });
       });
     return () => ctrl.abort();
-  }, [runId]);
+  }, [runId, attempt]);
 
   const refresh = useCallback(
     (signal?: AbortSignal) => {
@@ -1472,7 +1449,7 @@ export default function App() {
     const ctrl = new AbortController();
     refresh(ctrl.signal);
     return () => ctrl.abort();
-  }, [runId, refresh]);
+  }, [runId, refresh, attempt]);
 
   const fast =
     phase === "sent" || (load.kind === "ready" && Boolean(load.ceremony.busy));
@@ -1597,6 +1574,31 @@ export default function App() {
       : null;
   const showing = auth.kind === "off" || auth.kind === "in";
 
+  // Announce what the console now says, only when it changes after the first
+  // load (a fresh page load is not news).
+  const youRecorded = Boolean(you?.submitted);
+  const unlocked = Boolean(ceremony?.unlocked);
+  const published = Boolean(ceremony?.published);
+  const seen = useRef<{
+    you: boolean;
+    unlocked: boolean;
+    published: boolean;
+  } | null>(null);
+  useEffect(() => {
+    if (!ceremony) return;
+    const prev = seen.current;
+    seen.current = { you: youRecorded, unlocked, published };
+    if (!prev) return;
+    if (published && !prev.published) setAnnounce("Tally published");
+    else if (youRecorded && !prev.you) setAnnounce("Share recorded");
+    else if (unlocked && !prev.unlocked) setAnnounce("Threshold reached");
+  }, [ceremony, youRecorded, unlocked, published]);
+
+  function retry() {
+    setLoad({ kind: "loading" });
+    setAttempt((n) => n + 1);
+  }
+
   return (
     <div
       style={{
@@ -1609,14 +1611,23 @@ export default function App() {
       }}
     >
       <TopBar
-        you={showing ? you : null}
-        ordinal={ordinal}
-        total={ceremony?.trustees.length ?? 0}
-        actionLabel={
-          !showing ? null : session ? "Sign out" : you ? "Not you?" : null
+        appName="Trustee Console"
+        electionName={ceremony?.name}
+        role={
+          <RoleSlot
+            you={showing ? you : null}
+            ordinal={ordinal}
+            total={ceremony?.trustees.length ?? 0}
+            actionLabel={
+              !showing ? null : session ? "Sign out" : you ? "Not you?" : null
+            }
+            onAction={session ? signOut : () => setTrusteeId(null)}
+          />
         }
-        onAction={session ? signOut : () => setTrusteeId(null)}
       />
+      <div aria-live="polite" role="status" className="bc-sr-only">
+        {announce}
+      </div>
 
       {auth.kind === "login" ? (
         <Login
@@ -1628,7 +1639,11 @@ export default function App() {
       ) : null}
 
       {auth.kind === "checking" || (showing && load.kind === "loading") ? (
-        <Notice>Loading the ceremony…</Notice>
+        <main className="bc-wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
+          <Card>
+            <Skeleton label="Loading the ceremony…" />
+          </Card>
+        </main>
       ) : null}
       {showing && load.kind === "empty" ? (
         <Notice>
@@ -1637,11 +1652,13 @@ export default function App() {
         </Notice>
       ) : null}
       {showing && load.kind === "error" ? (
-        <Notice>Could not reach the election console — {load.message}</Notice>
+        <Notice onRetry={retry}>
+          Could not reach the election console — {load.message}
+        </Notice>
       ) : null}
 
       {showing && ceremony ? (
-        <main style={wrap}>
+        <main className="bc-wrap">
           <div
             style={{
               padding: "30px 0 22px",
@@ -1687,8 +1704,15 @@ export default function App() {
                   : ""}
               </div>
             </div>
-            <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <Chip variant={ceremony.on_chain ? "teal" : "neutral"} dot>
+            <span
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <Chip variant={ceremony.on_chain ? "active" : "neutral"} dot>
                 {ceremony.on_chain ? "On-chain ceremony" : "Local ceremony"}
               </Chip>
               <Chip
@@ -1698,7 +1722,7 @@ export default function App() {
                     : ceremony.unlocked
                       ? "success"
                       : ceremony.ready
-                        ? "teal"
+                        ? "active"
                         : "neutral"
                 }
                 dot
@@ -1756,14 +1780,19 @@ export default function App() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(360px, 100%), 1fr))",
               gap: 22,
               alignItems: "start",
               paddingBottom: 18,
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-              <ThresholdCard ceremony={ceremony} youId={actingId} />
+              <ThresholdCard
+                ceremony={ceremony}
+                youId={actingId}
+                sending={phase === "sent"}
+              />
               {you ? (
                 <ActionCard
                   ceremony={ceremony}
@@ -1790,7 +1819,11 @@ export default function App() {
                   session={session}
                 />
               ) : null}
-              <AuditLog events={ceremony.events} live={live} />
+              <AuditLog
+                events={ceremony.events}
+                live={live}
+                trail={trailUrl(ceremony.election_id)}
+              />
             </div>
           </div>
         </main>

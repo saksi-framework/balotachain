@@ -7,13 +7,21 @@ export type StepperProps = {
   current: number;
 };
 
+/**
+ * The admin step tabs. They wrap onto another line when the row runs out of
+ * room (below ~1280px with long labels) and never truncate a label.
+ */
 export function Stepper({ steps, current }: StepperProps) {
   return (
-    <div
+    <ol
+      aria-label="Election steps"
       style={{
         display: "flex",
-        alignItems: "stretch",
-        gap: 0,
+        flexWrap: "wrap",
+        gap: tokens.space.xs,
+        listStyle: "none",
+        margin: 0,
+        padding: 0,
         width: "100%",
       }}
     >
@@ -21,7 +29,6 @@ export function Stepper({ steps, current }: StepperProps) {
         const n = i + 1;
         const state: "pending" | "active" | "done" =
           n < current ? "done" : n === current ? "active" : "pending";
-        const isLast = i === steps.length - 1;
 
         const borderColor =
           state === "done"
@@ -29,93 +36,68 @@ export function Stepper({ steps, current }: StepperProps) {
             : state === "active"
               ? tokens.color.teal
               : tokens.color.border;
-
-        const bg =
-          state === "active" ? tokens.color.tealLight : tokens.color.surface;
-        const labelColor =
-          state === "pending" ? tokens.color.text2 : tokens.color.text1;
-
         const badgeBg =
           state === "done"
             ? tokens.color.success
             : state === "active"
               ? tokens.color.teal
               : tokens.color.bg;
-        const badgeFg =
-          state === "pending" ? tokens.color.text2 : tokens.color.surface;
-        const badgeBorder =
-          state === "pending" ? tokens.color.border : "transparent";
 
         return (
-          <div
+          <li
             key={step.label}
+            aria-current={state === "active" ? "step" : undefined}
             style={{
               display: "flex",
               alignItems: "center",
-              flex: 1,
-              minWidth: 0,
+              gap: tokens.space.xs,
+              flex: "1 1 auto",
+              background:
+                state === "active"
+                  ? tokens.color.tealLight
+                  : tokens.color.surface,
+              border: `1px solid ${borderColor}`,
+              borderRadius: tokens.radius.button,
+              padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
             }}
           >
-            <div
+            <span
               style={{
-                display: "flex",
+                width: 28,
+                height: 28,
+                borderRadius: tokens.radius.pill,
+                background: badgeBg,
+                border: `1px solid ${
+                  state === "pending" ? tokens.color.border : "transparent"
+                }`,
+                color:
+                  state === "pending"
+                    ? tokens.color.text2
+                    : tokens.color.surface,
+                display: "inline-flex",
                 alignItems: "center",
-                gap: tokens.space.xs,
-                background: bg,
-                border: `1px solid ${borderColor}`,
-                borderRadius: tokens.radius.button,
-                padding: `${tokens.space.xs}px ${tokens.space.sm}px`,
-                flex: 1,
-                minWidth: 0,
+                justifyContent: "center",
+                fontSize: 14,
+                fontWeight: 700,
+                flexShrink: 0,
               }}
             >
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: tokens.radius.pill,
-                  background: badgeBg,
-                  border: `1px solid ${badgeBorder}`,
-                  color: badgeFg,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}
-              >
-                {state === "done" ? <CheckIcon size={16} /> : n}
-              </span>
-              <span
-                style={{
-                  color: labelColor,
-                  fontSize: tokens.type.body,
-                  fontWeight: state === "active" ? 600 : 500,
-                  // The box has room for the full word at common desktop
-                  // widths (1280/1440) — nowrap+ellipsis was cutting labels
-                  // ("Populat…", "Ceremo…") that already fit. Let a label
-                  // wrap rather than truncate if a narrower window ever
-                  // leaves less room than a word needs.
-                  overflowWrap: "break-word",
-                }}
-              >
-                {step.label}
-              </span>
-            </div>
-            {!isLast && (
-              <div
-                style={{
-                  flex: "0 0 24px",
-                  height: 1,
-                  background: tokens.color.border,
-                  margin: `0 ${tokens.space.xs}px`,
-                }}
-              />
-            )}
-          </div>
+              {state === "done" ? <CheckIcon size={16} /> : n}
+            </span>
+            <span
+              style={{
+                color:
+                  state === "pending" ? tokens.color.text2 : tokens.color.text1,
+                fontSize: tokens.type.body,
+                fontWeight: state === "active" ? 600 : 500,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {step.label}
+            </span>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

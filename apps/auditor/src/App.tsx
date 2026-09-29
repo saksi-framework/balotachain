@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
   type FormEvent,
@@ -9,31 +10,31 @@ import {
 import {
   tokens,
   Card,
-  CopyButton,
+  Chip,
   PrimaryButton,
+  SecondaryButton,
+  Skeleton,
   TextInput,
-  ShieldCheckIcon,
+  TopBar,
+  VerifiableValue,
   CheckIcon,
   AlertIcon,
   UsersIcon,
-  HashIcon,
   DownloadIcon,
   CodeIcon,
 } from "@balotachain/ui";
-import { Chip } from "./components/Chip";
 import { ResultBar } from "./components/ResultBar";
 import { StatCard } from "./components/StatCard";
 import {
   listRuns,
   loadBoard,
   verifyTrackingCode,
-  exportUrl,
+  fileUrl,
   verifierUrl,
-  getCapabilities,
   type Board,
+  type BallotRecord,
   type BoardCandidate,
   type BoardContest,
-  type Capabilities,
   type RunView,
 } from "./lib/bulletin";
 
@@ -49,7 +50,7 @@ const POLL_MS = 4000;
 
 type VerifyState =
   | { kind: "idle" }
-  | { kind: "found"; code: string; position: string; recordedAt?: string }
+  | { kind: "found"; record: BallotRecord }
   | { kind: "missing" }
   | { kind: "ambiguous" }
   | { kind: "malformed" };
@@ -60,20 +61,9 @@ type Load =
   | { kind: "error"; message: string }
   | { kind: "ready"; board: Board };
 
-const wrap: CSSProperties = {
-  maxWidth: 1180,
-  margin: "0 auto",
-  padding: "0 28px",
-  width: "100%",
-};
-
-const eyebrow: CSSProperties = {
-  fontSize: tokens.type.eyebrow,
-  fontWeight: 600,
-  letterSpacing: 0.8,
-  color: tokens.color.text2,
-  textTransform: "uppercase",
-};
+/** Grid columns that drop to one below their minimum, so no page scroll. */
+const cols = (min: number) =>
+  `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`;
 
 const sectionHeading: CSSProperties = {
   fontSize: 15,
@@ -144,7 +134,8 @@ function Section({
           display: "flex",
           alignItems: "baseline",
           justifyContent: "space-between",
-          gap: tokens.space.sm,
+          flexWrap: "wrap",
+          gap: `${tokens.space.xs}px ${tokens.space.sm}px`,
           marginBottom: tokens.space.sm,
         }}
       >
@@ -165,18 +156,22 @@ function CandidateRow({
   barMax,
   showPercent,
   first,
+  lead,
 }: {
   candidate: BoardCandidate;
   barMax: number;
   showPercent: boolean;
   first: boolean;
+  /** Leading candidates get the primary bar; the rest get `neutral-bar`. */
+  lead: boolean;
 }) {
   const barPct = barMax > 0 ? (candidate.votes / barMax) * 100 : 0;
 
   return (
     <div
       style={{
-        padding: "13px 0",
+        // The board's compact table row (DESIGN.md: 8px vertical padding).
+        padding: "8px 0",
         borderTop: first ? "none" : `1px solid ${tokens.color.border}`,
       }}
     >
@@ -186,7 +181,7 @@ function CandidateRow({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
-          marginBottom: 9,
+          marginBottom: 6,
         }}
       >
         <div
@@ -230,7 +225,7 @@ function CandidateRow({
           </span>
         </div>
       </div>
-      <ResultBar percent={barPct} dimmed={!candidate.elected} />
+      <ResultBar percent={barPct} dimmed={!lead} />
     </div>
   );
 }
@@ -241,6 +236,9 @@ function RaceCard({ race }: { race: BoardContest }) {
     ? Math.max(...race.candidates.map((c) => c.votes), 1)
     : race.total_votes;
   const elected = race.candidates.filter((c) => c.elected).length;
+  // Elected candidates lead; with nobody elected (an undecided cut) the
+  // candidates level at the top do.
+  const leads = (c: BoardCandidate) => (elected > 0 ? c.elected : c.rank === 1);
 
   return (
     <Card style={{ padding: "22px 22px 8px" }}>
@@ -280,6 +278,7 @@ function RaceCard({ race }: { race: BoardContest }) {
           barMax={barMax}
           showPercent={!isMultiSeat}
           first={i === 0}
+          lead={leads(c)}
         />
       ))}
       {race.contested ? (
@@ -300,93 +299,39 @@ function RaceCard({ race }: { race: BoardContest }) {
   );
 }
 
-function BrandMark() {
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 11,
-        background: tokens.color.teal,
-        color: tokens.color.surface,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      <ShieldCheckIcon size={22} strokeWidth={1.7} />
-    </span>
-  );
-}
-
-function TopBar({
+/** The TopBar's right-hand slot: the election picker and the board's status. */
+function RunPicker({
   runs,
   runId,
   onPick,
-  status,
 }: {
   runs: RunView[];
   runId: string | null;
   onPick: (id: string) => void;
-  status: ReactNode;
 }) {
+  if (runs.length < 2) return null;
   return (
-    <header
+    <select
+      aria-label="Election"
+      value={runId ?? ""}
+      onChange={(e) => onPick(e.currentTarget.value)}
       style={{
+        fontFamily: "inherit",
+        fontSize: 13.5,
+        padding: "7px 10px",
+        borderRadius: tokens.radius.button,
+        border: `1px solid ${tokens.color.border}`,
         background: tokens.color.surface,
-        borderBottom: `1px solid ${tokens.color.border}`,
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
+        color: tokens.color.text1,
+        maxWidth: "min(340px, 100%)",
       }}
     >
-      <div
-        style={{
-          ...wrap,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: tokens.space.sm,
-          minHeight: 68,
-          flexWrap: "wrap",
-        }}
-      >
-        <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <BrandMark />
-          <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: 0.2 }}>
-            BalotaChain — Bulletin Board
-          </span>
-        </span>
-        <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {runs.length > 1 ? (
-            <select
-              aria-label="Election"
-              value={runId ?? ""}
-              onChange={(e) => onPick(e.currentTarget.value)}
-              style={{
-                fontFamily: "inherit",
-                fontSize: 13.5,
-                padding: "7px 10px",
-                borderRadius: tokens.radius.button,
-                border: `1px solid ${tokens.color.border}`,
-                background: tokens.color.surface,
-                color: tokens.color.text1,
-                maxWidth: 340,
-              }}
-            >
-              {runs.map((r) => (
-                <option key={r.run_id} value={r.run_id}>
-                  {r.config.name} — {formatStamp(r.created_at)}
-                </option>
-              ))}
-            </select>
-          ) : null}
-          {status}
-        </span>
-      </div>
-    </header>
+      {runs.map((r) => (
+        <option key={r.run_id} value={r.run_id}>
+          {r.config.name} — {formatStamp(r.created_at)}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -472,7 +417,8 @@ function UnauditedBanner({ verified }: { verified: boolean }) {
       }}
     >
       <span
-        style={{ color: tokens.color.warn, flexShrink: 0, display: "flex" }}
+        aria-hidden
+        style={{ color: tokens.color.warnText, flexShrink: 0, display: "flex" }}
       >
         <AlertIcon size={24} strokeWidth={1.8} />
       </span>
@@ -547,53 +493,11 @@ function CryptoItem({
   );
 }
 
+/** A hash across the whole crypto grid: the full value, wrapping, with Copy. */
 function Fingerprint({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        gridColumn: "1 / -1",
-        display: "flex",
-        alignItems: "center",
-        gap: 13,
-        padding: tokens.space.sm,
-        background: tokens.color.bg,
-        border: `1px solid ${tokens.color.border}`,
-        borderRadius: tokens.radius.button,
-        flexWrap: "wrap",
-      }}
-    >
-      <span
-        aria-hidden
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 10,
-          background: tokens.color.tealLight,
-          color: tokens.color.teal,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <HashIcon size={20} strokeWidth={1.7} />
-      </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <h3 style={{ margin: "0 0 5px", fontSize: 15, fontWeight: 600 }}>
-          {label}
-        </h3>
-        <div
-          className="bc-mono"
-          style={{
-            fontSize: 14,
-            color: tokens.color.tealDark,
-            wordBreak: "break-all",
-          }}
-        >
-          {value}
-        </div>
-      </div>
-      <CopyButton value={value} label={`Copy ${label.toLowerCase()}`} />
+    <div style={{ gridColumn: "1 / -1", minWidth: 0 }}>
+      <VerifiableValue label={label} value={value} />
     </div>
   );
 }
@@ -612,7 +516,7 @@ function CryptoVerification({ board }: { board: Board }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gridTemplateColumns: cols(320),
           gap: 14,
         }}
       >
@@ -630,8 +534,8 @@ function CryptoVerification({ board }: { board: Board }) {
               <span
                 style={{
                   color: crypto.tally_proof_verified
-                    ? tokens.color.success
-                    : tokens.color.warn,
+                    ? tokens.color.successText
+                    : tokens.color.warnText,
                   fontWeight: 600,
                 }}
               >
@@ -701,7 +605,7 @@ function CheckList({ checks }: { checks: Board["checks"] }) {
               display: "inline-flex",
               flexShrink: 0,
               marginTop: 1,
-              color: c.pass ? tokens.color.success : tokens.color.warn,
+              color: c.pass ? tokens.color.success : tokens.color.warnText,
             }}
           >
             {c.pass ? (
@@ -713,7 +617,7 @@ function CheckList({ checks }: { checks: Board["checks"] }) {
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 600 }}>
               {c.name}{" "}
-              <Chip variant={c.pass ? "success" : "warn"} size="sm">
+              <Chip variant={c.pass ? "success" : "warning"} size="sm">
                 {c.pass ? "PASS" : "NOT YET"}
               </Chip>
             </div>
@@ -739,7 +643,14 @@ function CheckList({ checks }: { checks: Board["checks"] }) {
   );
 }
 
-function VerifyVoteCard({ runId }: { runId: string }) {
+function VerifyVoteCard({
+  runId,
+  announce,
+}: {
+  runId: string;
+  /** The app's one aria-live region: the outcome is read out when it lands. */
+  announce: (text: string) => void;
+}) {
   const [code, setCode] = useState("");
   const [state, setState] = useState<VerifyState>({ kind: "idle" });
   const [pending, setPending] = useState(false);
@@ -756,12 +667,7 @@ function VerifyVoteCard({ runId }: { runId: string }) {
     try {
       const outcome = await verifyTrackingCode(runId, trimmed);
       if (outcome.kind === "found") {
-        setState({
-          kind: "found",
-          code: outcome.record.tracking_code,
-          position: outcome.record.position_label ?? "this election",
-          recordedAt: outcome.record.recorded_at,
-        });
+        setState({ kind: "found", record: outcome.record });
       } else {
         setState({ kind: outcome.kind });
       }
@@ -774,26 +680,33 @@ function VerifyVoteCard({ runId }: { runId: string }) {
 
   const notice = (() => {
     switch (state.kind) {
-      case "found":
+      case "found": {
+        const { tracking_code: code, recorded_at: at } = state.record;
+        const position = state.record.position_label ?? "this election";
         return {
           ok: true,
-          text: state.recordedAt
-            ? `Found — ballot ${state.code} for ${state.position} was committed on ${formatStamp(state.recordedAt)} and is included in the count.`
-            : `Found — ballot ${state.code} for ${state.position} is in this election's record and included in the count. (Offline run: there is no ledger timestamp to show.)`,
+          said: "Ballot found",
+          text: at
+            ? `Found — ballot ${code} for ${position} was committed on ${formatStamp(at)} and is included in the count.`
+            : `Found — ballot ${code} for ${position} is in this election's record and included in the count. (Offline run: there is no ledger timestamp to show.)`,
         };
+      }
       case "missing":
         return {
           ok: false,
+          said: "No ballot found",
           text: "No ballot record in this election starts with that code. Check the code on your receipt, and that you are looking at the right election.",
         };
       case "ambiguous":
         return {
           ok: false,
+          said: "More than one ballot matches",
           text: "More than one ballot record starts with that code. A code is only the first eight characters of a nullifier, so this can happen — ask for the full nullifier to resolve it.",
         };
       case "malformed":
         return {
           ok: false,
+          said: "Not a tracking code",
           text: "That is not a tracking code. They look like BC-XXXX-XXXX, using the digits 0-9 and the letters A-F.",
         };
       default:
@@ -801,12 +714,18 @@ function VerifyVoteCard({ runId }: { runId: string }) {
     }
   })();
 
+  // A short word, not the notice itself, so the text is not on the page twice.
+  const said = notice?.said ?? "";
+  useEffect(() => {
+    if (said) announce(said);
+  }, [said, announce]);
+
   return (
     <Card
       style={{
         padding: 28,
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+        gridTemplateColumns: cols(340),
         gap: 32,
         alignItems: "center",
       }}
@@ -876,8 +795,9 @@ function VerifyVoteCard({ runId }: { runId: string }) {
             }}
           >
             <span
+              aria-hidden
               style={{
-                color: notice.ok ? tokens.color.success : tokens.color.warn,
+                color: notice.ok ? tokens.color.success : tokens.color.warnText,
                 flexShrink: 0,
               }}
             >
@@ -895,11 +815,34 @@ function VerifyVoteCard({ runId }: { runId: string }) {
                   : tokens.color.warnText,
                 fontWeight: 600,
                 lineHeight: 1.4,
+                overflowWrap: "anywhere",
               }}
             >
               {notice.text}
             </span>
           </div>
+        ) : null}
+        {state.kind === "found" ? (
+          <>
+            <VerifiableValue
+              label="Tracking code"
+              value={state.record.tracking_code}
+            />
+            {state.record.nullifier ? (
+              <VerifiableValue
+                label="Nullifier"
+                value={state.record.nullifier}
+                truncate
+              />
+            ) : null}
+            {state.record.ballot_sha256 ? (
+              <VerifiableValue
+                label="Ballot SHA-256"
+                value={state.record.ballot_sha256}
+                truncate
+              />
+            ) : null}
+          </>
         ) : null}
       </form>
     </Card>
@@ -923,13 +866,31 @@ function TallyPendingNotice({ board }: { board: Board }) {
   );
 }
 
-function Notice({ children }: { children: ReactNode }) {
+function Notice({
+  children,
+  onRetry,
+}: {
+  children: ReactNode;
+  onRetry?: () => void;
+}) {
   return (
-    <main style={{ ...wrap, padding: "60px 28px" }}>
+    <main className="bc-wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
       <Card>
-        <p style={{ margin: 0, fontSize: 15, color: tokens.color.text2 }}>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 15,
+            color: tokens.color.text2,
+            overflowWrap: "anywhere",
+          }}
+        >
           {children}
         </p>
+        {onRetry ? (
+          <div style={{ marginTop: tokens.space.sm }}>
+            <SecondaryButton onClick={onRetry}>Retry</SecondaryButton>
+          </div>
+        ) : null}
       </Card>
     </main>
   );
@@ -991,17 +952,11 @@ function FooterLink({
   );
 }
 
-function Footer({ board, caps }: { board: Board; caps: Capabilities | null }) {
-  // The evidence set, in the console's own display order. Linking every
-  // artifact beats one dead "download" button.
-  const primary = ["correctness.csv", "election.csv", "ballots.csv"].filter(
-    (a) => board.artifacts.includes(a),
-  );
-  const download = primary[0] ?? board.artifacts[0];
-
-  // /trail/<id> dials Fabric. For an offline run, or a console with no Fabric
-  // driver configured, it can only 502 — don't offer a link that errors.
-  const verifierAvailable = board.mode === "onchain" && !!caps?.fabric;
+function Footer({ board }: { board: Board }) {
+  // The public records; the console refuses them while the board is sealed,
+  // so a link then could only 409.
+  const files = board.sealed ? [] : (board.files ?? []);
+  const download = files[0];
 
   return (
     <footer
@@ -1012,8 +967,8 @@ function Footer({ board, caps }: { board: Board; caps: Capabilities | null }) {
       }}
     >
       <div
+        className="bc-wrap"
         style={{
-          ...wrap,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -1021,7 +976,7 @@ function Footer({ board, caps }: { board: Board; caps: Capabilities | null }) {
           flexWrap: "wrap",
         }}
       >
-        <div style={{ maxWidth: 560 }}>
+        <div style={{ maxWidth: 560, minWidth: 0 }}>
           <p
             style={{
               fontSize: 13.5,
@@ -1035,59 +990,47 @@ function Footer({ board, caps }: { board: Board; caps: Capabilities | null }) {
             re-run every check on their own machine — no trust in the operator
             required.
           </p>
-          {board.artifacts.length > 0 ? (
-            <p style={{ ...noteText, marginTop: 10 }}>
-              {board.artifacts.map((a, i) => (
-                <span key={a}>
-                  {i > 0 ? " · " : ""}
-                  <a
-                    href={exportUrl(board.election_id, a)}
-                    download
-                    style={{ color: tokens.color.tealDark }}
-                  >
-                    {a}
-                  </a>
-                </span>
-              ))}
+          <p style={{ ...noteText, marginTop: 10, overflowWrap: "anywhere" }}>
+            {files.length > 0
+              ? files.map((a, i) => (
+                  <span key={a}>
+                    {i > 0 ? " · " : ""}
+                    <a
+                      href={fileUrl(board.election_id, a)}
+                      download
+                      style={{ color: tokens.color.tealDark }}
+                    >
+                      {a}
+                    </a>
+                  </span>
+                ))
+              : board.sealed
+                ? "The verification records can be downloaded here once the trustees publish the tally."
+                : "This console has no public verification records for this election."}
+          </p>
+          {board.on_chain ? null : (
+            <p style={{ ...noteText, marginTop: 6 }}>
+              The chain trail needs the Fabric network, and the console could
+              not read this election from the ledger, so there is no verifier to
+              open.
             </p>
-          ) : null}
+          )}
         </div>
-        <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {download ? (
-            <FooterLink href={exportUrl(board.election_id, download)} download>
+            <FooterLink href={fileUrl(board.election_id, download)} download>
               <DownloadIcon size={16} strokeWidth={1.8} />
               Download verification data
             </FooterLink>
           ) : null}
-          {verifierAvailable ? (
+          {/* /trail/<id> dials Fabric, so it is offered only when the console
+              has just read this election from the ledger (on_chain). */}
+          {board.on_chain ? (
             <FooterLink href={verifierUrl(board.election_id)} solid>
               <CodeIcon size={16} strokeWidth={1.8} />
               Open verifier
             </FooterLink>
-          ) : (
-            <div style={{ textAlign: "right" }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  border: `1.5px solid ${tokens.color.border}`,
-                  borderRadius: tokens.radius.button,
-                  padding: "10px 16px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: tokens.color.text2,
-                }}
-              >
-                <CodeIcon size={16} strokeWidth={1.8} />
-                Verifier unavailable
-              </span>
-              <p style={{ ...noteText, margin: "6px 0 0" }}>
-                the on-chain verifier needs a Fabric network; this run was
-                offline
-              </p>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </footer>
@@ -1098,13 +1041,10 @@ function App() {
   const [runs, setRuns] = useState<RunView[]>([]);
   const [runId, setRunId] = useState<string | null>(runIdFromUrl());
   const [load, setLoad] = useState<Load>({ kind: "loading" });
-  const [caps, setCaps] = useState<Capabilities | null>(null);
-
-  useEffect(() => {
-    getCapabilities()
-      .then(setCaps)
-      .catch(() => setCaps({ fabric: false }));
-  }, []);
+  /** Bumped by Retry so the run list and the board load run again. */
+  const [attempt, setAttempt] = useState(0);
+  /** The one aria-live region's text: state changes read from the console. */
+  const [announce, setAnnounce] = useState("");
 
   // Pick a run: the URL wins, otherwise the newest talliable one. /runs is
   // already sorted newest-first by the console.
@@ -1130,7 +1070,7 @@ function App() {
     // Re-runs when the selection changes, which costs one cheap filesystem
     // listing and keeps the picker's own labels current. It terminates: once
     // runId is set the effect returns before touching it again.
-  }, [runId]);
+  }, [runId, attempt]);
 
   const refresh = useCallback(
     (signal?: AbortSignal) => {
@@ -1157,17 +1097,42 @@ function App() {
       ctrl.abort();
       window.clearInterval(timer);
     };
-  }, [runId, refresh]);
+  }, [runId, refresh, attempt]);
 
   function pick(id: string) {
     setRunId(id);
     setRunInUrl(id);
   }
 
+  function retry() {
+    setLoad({ kind: "loading" });
+    setAttempt((n) => n + 1);
+  }
+
   const board = load.kind === "ready" ? load.board : null;
+
+  // Announce what changes while the board is open, never the first load of an
+  // election (opening a published board is not news).
+  const published = board ? !board.sealed : false;
+  const verified = Boolean(board?.verified);
+  const seen = useRef<{
+    id: string;
+    published: boolean;
+    verified: boolean;
+  } | null>(null);
+  useEffect(() => {
+    if (!board) return;
+    const prev = seen.current;
+    seen.current = { id: board.election_id, published, verified };
+    if (!prev || prev.id !== board.election_id) return;
+    if (published && !prev.published) setAnnounce("Tally published");
+    else if (verified && !prev.verified) setAnnounce("Election verified");
+  }, [board, published, verified]);
+
   const statusChip = board ? (
     <Chip
-      variant={board.sealed ? "warn" : board.verified ? "success" : "teal"}
+      variant={board.sealed ? "warning" : board.verified ? "success" : "active"}
+      size="lg"
       dot
     >
       {board.sealed
@@ -1189,10 +1154,25 @@ function App() {
         lineHeight: tokens.type.lineHeight,
       }}
     >
-      <TopBar runs={runs} runId={runId} onPick={pick} status={statusChip} />
+      <TopBar
+        appName="Bulletin Board"
+        role={
+          <>
+            <RunPicker runs={runs} runId={runId} onPick={pick} />
+            {statusChip}
+          </>
+        }
+      />
+      <div aria-live="polite" role="status" className="bc-sr-only">
+        {announce}
+      </div>
 
       {load.kind === "loading" ? (
-        <Notice>Loading the bulletin board…</Notice>
+        <main className="bc-wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
+          <Card>
+            <Skeleton label="Loading the bulletin board…" />
+          </Card>
+        </main>
       ) : null}
       {load.kind === "empty" ? (
         <Notice>
@@ -1201,19 +1181,21 @@ function App() {
         </Notice>
       ) : null}
       {load.kind === "error" ? (
-        <Notice>Could not reach the election console — {load.message}</Notice>
+        <Notice onRetry={retry}>
+          Could not reach the election console — {load.message}
+        </Notice>
       ) : null}
 
       {board ? (
         <>
-          <main style={wrap}>
+          <main className="bc-wrap">
             <div style={{ padding: "34px 0 26px" }}>
-              <div style={eyebrow}>Public Bulletin Board</div>
               <h1
                 style={{
                   fontSize: tokens.type.h1,
                   fontWeight: 700,
-                  margin: "10px 0 8px",
+                  margin: "0 0 8px",
+                  overflowWrap: "anywhere",
                   letterSpacing: 0.1,
                   lineHeight: 1.25,
                 }}
@@ -1245,6 +1227,7 @@ function App() {
                   color: tokens.color.text2,
                   fontSize: 13,
                   marginTop: 6,
+                  overflowWrap: "anywhere",
                 }}
               >
                 {board.election_id} · {board.mode}
@@ -1283,7 +1266,7 @@ function App() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                    gridTemplateColumns: cols(320),
                     gap: 20,
                   }}
                 >
@@ -1298,7 +1281,7 @@ function App() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gridTemplateColumns: cols(200),
                   gap: 18,
                 }}
               >
@@ -1353,11 +1336,14 @@ function App() {
 
             {/* The mockup's verify card carries its own heading — no section head. */}
             <div style={{ marginBottom: 38 }}>
-              <VerifyVoteCard runId={board.election_id} />
+              <VerifyVoteCard
+                runId={board.election_id}
+                announce={setAnnounce}
+              />
             </div>
           </main>
 
-          <Footer board={board} caps={caps} />
+          <Footer board={board} />
         </>
       ) : null}
     </div>

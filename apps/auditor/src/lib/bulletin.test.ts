@@ -3,7 +3,8 @@ import {
   listRuns,
   loadBoard,
   verifyTrackingCode,
-  exportUrl,
+  fileUrl,
+  verifyCodeUrl,
   verifierUrl,
   getCapabilities,
 } from "./bulletin";
@@ -87,9 +88,15 @@ describe("console client", () => {
     });
   });
 
-  it("builds same-origin artifact and verifier URLs", () => {
-    expect(exportUrl("run-1", "correctness.csv")).toBe(
-      "/export/run-1/correctness.csv",
+  it("builds same-origin public file, verify-code and verifier URLs", () => {
+    expect(fileUrl("run-1", "receipts.csv")).toBe(
+      "/api/board/run-1/files/receipts.csv",
+    );
+    expect(fileUrl("run-1", "ledger/header.json")).toBe(
+      "/api/board/run-1/files/ledger/header.json",
+    );
+    expect(verifyCodeUrl("run-1", "BC-CAFE-0001")).toBe(
+      "/api/verify-code/run-1/BC-CAFE-0001",
     );
     expect(verifierUrl("run-1")).toBe("/trail/run-1");
   });

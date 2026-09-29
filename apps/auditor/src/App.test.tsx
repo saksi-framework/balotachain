@@ -1,11 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
+import { tokens } from "@balotachain/ui";
 import type { Board, RunView, VerifyOutcome } from "./lib/bulletin";
 
 const listRunsMock = vi.fn();
 const loadBoardMock = vi.fn();
 const verifyTrackingCodeMock = vi.fn();
-const getCapabilitiesMock = vi.fn();
 
 vi.mock("./lib/bulletin", async (importActual) => {
   const actual = await importActual<typeof import("./lib/bulletin")>();
@@ -15,7 +21,6 @@ vi.mock("./lib/bulletin", async (importActual) => {
     loadBoard: (id: string) => loadBoardMock(id),
     verifyTrackingCode: (runId: string, code: string) =>
       verifyTrackingCodeMock(runId, code),
-    getCapabilities: () => getCapabilitiesMock(),
   };
 });
 
@@ -100,6 +105,7 @@ function board(over: Partial<Board> = {}): Board {
       },
     ],
     artifacts: ["correctness.csv", "election.csv"],
+    files: ["header.json", "receipts.csv", "ledger/header.json"],
     ...over,
   };
 }
@@ -108,10 +114,8 @@ beforeEach(() => {
   listRunsMock.mockReset();
   loadBoardMock.mockReset();
   verifyTrackingCodeMock.mockReset();
-  getCapabilitiesMock.mockReset();
   listRunsMock.mockResolvedValue([run]);
   loadBoardMock.mockResolvedValue(board());
-  getCapabilitiesMock.mockResolvedValue({ fabric: false });
   vi.stubGlobal("history", { ...window.history, replaceState: vi.fn() });
 });
 
@@ -281,34 +285,111 @@ describe("bulletin board", () => {
   });
 
   // /trail/<id> dials Fabric, so a link that will only 502 is worse than none.
-  it("shows the verifier as unavailable for an offline run, with a reason", async () => {
-    // Default fixtures: board mode "offline", capabilities fabric: false.
+  it("hides the verifier when the console did not read the run from the chain, with a reason", async () => {
+    // Default fixture: an offline run, on_chain false.
     render(<App />);
-    expect(await screen.findByText("Verifier unavailable")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /the on-chain verifier needs a Fabric network; this run was offline/,
-      ),
+      await screen.findByText(/The chain trail needs the Fabric network/),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /Open verifier/i }),
     ).not.toBeInTheDocument();
   });
 
-  it("shows the verifier as unavailable when the console has no Fabric driver, even on-chain", async () => {
-    loadBoardMock.mockResolvedValue(board({ mode: "onchain", on_chain: true }));
-    getCapabilitiesMock.mockResolvedValue({ fabric: false });
+  it("hides the verifier for an on-chain-mode run the console could not reach", async () => {
+    loadBoardMock.mockResolvedValue(
+      board({ mode: "onchain", on_chain: false }),
+    );
     render(<App />);
-    expect(await screen.findByText("Verifier unavailable")).toBeInTheDocument();
+    expect(
+      await screen.findByText(/The chain trail needs the Fabric network/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Open verifier/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("links to the verifier for an on-chain run on a console with Fabric", async () => {
+  it("links to the verifier when the console reports the run on-chain", async () => {
     loadBoardMock.mockResolvedValue(board({ mode: "onchain", on_chain: true }));
-    getCapabilitiesMock.mockResolvedValue({ fabric: true, peer: "p:7051" });
     render(<App />);
     const link = await screen.findByRole("link", { name: /Open verifier/i });
     expect(link).toHaveAttribute("href", "/trail/demo-2026-1");
-    expect(screen.queryByText("Verifier unavailable")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/The chain trail needs the Fabric network/),
+    ).not.toBeInTheDocument();
+  });
+
+  // The admin-only /export/ route 401s for the public; /files/ serves the
+  // public copy once the tally is published.
+  it("links the public verification records under /api/board/<run>/files/", async () => {
+    render(<App />);
+    const receipts = await screen.findByRole("link", { name: "receipts.csv" });
+    expect(receipts).toHaveAttribute(
+      "href",
+      "/api/board/demo-2026-1/files/receipts.csv",
+    );
+    expect(
+      screen.getByRole("link", { name: "ledger/header.json" }),
+    ).toHaveAttribute(
+      "href",
+      "/api/board/demo-2026-1/files/ledger/header.json",
+    );
+    expect(
+      screen.getByRole("link", { name: /Download verification data/ }),
+    ).toHaveAttribute("href", "/api/board/demo-2026-1/files/header.json");
+    expect(document.querySelector('a[href^="/export/"]')).toBeNull();
+  });
+
+  it("hides the download links while sealed and says when they appear", async () => {
+    loadBoardMock.mockResolvedValue(
+      board({ sealed: true, verified: false, contests: [], files: null }),
+    );
+    render(<App />);
+    expect(
+      await screen.findByText(
+        /can be downloaded here once the trustees publish/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Download verification data/ }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('a[href*="/files/"]')).toBeNull();
+  });
+
+  it("offers Retry on a load error and loads again", async () => {
+    loadBoardMock.mockRejectedValueOnce(new Error("connection refused"));
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
+    await screen.findByRole("heading", { name: "Demo Election", level: 1 });
+  });
+
+  it("paints the leading candidate's bar in primary and the rest in neutral-bar", async () => {
+    render(<App />);
+    await screen.findByText("Candidate 1");
+    const [lead, rest] = screen
+      .getAllByRole("progressbar")
+      .map((b) => b.firstElementChild);
+    expect(lead).toHaveStyle({ background: tokens.color.teal });
+    expect(rest).toHaveStyle({ background: tokens.color.neutralBar });
+  });
+
+  it("announces the tally when a sealed board is published while open", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      loadBoardMock.mockResolvedValue(
+        board({ sealed: true, verified: false, contests: [] }),
+      );
+      render(<App />);
+      await screen.findByText("Tally pending");
+      expect(screen.getByRole("status")).toHaveTextContent("");
+      loadBoardMock.mockResolvedValue(board());
+      await act(() => vi.advanceTimersByTimeAsync(4000));
+      await waitFor(() => {
+        expect(screen.getByRole("status")).toHaveTextContent("Tally published");
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -339,6 +420,30 @@ describe("verify your vote", () => {
       );
     });
     expect(await screen.findByText(/for President/)).toBeInTheDocument();
+  });
+
+  it("shows the found record's values, with no raw-JSON link", async () => {
+    verifyTrackingCodeMock.mockResolvedValue({
+      kind: "found",
+      record: {
+        found: true,
+        tracking_code: "BC-CAFE-0001",
+        ballot_index: 0,
+        position_label: "President",
+        nullifier: "cafe0001" + "ab".repeat(28),
+        committed_on_chain: false,
+      },
+    } satisfies VerifyOutcome);
+    await typeCode("BC-CAFE-0001");
+    expect(
+      await screen.findByRole("button", { name: "Copy tracking code" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Check" })).toBeNull();
+    // The nullifier is middle-truncated; Copy still takes the whole value.
+    expect(screen.getByText("cafe0001…abababab")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy nullifier" }),
+    ).toBeInTheDocument();
   });
 
   it("explains a miss", async () => {

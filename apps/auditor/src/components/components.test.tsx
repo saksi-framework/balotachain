@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Card, CopyButton, tokens } from "@balotachain/ui";
-import { Chip } from "./Chip";
 import { ResultBar } from "./ResultBar";
 import { StatCard } from "./StatCard";
 
@@ -36,16 +35,6 @@ describe("CopyButton", () => {
       expect(writeText).toHaveBeenCalledWith("sha256:abc");
     });
     expect(await screen.findByText("Copied")).toBeInTheDocument();
-  });
-});
-
-describe("Chip", () => {
-  it("uses the success palette from the mockup", () => {
-    render(<Chip variant="success">ELECTED</Chip>);
-    expect(screen.getByText("ELECTED")).toHaveStyle({
-      background: tokens.color.successLight,
-      color: tokens.color.success,
-    });
   });
 });
 

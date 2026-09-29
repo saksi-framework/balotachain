@@ -106,6 +106,12 @@ export type Board = {
   crypto: BoardCrypto;
   checks: BoardCheck[];
   artifacts: string[];
+  /**
+   * The public verification records served at `fileUrl`. Empty (or null)
+   * while the board is sealed: the console refuses them until the tally is
+   * published.
+   */
+  files?: string[] | null;
   partial?: boolean;
   partial_reason?: string;
 };
@@ -168,10 +174,9 @@ export async function verifyTrackingCode(
   runId: string,
   code: string,
 ): Promise<VerifyOutcome> {
-  const res = await fetch(
-    `${BASE}/api/verify-code/${encodeURIComponent(runId)}/${encodeURIComponent(code)}`,
-    { headers: { Accept: "application/json" } },
-  );
+  const res = await fetch(verifyCodeUrl(runId, code), {
+    headers: { Accept: "application/json" },
+  });
   if (res.status === 409) return { kind: "ambiguous" };
   if (!res.ok) {
     throw new Error(
@@ -182,9 +187,18 @@ export async function verifyTrackingCode(
   return record.found ? { kind: "found", record } : { kind: "missing" };
 }
 
-/** Direct download URL for one of a run's artifacts. */
-export function exportUrl(runId: string, artifact: string): string {
-  return `${BASE}/export/${encodeURIComponent(runId)}/${encodeURIComponent(artifact)}`;
+/** Where anyone can check one tracking code against a run's ballot records. */
+export function verifyCodeUrl(runId: string, code: string): string {
+  return `${BASE}/api/verify-code/${encodeURIComponent(runId)}/${encodeURIComponent(code)}`;
+}
+
+/**
+ * Public download URL for one of `Board.files`. A name can hold a folder
+ * (`ledger/header.json`), so each segment is encoded and the slash kept.
+ */
+export function fileUrl(runId: string, name: string): string {
+  const path = name.split("/").map(encodeURIComponent).join("/");
+  return `${BASE}/api/board/${encodeURIComponent(runId)}/files/${path}`;
 }
 
 /** The console's own public trail page for this election. */

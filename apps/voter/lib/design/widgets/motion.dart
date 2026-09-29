@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../tokens.dart';
 
 /// `ba-pop` — scale 0.8 -> 1 with a slight overshoot, ~360ms. Used on the
-/// splash badge and the vote-submitted success ring.
+/// splash badge and the vote-submitted success ring. Static when the platform
+/// asks for reduced motion (`MediaQuery.disableAnimations`).
 class BcPop extends StatelessWidget {
   const BcPop({super.key, required this.child});
 
@@ -10,6 +11,7 @@ class BcPop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.8, end: 1.0),
       duration: const Duration(milliseconds: 360),
@@ -23,7 +25,7 @@ class BcPop extends StatelessWidget {
 
 /// `ba-rise` — translateY 8 -> 0 with a fade, ~300ms. Used when the ballot step
 /// changes and when the verification result appears. Give it a [ValueKey] that
-/// changes to replay the animation.
+/// changes to replay the animation. Under reduced motion it fades only.
 class BcRise extends StatelessWidget {
   const BcRise({super.key, required this.child});
 
@@ -31,6 +33,7 @@ class BcRise extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduced = MediaQuery.disableAnimationsOf(context);
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 300),
@@ -38,7 +41,7 @@ class BcRise extends StatelessWidget {
       builder: (context, value, child) => Opacity(
         opacity: value,
         child: Transform.translate(
-          offset: Offset(0, 8 * (1 - value)),
+          offset: Offset(0, reduced ? 0 : 8 * (1 - value)),
           child: child,
         ),
       ),
@@ -48,6 +51,7 @@ class BcRise extends StatelessWidget {
 }
 
 /// `ba-dot` — three loading dots pulsing in opacity, staggered by 160ms.
+/// Under reduced motion the dots hold still at full opacity.
 class BcLoadingDots extends StatefulWidget {
   const BcLoadingDots({super.key, this.color = BcColors.surface});
 
@@ -62,7 +66,17 @@ class _BcLoadingDotsState extends State<BcLoadingDots>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1200),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = 0.5;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
 
   @override
   void dispose() {
@@ -81,7 +95,9 @@ class _BcLoadingDotsState extends State<BcLoadingDots>
             // Stagger each dot by 160ms across the 1200ms loop. phase stays
             // below 1, so the triangle wave below never leaves 0.3 .. 1.0.
             final phase = (_controller.value - i * (160 / 1200)) % 1.0;
-            final opacity = 0.3 + 0.7 * (1 - (phase * 2 - 1).abs());
+            final opacity = _controller.isAnimating
+                ? 0.3 + 0.7 * (1 - (phase * 2 - 1).abs())
+                : 1.0;
             return Padding(
               padding: EdgeInsets.only(left: i == 0 ? 0 : 6),
               child: Container(

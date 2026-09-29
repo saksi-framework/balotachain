@@ -38,8 +38,11 @@ class BcColors {
   /// Muted teal for non-leading result bars.
   static const neutralBar = Color(0xFF9FBFBF);
 
-  /// Placeholder text and offline dots.
-  static const muted = Color(0xFF9AA6A5);
+  /// Subtle text (placeholders, hints). Passes 4.5:1 on surface and bg.
+  static const textSubtle = Color(0xFF677473);
+
+  /// Decorative fill only (offline dots). Never use for text.
+  static const neutralDot = Color(0xFF9AA6A5);
 }
 
 class BcRadii {
@@ -66,7 +69,9 @@ class BcType {
   static const small = 13.0;
   static const button = 18.0;
   static const lineHeight = 1.5;
-  static const mono = 'monospace';
+  static const sans = 'Source Sans 3';
+  static const mono = 'JetBrains Mono';
+  static const monoFallback = <String>['Consolas', 'Menlo', 'monospace'];
 }
 
 class BcShadows {

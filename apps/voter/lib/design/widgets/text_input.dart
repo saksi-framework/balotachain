@@ -59,9 +59,7 @@ class _BcTextInputState extends State<BcTextInput> {
       height: 1.2,
       color: BcColors.text1,
       fontFamily: widget.mono ? BcType.mono : null,
-      fontFamilyFallback: widget.mono
-          ? const <String>['Menlo', 'Courier New', 'monospace']
-          : null,
+      fontFamilyFallback: widget.mono ? BcType.monoFallback : null,
     );
 
     return Column(
@@ -103,7 +101,7 @@ class _BcTextInputState extends State<BcTextInput> {
                 fontSize: BcType.body,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 0,
-                color: BcColors.muted,
+                color: BcColors.textSubtle,
               ),
               isDense: true,
               filled: false,

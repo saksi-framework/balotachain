@@ -163,6 +163,12 @@ Containerized backend (Stage 1) is in and verified. Resume options:
   here, verify via CI" note is stale; Go/Docker changes can be built and tested locally.
 
 <!-- ban-init:begin -->
+## Design System
+Always read DESIGN.md before making any visual or UI decisions.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that doesn't match DESIGN.md.
+
 ## ban-init — orchestrator + tiered subagents
 
 This repo runs the ban-init workflow: the main session (Fable) plans, dispatches, reviews, and synthesises; subagents implement. Invoke `/ban-init` at the start of any multi-step task; it wraps `superpowers:subagent-driven-development`.

@@ -10,16 +10,20 @@ import {
 import {
   tokens,
   Card,
+  Chip,
+  CopyButton,
   PrimaryButton,
   SecondaryButton,
+  Skeleton,
   TextButton,
   TextInput,
+  TopBar,
+  VerifiableValue,
   ShieldCheckIcon,
+  type ChipVariant,
   CheckIcon,
-  CopyIcon,
   AlertIcon,
 } from "@balotachain/ui";
-import { Chip } from "./components/Chip";
 import { Stepper } from "./components/Stepper";
 import {
   ApiError,
@@ -78,6 +82,9 @@ type Auth =
 /** Turns a failed call into display text; a 401 also sends the app to login. */
 type Fail = (e: unknown) => string;
 
+/** Says a state change through the page's one aria-live region. */
+type Announce = (text: string) => void;
+
 /** `run` is the list row an existing election was opened from. */
 type Active = { runId: string; config: ElectionConfig; run?: RunView };
 
@@ -91,7 +98,6 @@ const STEPS = [
   { label: "Results" },
 ];
 
-const PAGE_MAX = 960;
 const FIELD_MAX = 480;
 /** How often a running phase re-reads its state of record. */
 const PHASE_POLL_MS = 1500;
@@ -141,67 +147,33 @@ function usePhaseEvents(runId: string, phase: string) {
   return [progress, setProgress, latest] as const;
 }
 
-function Header({ auth, onSignOut }: { auth: Auth; onSignOut: () => void }) {
+/** The TopBar's right-hand slot: who is signed in, or that nobody has to be. */
+function RoleSlot({ auth, onSignOut }: { auth: Auth; onSignOut: () => void }) {
   return (
-    <header
+    <span
       style={{
-        height: 56,
-        background: tokens.color.surface,
-        borderBottom: `1px solid ${tokens.color.border}`,
-        display: "flex",
+        display: "inline-flex",
         alignItems: "center",
+        gap: tokens.space.xs,
+        color: tokens.color.text2,
+        fontSize: 14,
       }}
     >
-      <div
-        style={{
-          maxWidth: PAGE_MAX,
-          margin: "0 auto",
-          width: "100%",
-          padding: `0 ${tokens.space.md}px`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: tokens.space.sm,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: tokens.type.fontFamily,
-            fontSize: tokens.type.body,
-            fontWeight: 700,
-            color: tokens.color.text1,
-            letterSpacing: 0.2,
-          }}
-        >
-          BalotaChain — Admin
-        </div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: tokens.space.xs,
-            color: tokens.color.text2,
-            fontSize: 14,
-          }}
-        >
-          <ShieldCheckIcon size={18} style={{ color: tokens.color.teal }} />
-          {auth.kind === "in" ? (
-            <>
-              <span>
-                {auth.session.username} · {auth.session.role}
-              </span>
-              <TextButton onClick={onSignOut} style={{ fontSize: 14 }}>
-                Sign out
-              </TextButton>
-            </>
-          ) : auth.kind === "off" ? (
-            <span>Console authentication is off</span>
-          ) : (
-            <span>Research election console</span>
-          )}
-        </div>
-      </div>
-    </header>
+      {auth.kind === "in" ? (
+        <>
+          <span>
+            {auth.session.username} · {auth.session.role}
+          </span>
+          <TextButton onClick={onSignOut} style={{ fontSize: 14 }}>
+            Sign out
+          </TextButton>
+        </>
+      ) : auth.kind === "off" ? (
+        <span>Console authentication is off</span>
+      ) : (
+        <span>Research election console</span>
+      )}
+    </span>
   );
 }
 
@@ -278,20 +250,23 @@ function SectionTitle({
 function Banner({
   variant,
   children,
+  onRetry,
 }: {
   variant: "success" | "error" | "note";
   children: ReactNode;
+  /** Offers Retry next to an error that a new read can clear. */
+  onRetry?: () => void;
 }) {
   const palette = {
     success: {
-      fg: tokens.color.success,
-      bg: "rgba(46, 125, 91, 0.08)",
-      border: "rgba(46, 125, 91, 0.24)",
+      fg: tokens.color.successText,
+      bg: tokens.color.successLight,
+      border: tokens.color.successBorder,
     },
     error: {
       fg: tokens.color.error,
-      bg: "rgba(192, 57, 43, 0.08)",
-      border: "rgba(192, 57, 43, 0.24)",
+      bg: tokens.color.errorLight,
+      border: tokens.color.errorLight,
     },
     note: {
       fg: tokens.color.text2,
@@ -326,7 +301,14 @@ function Banner({
       <span style={{ color: palette.fg, display: "inline-flex", marginTop: 1 }}>
         <Icon size={18} />
       </span>
-      <span>{children}</span>
+      <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
+        {children}
+      </span>
+      {onRetry ? (
+        <TextButton onClick={onRetry} style={{ fontSize: 14 }}>
+          Retry
+        </TextButton>
+      ) : null}
     </div>
   );
 }
@@ -350,43 +332,6 @@ function MonoText({
     >
       {children}
     </span>
-  );
-}
-
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(value);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1200);
-        } catch {
-          // clipboard unavailable in some sandboxes
-        }
-      }}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        background: "transparent",
-        border: `1px solid ${tokens.color.border}`,
-        borderRadius: tokens.radius.button,
-        padding: "4px 8px",
-        cursor: "pointer",
-        color: copied ? tokens.color.success : tokens.color.text2,
-        fontSize: 12,
-        fontWeight: 600,
-        fontFamily: tokens.type.fontFamily,
-        flexShrink: 0,
-      }}
-      aria-label="Copy"
-    >
-      {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
-      <span>{copied ? "Copied" : "Copy"}</span>
-    </button>
   );
 }
 
@@ -522,30 +467,6 @@ function Table({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{ display: "flex", alignItems: "center", gap: tokens.space.xs }}
-    >
-      <span
-        style={{
-          width: 120,
-          fontSize: 12,
-          color: tokens.color.text2,
-          fontWeight: 600,
-          letterSpacing: 0.4,
-          textTransform: "uppercase",
-          flexShrink: 0,
-        }}
-      >
-        {label}
-      </span>
-      <MonoText style={{ flex: 1 }}>{value}</MonoText>
-      <CopyButton value={value} />
-    </div>
-  );
-}
-
 function Stat({
   label,
   value,
@@ -592,7 +513,7 @@ function StatGrid({ children }: { children: ReactNode }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))",
         gap: tokens.space.xs,
       }}
     >
@@ -755,6 +676,8 @@ function Elections({
   const [runs, setRuns] = useState<RunView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [resuming, setResuming] = useState(false);
+  /** Bumped by Retry to read the list again. */
+  const [attempt, setAttempt] = useState(0);
 
   async function resume(r: RunView) {
     setError(null);
@@ -781,7 +704,7 @@ function Elections({
         if (!ctrl.signal.aborted) setError(fail(e));
       });
     return () => ctrl.abort();
-  }, [fail]);
+  }, [fail, attempt]);
 
   return (
     <Card>
@@ -790,14 +713,26 @@ function Elections({
         subtitle="Each election is a run on this console: generated, encrypted, decrypted by its trustees, and verified."
         aside={<PrimaryButton onClick={onNew}>New election</PrimaryButton>}
       />
-      {error && <Banner variant="error">{error}</Banner>}
-      {runs === null && !error ? (
-        <p style={{ color: tokens.color.text2, margin: 0 }}>Loading…</p>
-      ) : null}
+      {error && (
+        <Banner
+          variant="error"
+          onRetry={
+            runs === null
+              ? () => {
+                  setError(null);
+                  setAttempt((n) => n + 1);
+                }
+              : undefined
+          }
+        >
+          {error}
+        </Banner>
+      )}
+      {runs === null && !error ? <Skeleton label="Loading elections…" /> : null}
       {runs ? (
         <Table
           head={["Election", "Mode", "Voters", "Created", "Status", ""]}
-          empty="No elections on this console yet."
+          empty="No elections on this console yet. Create one with New election and it appears here."
         >
           {runs.map((r) => {
             const s = runState(r);
@@ -984,7 +919,8 @@ function ElectionStep({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(min(200px, 100%), 1fr))",
             gap: tokens.space.md,
           }}
         >
@@ -1085,6 +1021,7 @@ function ElectionStep({
             display: "flex",
             justifyContent: "space-between",
             gap: tokens.space.sm,
+            flexWrap: "wrap",
           }}
         >
           <SecondaryButton onClick={onCancel}>Back</SecondaryButton>
@@ -1111,6 +1048,8 @@ function PopulationStep({
   const [report, setReport] = useState<CheckReport | null>(null);
   const [summary, setSummary] = useState<ElectionSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Bumped by Retry to read the report and summary again. */
+  const [attempt, setAttempt] = useState(0);
 
   // The phase lock is the state of record: the stream has no replay, and a
   // generation that finished before this page subscribed says nothing.
@@ -1144,7 +1083,7 @@ function PopulationStep({
         );
       });
     // progress.error is read once, when the phase ends — not a dependency.
-  }, [generating, runId, fail]);
+  }, [generating, runId, fail, attempt]);
 
   const proofsPerBallot = summary?.candidates ?? 0;
 
@@ -1166,7 +1105,21 @@ function PopulationStep({
         synthetic, created by the generator. This console does not issue real
         voter credentials.
       </Banner>
-      {error && <Banner variant="error">{error}</Banner>}
+      {error && (
+        <Banner
+          variant="error"
+          onRetry={
+            generating
+              ? undefined
+              : () => {
+                  setError(null);
+                  setAttempt((n) => n + 1);
+                }
+          }
+        >
+          {error}
+        </Banner>
+      )}
 
       {generating ? (
         <>
@@ -1175,6 +1128,10 @@ function PopulationStep({
           </p>
           <Log lines={progress.lines} />
         </>
+      ) : null}
+
+      {!generating && !error && !(report && summary) ? (
+        <Skeleton label="Loading the population report…" />
       ) : null}
 
       {report && summary ? (
@@ -1248,18 +1205,24 @@ function PopulationStep({
             </Table>
           </div>
 
-          <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ display: "grid", gap: tokens.space.sm }}>
             {report.ground_truth_ballots_sha256 ? (
-              <Row
-                label="ground truth"
+              <VerifiableValue
+                label="Ground truth ballots SHA-256"
                 value={report.ground_truth_ballots_sha256}
               />
             ) : null}
             {summary.ballots_sha256 ? (
-              <Row label="ballot set" value={summary.ballots_sha256} />
+              <VerifiableValue
+                label="Ballot set SHA-256"
+                value={summary.ballots_sha256}
+              />
             ) : null}
             {summary.issuer_public_key ? (
-              <Row label="issuer key" value={summary.issuer_public_key} />
+              <VerifiableValue
+                label="Issuer public key"
+                value={summary.issuer_public_key}
+              />
             ) : null}
           </div>
         </div>
@@ -1284,6 +1247,7 @@ function RunStep({
   onChain,
   opened,
   fail,
+  announce,
   onBack,
   onNext,
 }: {
@@ -1292,6 +1256,7 @@ function RunStep({
   /** The list row this run was opened from, if any. */
   opened?: RunView;
   fail: Fail;
+  announce: Announce;
   onBack: () => void;
   onNext: () => void;
 }) {
@@ -1333,6 +1298,7 @@ function RunStep({
           setReady(c.ready);
           if (c.ready) {
             setAction("idle");
+            announce("Election closed");
           } else if (!s.busy) {
             setAction("idle");
             setError(
@@ -1374,7 +1340,7 @@ function RunStep({
             : "Local run — no ledger. Prepares the election bundle and the trustees' ceremony on this console."
         }
         aside={
-          <Chip variant={onChain ? "success" : "neutral"}>
+          <Chip variant={onChain ? "active" : "neutral"}>
             {onChain ? "On-chain" : "Offline"}
           </Chip>
         }
@@ -1426,10 +1392,27 @@ function RunStep({
   );
 }
 
+/** The trustee console's roster words, from the console's own state. */
+type RosterStatus = "Waiting" | "Recording…" | "Recorded" | "Failed";
+
+const rosterVariant: Record<RosterStatus, ChipVariant> = {
+  Waiting: "neutral",
+  "Recording…": "active",
+  Recorded: "success",
+  Failed: "error",
+};
+
+function rosterStatus(t: Ceremony["trustees"][number]): RosterStatus {
+  if (t.submitted) return "Recorded";
+  if (t.submitting) return "Recording…";
+  return t.submit_error ? "Failed" : "Waiting";
+}
+
 function CeremonyStep({
   runId,
   opened,
   fail,
+  announce,
   onBack,
   onNext,
 }: {
@@ -1437,6 +1420,7 @@ function CeremonyStep({
   /** The list row this run was opened from, if any. */
   opened?: RunView;
   fail: Fail;
+  announce: Announce;
   onBack: () => void;
   onNext: () => void;
 }) {
@@ -1513,6 +1497,29 @@ function CeremonyStep({
     }
   }
 
+  // Announce what the console now says, only when it changes after the first
+  // read (opening the step is not news).
+  const seen = useRef<{ recorded: Set<string>; published: boolean } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!ceremony) return;
+    const prev = seen.current;
+    const recorded = new Set(
+      ceremony.trustees.filter((t) => t.submitted).map((t) => t.id),
+    );
+    seen.current = { recorded, published: ceremony.published };
+    if (!prev) return;
+    if (ceremony.published && !prev.published) {
+      announce("Tally published");
+      return;
+    }
+    const fresh = ceremony.trustees.find(
+      (t) => recorded.has(t.id) && !prev.recorded.has(t.id),
+    );
+    if (fresh) announce(`Share recorded: ${fresh.name}`);
+  }, [ceremony, announce]);
+
   const origin = typeof window === "undefined" ? "" : window.location.origin;
 
   return (
@@ -1524,7 +1531,11 @@ function CeremonyStep({
           ceremony ? (
             <Chip
               variant={
-                ceremony.published || ceremony.unlocked ? "success" : "neutral"
+                ceremony.published || ceremony.unlocked
+                  ? "success"
+                  : ceremony.ready
+                    ? "active"
+                    : "neutral"
               }
             >
               {ceremony.published
@@ -1542,7 +1553,7 @@ function CeremonyStep({
         <Banner variant="error">{error ?? pollError}</Banner>
       )}
       {!ceremony && !error && !pollError ? (
-        <p style={{ margin: 0, color: tokens.color.text2 }}>Loading…</p>
+        <Skeleton label="Loading the ceremony…" />
       ) : null}
 
       {ceremony ? (
@@ -1585,6 +1596,7 @@ function CeremonyStep({
           >
             {ceremony.trustees.map((t) => {
               const link = trusteeUrl(runId, t.id);
+              const status = rosterStatus(t);
               return (
                 <tr key={t.id}>
                   <td style={cell}>
@@ -1594,24 +1606,8 @@ function CeremonyStep({
                     </div>
                   </td>
                   <td style={cell}>
-                    <Chip
-                      variant={
-                        t.submitted
-                          ? "success"
-                          : t.submitting
-                            ? "neutral"
-                            : ceremony.ready
-                              ? "warn"
-                              : "neutral"
-                      }
-                    >
-                      {t.submitted
-                        ? "Submitted"
-                        : t.submitting
-                          ? "Recording…"
-                          : ceremony.ready
-                            ? "Pending"
-                            : "Not started"}
+                    <Chip variant={rosterVariant[status]} dot>
+                      {status}
                     </Chip>
                     {t.submit_error ? (
                       <div
@@ -1637,6 +1633,8 @@ function CeremonyStep({
                       {/* An empty client base gives a same-origin path. */}
                       <CopyButton
                         value={link.startsWith("/") ? origin + link : link}
+                        label={`Copy ${t.name}'s link`}
+                        size="xs"
                       />
                     </div>
                   </td>
@@ -1683,6 +1681,7 @@ function ResultsStep({
   onChain,
   opened,
   fail,
+  announce,
   onBack,
   onDone,
 }: {
@@ -1690,6 +1689,7 @@ function ResultsStep({
   onChain: boolean;
   opened?: RunView;
   fail: Fail;
+  announce: Announce;
   onBack: () => void;
   onDone: () => void;
 }) {
@@ -1760,6 +1760,7 @@ function ResultsStep({
           setPollError(null);
           if (s.busy) return;
           setAction("idle");
+          announce("Verification finished");
           load(latest.current.error);
         })
         .catch((e) => setPollError(fail(e)));
@@ -1810,8 +1811,23 @@ function ResultsStep({
         }
       />
       {(error ?? pollError) && (
-        <Banner variant="error">{error ?? pollError}</Banner>
+        <Banner
+          variant="error"
+          onRetry={
+            error && !verifying
+              ? () => {
+                  setError(null);
+                  load();
+                }
+              : undefined
+          }
+        >
+          {error ?? pollError}
+        </Banner>
       )}
+      {rows === null && !unverified && !error && !pollError ? (
+        <Skeleton label="Loading the results…" />
+      ) : null}
       {failedChecks.length > 0 ? (
         <Banner variant="error">
           {`Failed checks: ${failedChecks.join(", ")}`}
@@ -1868,7 +1884,10 @@ function ResultsStep({
           ) : null}
 
           {local[0]?.tally_sha256 ? (
-            <Row label="tally sha256" value={local[0].tally_sha256} />
+            <VerifiableValue
+              label="Tally SHA-256"
+              value={local[0].tally_sha256}
+            />
           ) : null}
 
           <div
@@ -1905,6 +1924,9 @@ export default function App() {
   const [caps, setCaps] = useState<Capabilities | null>(null);
   const [active, setActive] = useState<Active | null>(null);
   const [step, setStep] = useState<Step | null>(null);
+  /** The one aria-live region's text. */
+  const [live, setLive] = useState("");
+  const announce = useCallback<Announce>((text) => setLive(text), []);
 
   const checkSession = useCallback(() => {
     getMe()
@@ -1965,7 +1987,7 @@ export default function App() {
   if (auth.kind === "checking") {
     body = (
       <Card>
-        <p style={{ margin: 0, color: tokens.color.text2 }}>Loading…</p>
+        <Skeleton label="Connecting to the election console…" />
       </Card>
     );
   } else if (auth.kind === "unreachable") {
@@ -2043,6 +2065,7 @@ export default function App() {
             onChain={onChain}
             opened={active.run}
             fail={fail}
+            announce={announce}
             onBack={() => setStep(2)}
             onNext={() => setStep(4)}
           />
@@ -2052,6 +2075,7 @@ export default function App() {
             runId={active.runId}
             opened={active.run}
             fail={fail}
+            announce={announce}
             onBack={() => setStep(3)}
             onNext={() => setStep(5)}
           />
@@ -2062,6 +2086,7 @@ export default function App() {
             onChain={onChain}
             opened={active.run}
             fail={fail}
+            announce={announce}
             onBack={() => setStep(4)}
             onDone={toList}
           />
@@ -2079,13 +2104,20 @@ export default function App() {
         color: tokens.color.text1,
       }}
     >
-      <Header auth={auth} onSignOut={signOut} />
+      <TopBar
+        appName="Admin Console"
+        electionName={active?.config.name}
+        role={<RoleSlot auth={auth} onSignOut={signOut} />}
+      />
+      <div aria-live="polite" role="status" className="bc-sr-only">
+        {live}
+      </div>
 
       <main
+        className="bc-wrap"
         style={{
-          maxWidth: PAGE_MAX,
-          margin: "0 auto",
-          padding: tokens.space.md,
+          paddingTop: tokens.space.md,
+          paddingBottom: tokens.space.md,
           display: "grid",
           gap: tokens.space.md,
         }}

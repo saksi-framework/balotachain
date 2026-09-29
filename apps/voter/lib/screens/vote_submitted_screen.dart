@@ -99,11 +99,7 @@ class _VoteSubmittedScreenState extends State<VoteSubmittedScreen> {
                           letterSpacing: 2,
                           height: 1.2,
                           fontFamily: BcType.mono,
-                          fontFamilyFallback: <String>[
-                            'Menlo',
-                            'Courier New',
-                            'monospace',
-                          ],
+                          fontFamilyFallback: BcType.monoFallback,
                         ),
                       ),
                       const SizedBox(height: BcSpace.sm),

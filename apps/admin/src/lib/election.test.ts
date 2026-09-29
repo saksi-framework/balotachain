@@ -259,18 +259,18 @@ describe("stepFor an existing run", () => {
   it("labels each run state for the list", () => {
     expect(runState(rv(["election.csv"], { busy: true }))).toEqual({
       label: "Running",
-      variant: "neutral",
+      variant: "active",
     });
     expect(
       runState(rv(["election.csv"], { busy: true, paused_stage: "ballots" })),
-    ).toEqual({ label: "Paused at ballots", variant: "neutral" });
+    ).toEqual({ label: "Paused at ballots", variant: "active" });
     expect(
       runState(rv(["election.csv"], { status: "failed", reason: "boom" })),
     ).toEqual({ label: "Failed", variant: "error", detail: "boom" });
     for (const status of ["interrupted", "close-pending"] as const) {
       expect(runState(rv(["election.csv"], { status }))).toEqual({
         label: "Interrupted",
-        variant: "warn",
+        variant: "warning",
       });
     }
     const verified = ["election.csv", "correctness.csv"];
@@ -301,7 +301,7 @@ describe("stepFor an existing run", () => {
     });
     expect(runState(rv(null))).toEqual({
       label: "Not generated",
-      variant: "warn",
+      variant: "warning",
     });
   });
 });

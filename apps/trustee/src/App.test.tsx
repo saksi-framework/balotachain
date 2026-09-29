@@ -138,8 +138,9 @@ describe("trustee console", () => {
     ).toBeInTheDocument();
   });
 
-  // The console has no trustee presence concept, so a roster row is Submitted,
-  // Pending, or — before setup — Not started. There is no honest "Offline".
+  // The console has no trustee presence concept, so a roster row uses the
+  // roster words (Waiting, Recording…, Recorded, Failed); the ceremony chip
+  // says Not started before setup. There is no honest "Offline".
   it("uses Not started before the ceremony is set up", async () => {
     loadCeremonyMock.mockResolvedValue(
       ceremony({
@@ -156,9 +157,26 @@ describe("trustee console", () => {
       0,
     );
     expect(screen.queryByText("Offline")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Waiting")).toHaveLength(2);
     expect(
       screen.getByText(/This ceremony has not been set up yet/),
     ).toBeInTheDocument();
+  });
+
+  it("shows Recording… on the roster while a share is being recorded", async () => {
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({
+        busy: "3",
+        trustees: ceremony().trustees.map((t) =>
+          t.id === "3" ? { ...t, submitting: true } : t,
+        ),
+      }),
+    );
+    render(<App />);
+    expect(await screen.findByText("Recording…")).toBeInTheDocument();
+    expect(screen.getByText("Recorded")).toBeInTheDocument();
+    expect(screen.getAllByText("Waiting")).toHaveLength(3);
+    expect(screen.queryByText("Pending")).not.toBeInTheDocument();
   });
 
   it("shows a picker when no trustee is chosen", async () => {
@@ -206,6 +224,12 @@ describe("trustee console", () => {
     expect(
       await screen.findByText("Partial decryption submitted"),
     ).toBeInTheDocument();
+    // The change is announced once, from the console's state.
+    await waitFor(() =>
+      expect(document.querySelector("[aria-live=polite]")!.textContent).toBe(
+        "Share recorded",
+      ),
+    );
   });
 
   const withYou = (over: Record<string, unknown>, id = "2") =>
@@ -417,6 +441,28 @@ describe("trustee console", () => {
     expect(
       await screen.findByText(/Could not reach the election console/),
     ).toBeInTheDocument();
+    expect(screen.getByText(/connection refused/)).toBeInTheDocument();
+    loadCeremonyMock.mockResolvedValue(ceremony());
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("Quorum 3 of 5")).toBeInTheDocument();
+  });
+
+  it("shows a chain event's tx id in full on copy, with a trail check link", async () => {
+    const tx = "a1b2c3d4e5f60718293a4b5c6d7e8f90";
+    loadCeremonyMock.mockResolvedValue(
+      ceremony({
+        on_chain: true,
+        events: [
+          { kind: "chain", text: "Tally published", tx_id: tx, block: 42 },
+        ],
+      }),
+    );
+    render(<App />);
+    expect(await screen.findByText("a1b2c3d4…6d7e8f90")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Check" })).toHaveAttribute(
+      "href",
+      "/trail/demo-2026-1",
+    );
   });
 
   it("says the console has no trustee authentication", async () => {

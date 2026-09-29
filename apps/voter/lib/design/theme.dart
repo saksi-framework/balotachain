@@ -3,6 +3,7 @@ import 'tokens.dart';
 
 ThemeData bcTheme() {
   const baseText = TextStyle(
+    fontFamily: BcType.sans,
     fontSize: BcType.body,
     height: BcType.lineHeight,
     color: BcColors.text1,
@@ -20,6 +21,7 @@ ThemeData bcTheme() {
 
   return ThemeData(
     useMaterial3: true,
+    fontFamily: BcType.sans,
     colorScheme: colorScheme,
     scaffoldBackgroundColor: BcColors.bg,
     canvasColor: BcColors.bg,
