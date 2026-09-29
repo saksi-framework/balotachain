@@ -9,6 +9,7 @@ import {
   submitPartialDecryption,
   publishTally,
   boardUrl,
+  trailUrl,
 } from "./bulletin";
 
 function ok(body: unknown, status = 200): Response {
@@ -81,6 +82,7 @@ describe("console client", () => {
 
   it("links to the board served by the same console", () => {
     expect(boardUrl("demo-1")).toBe("/board/?run=demo-1");
+    expect(trailUrl("demo-1")).toBe("/trail/demo-1");
   });
 });
 

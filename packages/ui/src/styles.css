@@ -104,6 +104,16 @@ button {
   outline-offset: 2px;
 }
 
+/* Visually hidden, still read by screen readers (the aria-live region). */
+.bc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* Desktop content column: 1200px max, 24px gutters, 16px below 720px. */
 .bc-wrap {
   width: 100%;

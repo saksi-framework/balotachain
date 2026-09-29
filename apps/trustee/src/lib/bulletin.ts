@@ -234,3 +234,8 @@ export function subscribeEvents(
 export function boardUrl(runId: string): string {
   return `${BASE}/board/?run=${encodeURIComponent(runId)}`;
 }
+
+/** The console's public trail page for this election, where a tx id is checked. */
+export function trailUrl(runId: string): string {
+  return `${BASE}/trail/${encodeURIComponent(runId)}`;
+}
