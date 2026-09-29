@@ -18,6 +18,7 @@ import {
   CheckIcon,
   LockIcon,
   ShieldCheckIcon,
+  Skeleton,
   TopBar,
   VerifiableValue,
   type ChipVariant,
@@ -108,27 +109,6 @@ function rosterStatus(t: CeremonyTrustee, sending: boolean): RosterStatus {
   if (t.submitted) return "Recorded";
   if (t.submitting || sending) return "Recording…";
   return t.submit_error ? "Failed" : "Waiting";
-}
-
-/** Grey placeholder lines while a view loads; the sentence is for screen readers. */
-function Skeleton({ label }: { label: string }) {
-  return (
-    <div role="status" aria-label={label} style={{ display: "grid", gap: 12 }}>
-      {[70, 100, 85].map((w) => (
-        <span
-          key={w}
-          aria-hidden
-          style={{
-            display: "block",
-            height: 14,
-            width: `${w}%`,
-            borderRadius: 8,
-            background: tokens.color.neutralFill,
-          }}
-        />
-      ))}
-    </div>
-  );
 }
 
 /** "Roberto Lim" -> "RL". */

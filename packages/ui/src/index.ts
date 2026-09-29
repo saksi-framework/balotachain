@@ -37,6 +37,9 @@ export type { ChipProps, ChipVariant } from "./components/Chip.js";
 export { VerifiableValue } from "./components/VerifiableValue.js";
 export type { VerifiableValueProps } from "./components/VerifiableValue.js";
 
+export { Skeleton } from "./components/Skeleton.js";
+export type { SkeletonProps } from "./components/Skeleton.js";
+
 export { PageDots } from "./components/PageDots.js";
 export type { PageDotsProps } from "./components/PageDots.js";
 
