@@ -422,7 +422,7 @@ describe("verify your vote", () => {
     expect(await screen.findByText(/for President/)).toBeInTheDocument();
   });
 
-  it("shows the found record's values with a Check link for the code", async () => {
+  it("shows the found record's values, with no raw-JSON link", async () => {
     verifyTrackingCodeMock.mockResolvedValue({
       kind: "found",
       record: {
@@ -435,10 +435,10 @@ describe("verify your vote", () => {
       },
     } satisfies VerifyOutcome);
     await typeCode("BC-CAFE-0001");
-    expect(await screen.findByRole("link", { name: "Check" })).toHaveAttribute(
-      "href",
-      "/api/verify-code/demo-2026-1/BC-CAFE-0001",
-    );
+    expect(
+      await screen.findByRole("button", { name: "Copy tracking code" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Check" })).toBeNull();
     // The nullifier is middle-truncated; Copy still takes the whole value.
     expect(screen.getByText("cafe0001…abababab")).toBeInTheDocument();
     expect(

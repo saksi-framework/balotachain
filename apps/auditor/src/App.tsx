@@ -30,7 +30,6 @@ import {
   loadBoard,
   verifyTrackingCode,
   fileUrl,
-  verifyCodeUrl,
   verifierUrl,
   type Board,
   type BallotRecord,
@@ -828,7 +827,6 @@ function VerifyVoteCard({
             <VerifiableValue
               label="Tracking code"
               value={state.record.tracking_code}
-              checkHref={verifyCodeUrl(runId, state.record.tracking_code)}
             />
             {state.record.nullifier ? (
               <VerifiableValue
