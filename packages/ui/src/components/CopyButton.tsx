@@ -33,16 +33,47 @@ const geometry = {
 } as const;
 
 /**
+ * Put `value` on the clipboard. The async Clipboard API is missing on a
+ * plain-http LAN origin, so fall back to a hidden textarea + execCommand.
+ * Resolves true only when a copy actually happened.
+ */
+export async function copyText(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+  const area = document.createElement("textarea");
+  area.value = value;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.opacity = "0";
+  document.body.appendChild(area);
+  area.select();
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    area.remove();
+  }
+}
+
+/**
  * The outlined copy control. After a successful copy it turns teal and reads
- * "Copied" for 2 s; if the clipboard refuses, it stays on "Copy" rather than
- * claim a copy that did not happen.
+ * "Copied" for 2 s; if no copy path works it reads "Copy failed" for 2 s
+ * rather than claim a copy that did not happen.
  */
 export function CopyButton({
   value,
   label = "Copy",
   size = "md",
 }: CopyButtonProps) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+  const copied = state === "copied";
   const [hover, setHover] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,14 +85,9 @@ export function CopyButton({
   );
 
   async function onCopy() {
-    try {
-      await navigator.clipboard.writeText(value);
-    } catch {
-      return; // clipboard unavailable (insecure origin, sandboxed webview)
-    }
-    setCopied(true);
+    setState((await copyText(value)) ? "copied" : "failed");
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 2000);
+    timer.current = setTimeout(() => setState("idle"), 2000);
   }
 
   const g = geometry[size];
@@ -70,7 +96,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={onCopy}
-      aria-label={copied ? "Copied" : label}
+      aria-label={state === "idle" ? label : undefined}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -98,7 +124,13 @@ export function CopyButton({
       }}
     >
       <Glyph size={g.icon} />
-      {copied ? "Copied" : "Copy"}
+      <span aria-live="polite">
+        {state === "copied"
+          ? "Copied"
+          : state === "failed"
+            ? "Copy failed"
+            : "Copy"}
+      </span>
     </button>
   );
 }

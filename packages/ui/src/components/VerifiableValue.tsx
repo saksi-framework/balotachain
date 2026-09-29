@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { tokens } from "../tokens.js";
 import { CopyButton } from "./CopyButton.js";
 
@@ -20,6 +21,11 @@ export function middleTruncate(value: string, keep = KEEP): string {
     : `${value.slice(0, keep)}…${value.slice(-keep)}`;
 }
 
+/** "Tracking code" -> "tracking code", but "TX id" and "SHA-256" stay as-is. */
+function lowerFirst(s: string): string {
+  return /^[A-Z][a-z]/.test(s) ? s[0]!.toLowerCase() + s.slice(1) : s;
+}
+
 /** A value you can check yourself: mono text, a Copy button, a Check link. */
 export function VerifiableValue({
   value,
@@ -28,12 +34,16 @@ export function VerifiableValue({
   truncate = false,
 }: VerifiableValueProps) {
   const shown = truncate ? middleTruncate(value) : value;
+  const labelId = useId();
   return (
     <div
       style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}
     >
       {label ? (
-        <span style={{ ...tokens.typeRole.label, color: tokens.color.text2 }}>
+        <span
+          id={labelId}
+          style={{ ...tokens.typeRole.label, color: tokens.color.text2 }}
+        >
           {label}
         </span>
       ) : null}
@@ -49,6 +59,7 @@ export function VerifiableValue({
         }}
       >
         <code
+          aria-labelledby={label ? labelId : undefined}
           title={shown === value ? undefined : value}
           style={{
             ...tokens.typeRole.mono,
@@ -76,7 +87,7 @@ export function VerifiableValue({
         <CopyButton
           value={value}
           size="sm"
-          label={label ? `Copy ${label.toLowerCase()}` : "Copy"}
+          label={label ? `Copy ${lowerFirst(label)}` : "Copy"}
         />
       </div>
     </div>

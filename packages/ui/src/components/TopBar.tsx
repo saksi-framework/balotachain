@@ -78,12 +78,20 @@ function ConsoleBar({ appName, electionName, role }: ConsoleTopBarProps) {
             <ShieldCheckIcon size={20} strokeWidth={1.7} />
           </span>
           <span style={{ lineHeight: 1.25, minWidth: 0 }}>
-            <span style={{ display: "block", fontSize: 18, fontWeight: 700 }}>
+            <h1
+              style={{
+                display: "block",
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 700,
+                lineHeight: "inherit",
+              }}
+            >
               BalotaChain{" "}
               <span style={{ color: tokens.color.text2, fontWeight: 500 }}>
                 — {appName}
               </span>
-            </span>
+            </h1>
             {electionName ? (
               <span
                 style={{

@@ -76,6 +76,44 @@ describe("CopyButton", () => {
   });
 });
 
+describe("CopyButton without the Clipboard API (plain-http LAN origin)", () => {
+  beforeEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
+  });
+
+  it("falls back to execCommand and shows Copied", async () => {
+    const exec = vi.fn(() => true);
+    Object.defineProperty(document, "execCommand", {
+      value: exec,
+      configurable: true,
+    });
+    render(<CopyButton value="abc123" />);
+    const btn = host.querySelector("button")!;
+    await click(btn);
+    expect(exec).toHaveBeenCalledWith("copy");
+    expect(btn.textContent).toBe("Copied");
+    expect(host.querySelector("textarea")).toBeNull();
+  });
+
+  it("shows Copy failed for 2 s when no copy path works", async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(document, "execCommand", {
+      value: vi.fn(() => false),
+      configurable: true,
+    });
+    render(<CopyButton value="abc123" />);
+    const btn = host.querySelector("button")!;
+    await click(btn);
+    expect(btn.textContent).toBe("Copy failed");
+    expect(btn.querySelector("[aria-live=polite]")).not.toBeNull();
+    act(() => vi.advanceTimersByTime(2000));
+    expect(btn.textContent).toBe("Copy");
+  });
+});
+
 describe("VerifiableValue", () => {
   const full = "0123456789abcdef0123456789abcdef";
 
@@ -85,6 +123,18 @@ describe("VerifiableValue", () => {
     expect(text).toBe("01234567…89abcdef");
     await click(host.querySelector("button")!);
     expect(writeText).toHaveBeenCalledWith(full);
+  });
+
+  it("links the label to the value and keeps acronyms in the copy name", () => {
+    render(<VerifiableValue value={full} label="TX id" />);
+    const code = host.querySelector("code")!;
+    const labelEl = document.getElementById(
+      code.getAttribute("aria-labelledby")!,
+    );
+    expect(labelEl!.textContent).toBe("TX id");
+    expect(host.querySelector("button")!.getAttribute("aria-label")).toBe(
+      "Copy TX id",
+    );
   });
 
   it("shows the whole value and a Check link when given", () => {
@@ -105,7 +155,7 @@ describe("TopBar", () => {
         role={<span data-testid="role">Trustee 2 of 5</span>}
       />,
     );
-    expect(host.textContent).toContain("Trustee Console");
+    expect(host.querySelector("h1")!.textContent).toContain("Trustee Console");
     expect(host.textContent).toContain("SSC 2026");
     expect(host.querySelector("[data-testid=role]")!.textContent).toBe(
       "Trustee 2 of 5",
