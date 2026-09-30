@@ -1,0 +1,173 @@
+[
+  {
+    "Scenario": "tamper-ballot-proof",
+    "Layer": "offline",
+    "Action": "flip a byte in a ballot's CDS proof response",
+    "Expected": "rejected by the CDS proof check (chaincode gate cds live, auditor ballot.cds_proof simulated)",
+    "Actual": "rejected by chaincode gate cds (the declared gate): contest \"president/cand0\" CDS well-formedness proof failed: CDS branch 0 verification equation failed",
+    "Verdict": "PASS",
+    "Property": "ballot well-formedness (CDS proof)",
+    "OnChain": true,
+    "Stage": "ballots",
+    "Mount": {
+      "mounted_stage": "ballots",
+      "election_status": "open",
+      "ballots_committed": 5000,
+      "block_height": 2580
+    },
+    "GateExpected": "cds",
+    "GateObserved": "cds"
+  },
+  {
+    "Scenario": "reused-nullifier",
+    "Layer": "offline",
+    "Action": "copy a cast ballot's nullifier onto another ballot",
+    "Expected": "rejected as a double vote (chaincode gate nullifier live, auditor nullifier.unique simulated)",
+    "Actual": "rejected by chaincode gate nullifier (the declared gate): nullifier already spent in election \"sp-10k-ch4-sec-20260929-183410-129\" (double vote)",
+    "Verdict": "PASS",
+    "Property": "no double voting (per-position nullifier)",
+    "OnChain": true,
+    "Stage": "ballots",
+    "Mount": {
+      "mounted_stage": "ballots",
+      "election_status": "open",
+      "ballots_committed": 5000,
+      "block_height": 2580
+    },
+    "GateExpected": "nullifier",
+    "GateObserved": "nullifier"
+  },
+  {
+    "Scenario": "dropped-ballot",
+    "Layer": "offline",
+    "Action": "remove one committed ballot line",
+    "Expected": "auditor rejects: stream.completeness (fewer ballots than the header declares)",
+    "Actual": "on-chain: not mountable as one submission (a dropped ballot is an absence across the set); caught by the auditor — rejected by auditor check stream.completeness (the declared gate): audited 9999 of the 10000 ballot lines the header declares (1 not audited)",
+    "Verdict": "PASS",
+    "Property": "ballot-box completeness",
+    "OnChain": false,
+    "Stage": "close",
+    "Mount": {
+      "mounted_stage": "close",
+      "election_status": "closed",
+      "ballots_committed": 10000,
+      "block_height": 2681
+    },
+    "GateExpected": "stream.completeness",
+    "GateObserved": "stream.completeness;decryption.cp_proof;decryption.threshold;tally.homomorphic_sum"
+  },
+  {
+    "Scenario": "reordered-ballots",
+    "Layer": "chaincode",
+    "Action": "swap the first two ballot lines",
+    "Expected": "no gate: ordering is not checked on-chain or by the stateless auditor",
+    "Actual": "no gate exists to test",
+    "Verdict": "SKIPPED",
+    "Property": "ledger integrity (ordering)",
+    "OnChain": false,
+    "Stage": "close",
+    "Mount": {
+      "mounted_stage": "close",
+      "election_status": "closed",
+      "ballots_committed": 10000,
+      "block_height": 2681
+    },
+    "GateExpected": "",
+    "GateObserved": ""
+  },
+  {
+    "Scenario": "corrupted-ballot-bytes",
+    "Layer": "offline",
+    "Action": "corrupt a ballot's first wire byte so the protobuf no longer parses",
+    "Expected": "rejected as undecodable (chaincode gate decode live, auditor ballot.decode simulated)",
+    "Actual": "rejected by chaincode gate decode (the declared gate): decode ballot: proto: cannot parse invalid wire-format data",
+    "Verdict": "PASS",
+    "Property": "wire integrity",
+    "OnChain": true,
+    "Stage": "ballots",
+    "Mount": {
+      "mounted_stage": "ballots",
+      "election_status": "open",
+      "ballots_committed": 5000,
+      "block_height": 2580
+    },
+    "GateExpected": "decode",
+    "GateObserved": "decode"
+  },
+  {
+    "Scenario": "tamper-partial-decryption",
+    "Layer": "offline",
+    "Action": "flip a byte in a trustee's Chaum-Pedersen proof response",
+    "Expected": "auditor rejects: decryption.cp_proof (the proof does not verify)",
+    "Actual": "on-chain: not checked (shape/presence only, no caller authorization); caught by the auditor — rejected by auditor check decryption.cp_proof (the declared gate): partial_decryptions[0] (trustee 1, contest president/cand0) Chaum-Pedersen failed: proof verification failed",
+    "Verdict": "PASS",
+    "Property": "threshold-decryption integrity",
+    "OnChain": false,
+    "Stage": "ceremony",
+    "Mount": {
+      "mounted_stage": "ceremony",
+      "election_status": "closed",
+      "ballots_committed": 10000,
+      "block_height": 2693
+    },
+    "GateExpected": "decryption.cp_proof",
+    "GateObserved": "decryption.cp_proof"
+  },
+  {
+    "Scenario": "tamper-dkg-transcript",
+    "Layer": "offline",
+    "Action": "flip a byte in a trustee's DKG coefficient commitment",
+    "Expected": "auditor rejects: dkg.decode (the commitment is not a valid point)",
+    "Actual": "on-chain: not checked (shape/presence only, no caller authorization); caught by the auditor — rejected by auditor check dkg.decode (the declared gate): trustee 1 coefficient_commitments[0] is not a valid ristretto point",
+    "Verdict": "PASS",
+    "Property": "DKG transcript integrity",
+    "OnChain": false,
+    "Stage": "dkg",
+    "Mount": {
+      "mounted_stage": "dkg",
+      "election_status": "open",
+      "ballots_committed": 0,
+      "block_height": 2479
+    },
+    "GateExpected": "dkg.decode",
+    "GateObserved": "dkg.decode"
+  },
+  {
+    "Scenario": "self-issued-credential",
+    "Layer": "offline",
+    "Action": "replace a ballot with one forged under a freshly generated issuer key, every proof genuine",
+    "Expected": "rejected as issued by a key the election never declared (chaincode gate issuer live, auditor ballot.issuer_binding simulated)",
+    "Actual": "rejected by chaincode gate issuer (the declared gate): credential issuer key is not the issuer bound to election \"sp-10k-ch4-sec-20260929-183410-129\"",
+    "Verdict": "PASS",
+    "Property": "eligibility (credential issuer binding)",
+    "OnChain": true,
+    "Stage": "ballots",
+    "Mount": {
+      "mounted_stage": "ballots",
+      "election_status": "open",
+      "ballots_committed": 5000,
+      "block_height": 2580
+    },
+    "GateExpected": "issuer",
+    "GateObserved": "issuer"
+  },
+  {
+    "Scenario": "overvote",
+    "Layer": "offline",
+    "Action": "re-encrypt two of a ballot's candidate slots to 1 with valid CDS proofs, keeping its old selection proof",
+    "Expected": "rejected as selecting more than one candidate (chaincode gate selection live, auditor ballot.selection_sum simulated)",
+    "Actual": "rejected by chaincode gate selection (the declared gate): position \"president\" selection proof failed: selection proof challenge does not match Fiat-Shamir transcript",
+    "Verdict": "PASS",
+    "Property": "one selection per position (sum-to-one proof)",
+    "OnChain": true,
+    "Stage": "ballots",
+    "Mount": {
+      "mounted_stage": "ballots",
+      "election_status": "open",
+      "ballots_committed": 5000,
+      "block_height": 2580
+    },
+    "GateExpected": "selection",
+    "GateObserved": "selection"
+  }
+]

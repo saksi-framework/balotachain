@@ -1,0 +1,51 @@
+{
+  "threshold": 3,
+  "trustees": [
+    {
+      "id": "1",
+      "name": "COMELEC",
+      "submitted": true,
+      "contests": 0,
+      "submitted_at": "2026-09-29T18:35:38.658239645Z",
+      "submitting": false
+    },
+    {
+      "id": "2",
+      "name": "Civil Society Watch",
+      "submitted": true,
+      "contests": 0,
+      "submitted_at": "2026-09-29T18:36:08.70086085Z",
+      "submitting": false
+    },
+    {
+      "id": "3",
+      "name": "University IT",
+      "submitted": true,
+      "contests": 0,
+      "submitted_at": "2026-09-29T18:36:38.717892952Z",
+      "submitting": false
+    },
+    {
+      "id": "4",
+      "name": "Academe Observer",
+      "submitted": false,
+      "contests": 0,
+      "submitting": false
+    },
+    {
+      "id": "5",
+      "name": "Bar Association",
+      "submitted": false,
+      "contests": 0,
+      "submitting": false
+    }
+  ],
+  "submitted": 0,
+  "unlocked": false,
+  "published": true,
+  "on_chain": false,
+  "ready": true,
+  "started_at": "2026-09-29T18:35:24.531434002Z",
+  "closed_at": "2026-09-29T18:35:24.531434002Z",
+  "published_at": "2026-09-29T18:37:16.55419365Z"
+}

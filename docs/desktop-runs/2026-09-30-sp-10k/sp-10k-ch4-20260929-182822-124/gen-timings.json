@@ -1,0 +1,8 @@
+{
+  "credential_cpu_ms": 6083,
+  "encrypt_cpu_ms": 5223,
+  "cds_prove_cpu_ms": 16092,
+  "wall_ms": 1976,
+  "chunks": 2,
+  "chunk_voters": 5000
+}
