@@ -77,3 +77,7 @@ orderer.example.com 19070735690 /var/hyperledger/production/orderer
 ```
 
 The peer and orderer `docker logs` stay in WSL at `~/ch4/capstone/m2/logs/` (too large for git); the run's `ballots.csv` was deleted after the export and `ballots.ndjson` kept.
+
+## Contention (corrected 22:20)
+
+Not contended. The 302 samples above are Windows `\Processor(_Total)`, which includes the WSL VM running this run; preflight host CPU before the run was 2.8 %. The rule now subtracts vmmemWSL/CPUs (controller fix, 22:20). m2 stands; no rerun.
