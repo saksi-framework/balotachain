@@ -1,0 +1,30 @@
+{"containers":[{"HostConfig.Memory":0,"HostConfig.NanoCpus":0,"Name":"/peer0.org1.example.com"},{"HostConfig.Memory":0,"HostConfig.NanoCpus":0,"Name":"/orderer.example.com"},{"HostConfig.Memory":0,"HostConfig.NanoCpus":0,"Name":"/peer0.org2.example.com"}],"cpu_model":"AMD Ryzen 7 5700G with Radeon Graphics","docker_info":{"NCPU":16,"MemTotal":25199005696,"ServerVersion":"29.7.2","OSType":"linux"},"docker_version":{"Client":{"ApiVersion":"1.55","Arch":"amd64","BuildTime":"Wed Aug  5 18:27:38 2026","Context":"default","DefaultAPIVersion":"1.55","GitCommit":"a7dcaa6","GoVersion":"go1.26.5","Os":"linux","Version":"29.7.2"},"Server":{"ApiVersion":"1.55","Arch":"amd64","BuildTime":"2026-08-05T18:28:36.000000000+00:00","Components":[{"Details":{"ApiVersion":"1.55","Arch":"amd64","BuildTime":"Wed Aug  5 18:28:36 2026","Experimental":"false","GitCommit":"6a43e3d","GoVersion":"go1.26.5","KernelVersion":"6.18.33.2-microsoft-standard-WSL2","MinAPIVersion":"1.40","Module":"github.com/moby/moby/v2","ModuleVersion":"v2.0.0+unknown","Os":"linux"},"Name":"Engine","Version":"29.7.2"},{"Details":{"GitCommit":"aad11006b869517fcd3009450b6f82da282e1a9b"},"Name":"containerd","Version":"v2.3.3"},{"Details":{"GitCommit":"v1.4.3-0-gbb14dabe"},"Name":"runc","Version":"1.4.3"},{"Details":{"GitCommit":"de40ad0"},"Name":"docker-init","Version":"0.19.0"}],"GitCommit":"6a43e3d","GoVersion":"go1.26.5","KernelVersion":"6.18.33.2-microsoft-standard-WSL2","MinAPIVersion":"1.40","Os":"linux","Platform":{"Name":"Docker Desktop 4.90.0 (238679)"},"Version":"29.7.2"}},"event":"env","git_head_console":"4a38a54fe0223b58f28c53ec54e47fbeab222837","git_head_saksi":"4a38a54fe0223b58f28c53ec54e47fbeab222837","go_arch":"amd64","go_os":"linux","go_version":"go1.23.4","null_probes":[],"orderer_batch":{"AbsoluteMaxBytes":"99 MB","BatchTimeout":"2s","MaxMessageCount":"50","PreferredMaxBytes":"2 MB","SnapshotIntervalSize":"268435456","saksi_configtx":"saksi"},"phase_timeout_s":18000,"saksi_demo_sha256":"112fffa0124943a4160f4b43f1178459c0db845c9b19aa4998d890e49c763c52","ts":"2026-09-30T17:58:33Z","uname":"Linux Ban-PC 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux"}
+{"candidates":28,"distribution":"realistic","event":"run.start","mode":"onchain","mono_ms":4,"positions":3,"run_id":"mp-1k-ch4-cand28-20260930-175832-24","ts":"2026-09-30T17:58:33Z","voters":1000}
+{"event":"rep.start","index":1,"kind":"measured","mono_ms":5,"ts":"2026-09-30T17:58:33Z"}
+{"event":"stage.generate.start","mono_ms":8,"ts":"2026-09-30T17:58:33Z"}
+{"event":"stage.generate.end","mono_ms":5022,"ok":true,"ts":"2026-09-30T17:58:38Z"}
+{"event":"stage.check.start","mono_ms":0,"ts":"2026-09-30T17:58:38Z"}
+{"event":"stage.check.end","mono_ms":3,"ok":true,"rows":1000,"ts":"2026-09-30T17:58:38Z"}
+{"event":"stage.submit.start","mono_ms":0,"ts":"2026-09-30T17:58:38Z"}
+{"event":"stage.bundle.start","mono_ms":0,"ts":"2026-09-30T17:58:38Z"}
+{"event":"stage.bundle.end","mono_ms":7,"ok":true,"ts":"2026-09-30T17:58:38Z"}
+{"concurrency":128,"event":"stage.ballots.start","mono_ms":0,"n":3000,"send_rate":0,"ts":"2026-09-30T17:58:42Z"}
+{"event":"segment.start","index":0,"mono_ms":3,"tag":"measured","ts":"2026-09-30T17:58:42Z"}
+{"done":1000,"event":"ballots.progress","mono_ms":3782,"ts":"2026-09-30T17:58:46Z"}
+{"block_in_bytes":0,"block_out_bytes":825000000,"container":"peer0.org1.example.com","cpu_pct":221.92,"event":"sample","mem_bytes":378221363,"mono_ms":7214,"net_in_bytes":851000000,"net_out_bytes":1190000000,"ts":"2026-09-30T17:58:49Z"}
+{"block_in_bytes":0,"block_out_bytes":562000000,"container":"orderer.example.com","cpu_pct":81.28,"event":"sample","mem_bytes":398878310,"mono_ms":7214,"net_in_bytes":284000000,"net_out_bytes":564000000,"ts":"2026-09-30T17:58:49Z"}
+{"block_in_bytes":0,"block_out_bytes":849000000,"container":"peer0.org2.example.com","cpu_pct":72.35,"event":"sample","mem_bytes":292028416,"mono_ms":7214,"net_in_bytes":284000000,"net_out_bytes":1270000,"ts":"2026-09-30T17:58:49Z"}
+{"container":"client","cpu_pct":null,"event":"sample","mem_bytes":195785776,"mono_ms":7215,"ts":"2026-09-30T17:58:49Z"}
+{"done":2000,"event":"ballots.progress","mono_ms":7450,"ts":"2026-09-30T17:58:50Z"}
+{"block_in_bytes":0,"block_out_bytes":966000000,"container":"peer0.org1.example.com","cpu_pct":222.78,"event":"sample","mem_bytes":357564416,"mono_ms":11330,"net_in_bytes":984000000,"net_out_bytes":1340000000,"ts":"2026-09-30T17:58:54Z"}
+{"block_in_bytes":0,"block_out_bytes":632000000,"container":"orderer.example.com","cpu_pct":68.55,"event":"sample","mem_bytes":510341939,"mono_ms":11330,"net_in_bytes":320000000,"net_out_bytes":634000000,"ts":"2026-09-30T17:58:54Z"}
+{"block_in_bytes":0,"block_out_bytes":966000000,"container":"peer0.org2.example.com","cpu_pct":75.49,"event":"sample","mem_bytes":278816358,"mono_ms":11330,"net_in_bytes":319000000,"net_out_bytes":1350000,"ts":"2026-09-30T17:58:54Z"}
+{"container":"client","cpu_pct":48.60567681054154,"event":"sample","mem_bytes":195785776,"mono_ms":11330,"ts":"2026-09-30T17:58:54Z"}
+{"done":3000,"event":"ballots.progress","mono_ms":11703,"ts":"2026-09-30T17:58:54Z"}
+{"committed":3000,"dropped":0,"event":"stage.ballots.end","mono_ms":11895,"stopped":false,"submitted":3000,"ts":"2026-09-30T17:58:54Z","window_ms":11845}
+{"committed":3000,"driver_ceiling_tps":241.50520625414413,"event":"segment.end","index":0,"mono_ms":11898,"p50_ms":530.009,"tps":253.25021432698594,"ts":"2026-09-30T17:58:54Z","window_ms":11845}
+{"event":"stage.submit.end","mono_ms":79089,"ok":true,"ts":"2026-09-30T17:59:57Z"}
+{"event":"stage.verify.start","mono_ms":0,"ts":"2026-09-30T17:59:57Z"}
+{"ballots":0,"event":"ledger.dump","mono_ms":505,"ok":false,"read_path":"","ts":"2026-09-30T17:59:58Z"}
+{"event":"stage.verify.end","failed_checks":[],"mono_ms":4805,"ok":true,"overall":"pass","ts":"2026-09-30T18:00:02Z"}
+{"arrival_tps":0.027777777777777776,"event":"run.end","failed":false,"ledger_audit":"not run","mono_ms":4810,"reason":"","scaling_limit":"inconclusive","sustained":true,"sustained_tps":253.25021432698594,"ts":"2026-09-30T18:00:02Z"}

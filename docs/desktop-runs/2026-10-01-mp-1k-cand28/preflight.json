@@ -1,0 +1,54 @@
+{
+  "at": "2026-09-30T17:55:15.381652408Z",
+  "run": {
+    "mode": "onchain",
+    "voters": 1000,
+    "positions": 3,
+    "candidates": 28,
+    "concurrency": 128
+  },
+  "fabric": {
+    "enabled": true,
+    "reachable": true,
+    "peer": "localhost:7051",
+    "channel": "saksi"
+  },
+  "orderer_batch": {
+    "AbsoluteMaxBytes": "99 MB",
+    "BatchTimeout": "2s",
+    "MaxMessageCount": "50",
+    "PreferredMaxBytes": "2 MB",
+    "SnapshotIntervalSize": "268435456",
+    "saksi_configtx": "saksi"
+  },
+  "ladder": {
+    "ok": true,
+    "ladder_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837",
+    "console_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837"
+  },
+  "disk": {
+    "path": "/home/user/.saksi/campaign/runs",
+    "free_bytes": 889742893056,
+    "projected_ledger_bytes": 36000000,
+    "projected_run_bytes": null
+  },
+  "memory": {
+    "available_bytes": 23233458176,
+    "projected_audit_bytes": 34004432
+  },
+  "host": {
+    "at": "2026-09-30T17:55:11.761546846Z",
+    "guest_load1": 0.76,
+    "guest_load5": 3.08,
+    "host_cpu_pct": 21.6910041447385,
+    "cpus": 16
+  },
+  "phase_timeout": {
+    "seconds": 18000,
+    "longest_phase": "ballot submission",
+    "estimated_s": 3.7199999999999998
+  },
+  "verify_threads_default": 16,
+  "concurrency_min_advised": 50,
+  "warnings": []
+}
