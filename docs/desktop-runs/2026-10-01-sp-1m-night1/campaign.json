@@ -1,8 +1,8 @@
 {
-  "id": "campaign-20261001-035442-2",
+  "id": "campaign-20260930-214456-14",
   "status": "done",
-  "created_at": "2026-10-01T03:54:42.638797957Z",
-  "finished_at": "2026-10-01T06:40:52.907207806Z",
+  "created_at": "2026-09-30T21:44:56.132069595Z",
+  "finished_at": "2026-09-30T23:56:17.338134012Z",
   "config": {
     "name": "SP-1M ch4",
     "trustees": [
@@ -39,7 +39,7 @@
     "reps": 3
   },
   "preflight": {
-    "at": "2026-10-01T03:54:42.638361878Z",
+    "at": "2026-09-30T21:44:56.131588682Z",
     "run": {
       "mode": "onchain",
       "voters": 1000000,
@@ -68,19 +68,19 @@
     },
     "disk": {
       "path": "/home/user/.saksi/campaign/runs",
-      "free_bytes": 899189248000,
+      "free_bytes": 842162552832,
       "projected_ledger_bytes": 12000000000,
       "projected_run_bytes": null
     },
     "memory": {
-      "available_bytes": 23232622592,
+      "available_bytes": 23117492224,
       "projected_audit_bytes": 183554432
     },
     "host": {
-      "at": "2026-10-01T03:54:39.153433967Z",
-      "guest_load1": 1.87,
-      "guest_load5": 1.29,
-      "host_cpu_pct": 4.75821631345547,
+      "at": "2026-09-30T21:44:52.657618824Z",
+      "guest_load1": 3.28,
+      "guest_load5": 8.08,
+      "host_cpu_pct": 3.69690641788776,
       "cpus": 16
     },
     "phase_timeout": {
@@ -96,64 +96,66 @@
     {
       "index": 1,
       "kind": "measured",
-      "run_id": "sp-1m-ch4-20261001-035446-1",
+      "run_id": "sp-1m-ch4-20260930-214459-40",
       "status": "done",
-      "committed_tps": 628.118,
-      "latency_p99_ms": 391.18,
+      "committed_tps": 428.252,
+      "latency_p99_ms": 623.83,
       "failed": false,
       "host_start": {
-        "at": "2026-10-01T03:54:42.639656902Z",
-        "guest_load1": 1.72,
-        "guest_load5": 1.27,
-        "host_cpu_pct": 18.3897641987445
+        "at": "2026-09-30T21:44:56.149457505Z",
+        "guest_load1": 3.28,
+        "guest_load5": 8.08,
+        "host_cpu_pct": 21.2035872226042
       },
       "host_end": {
-        "at": "2026-10-01T04:46:14.644381163Z",
-        "guest_load1": 9.96,
-        "guest_load5": 10.82,
-        "host_cpu_pct": 1.97714358723955
+        "at": "2026-09-30T22:47:29.072616343Z",
+        "guest_load1": 9.02,
+        "guest_load5": 10.15,
+        "host_cpu_pct": 9.18014909114278
       }
     },
     {
       "index": 2,
       "kind": "measured",
-      "run_id": "sp-1m-ch4-20261001-044622-2",
-      "status": "done",
-      "committed_tps": 574.466,
-      "latency_p99_ms": 482.31,
-      "failed": false,
+      "run_id": "sp-1m-ch4-20260930-224736-41",
+      "status": "failed",
+      "committed_tps": 412.807,
+      "latency_p99_ms": 626.39,
+      "failed": true,
+      "fail_reason": "stage_error: submit: 67300 of 1000000 ballots did not commit",
       "host_start": {
-        "at": "2026-10-01T04:46:18.974185915Z",
-        "guest_load1": 9.17,
-        "guest_load5": 10.64,
-        "host_cpu_pct": 3.28626522568259
+        "at": "2026-09-30T22:47:32.955872097Z",
+        "guest_load1": 8.29,
+        "guest_load5": 9.98,
+        "host_cpu_pct": 6.52640814131116
       },
       "host_end": {
-        "at": "2026-10-01T05:42:46.178257636Z",
-        "guest_load1": 9.25,
-        "guest_load5": 10.63,
-        "host_cpu_pct": 5.20947355888703
+        "at": "2026-09-30T23:38:37.976694211Z",
+        "guest_load1": 11.7,
+        "guest_load5": 12.42,
+        "host_cpu_pct": 18.818503770302
       }
     },
     {
       "index": 3,
       "kind": "measured",
-      "run_id": "sp-1m-ch4-20261001-054253-3",
-      "status": "done",
-      "committed_tps": 561.198,
-      "latency_p99_ms": 508.866,
-      "failed": false,
+      "run_id": "sp-1m-ch4-20260930-233845-42",
+      "status": "failed",
+      "committed_tps": null,
+      "latency_p99_ms": null,
+      "failed": true,
+      "fail_reason": "stage_error: submit: CreateElection: submit CreateElection: rpc error: code = Unavailable desc = connection error: desc = \"transport: Error while dialing: dial tcp 127.0.0.1:7051: connect: connection refused\"",
       "host_start": {
-        "at": "2026-10-01T05:42:49.797168905Z",
-        "guest_load1": 8.51,
-        "guest_load5": 10.46,
-        "host_cpu_pct": 4.8624999346702
+        "at": "2026-09-30T23:38:42.298240947Z",
+        "guest_load1": 10.77,
+        "guest_load5": 12.21,
+        "host_cpu_pct": 12.5886583963033
       },
       "host_end": {
-        "at": "2026-10-01T06:40:48.693644945Z",
-        "guest_load1": 8.55,
-        "guest_load5": 10.58,
-        "host_cpu_pct": 9.01584164704845
+        "at": "2026-09-30T23:56:12.310249661Z",
+        "guest_load1": 13.53,
+        "guest_load5": 10.72,
+        "host_cpu_pct": null
       }
     }
   ]

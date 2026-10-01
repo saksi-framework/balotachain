@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-01T03:54:42.638361878Z",
+  "at": "2026-09-30T21:44:56.131588682Z",
   "run": {
     "mode": "onchain",
     "voters": 1000000,
@@ -28,19 +28,19 @@
   },
   "disk": {
     "path": "/home/user/.saksi/campaign/runs",
-    "free_bytes": 899189248000,
+    "free_bytes": 842162552832,
     "projected_ledger_bytes": 12000000000,
     "projected_run_bytes": null
   },
   "memory": {
-    "available_bytes": 23232622592,
+    "available_bytes": 23117492224,
     "projected_audit_bytes": 183554432
   },
   "host": {
-    "at": "2026-10-01T03:54:39.153433967Z",
-    "guest_load1": 1.87,
-    "guest_load5": 1.29,
-    "host_cpu_pct": 4.75821631345547,
+    "at": "2026-09-30T21:44:52.657618824Z",
+    "guest_load1": 3.28,
+    "guest_load5": 8.08,
+    "host_cpu_pct": 3.69690641788776,
     "cpus": 16
   },
   "phase_timeout": {

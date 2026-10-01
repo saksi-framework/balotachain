@@ -1,3 +1,28 @@
-rep 1 (measured): run sp-1m-ch4-20260930-214459-40
-rep 2 (measured): run sp-1m-ch4-20260930-224736-41
-rep 3 (measured): run sp-1m-ch4-20260930-233845-42
+2026-10-01 11:53:08 === STEP sp1m begin
+2026-10-01 11:53:09 budget sp-1m-ch4-a1: C: free 32.1 GB, Q: free 436.0 GB, ubuntu vhdx 214.5 GB, WSL used 126.9 GB (df avail 899.2); run folders need 37.5 GB of room 94.7; ledger x3 needs 102.0 GB of Q: room 411.0
+2026-10-01 11:53:09 reset 1000000x1 started network-reset-20261001-035309-1
+2026-10-01 11:54:39 reset network-reset-20261001-035309-1 done chain_height 6 82956 ms
+2026-10-01 11:54:42 preflight sp-1m-ch4-a1: host_cpu 4.75821631345547 load1 1.87 warnings [] disk free 899189252096 proj 12000000000 phase_timeout {'seconds': 18000, 'longest_phase': 'ballot submission', 'estimated_s': 1240} -> green
+2026-10-01 11:54:42 campaign sp-1m-ch4-a1 started campaign-20261001-035442-2 options {'warmups': 0, 'reps': 3}
+2026-10-01 14:41:51 campaign campaign-20261001-035442-2 done error=None measured 3 host>25 {} guest>4 (noted only) ['sp-1m-ch4-20261001-035446-1', 'sp-1m-ch4-20261001-044622-2', 'sp-1m-ch4-20261001-054253-3'] failed []
+2026-10-01 14:41:51   1 measured sp-1m-ch4-20261001-035446-1 done tps 628.118 p99 391.18 failed False  host 18.3897641987445/1.72 -> 1.97714358723955/9.96
+2026-10-01 14:41:51   2 measured sp-1m-ch4-20261001-044622-2 done tps 574.466 p99 482.31 failed False  host 3.28626522568259/9.17 -> 5.20947355888703/9.25
+2026-10-01 14:41:51   3 measured sp-1m-ch4-20261001-054253-3 done tps 561.198 p99 508.866 failed False  host 4.8624999346702/8.51 -> 9.01584164704845/8.55
+2026-10-01 14:41:55 export campaign-20261001-035442-2 -> /home/user/ch4/night2/exports/campaign-20261001-035442-2.zip (166661 bytes)
+2026-10-01 14:41:55 summary campaign-20261001-035442-2: {"committed_tps": ["574.466", "3"], "latency_p50_ms": ["230.351", "3"], "latency_p99_ms": ["482.31", "3"], "driver_ceiling_tps": ["555.673", "3"], "runs_failed": ["0", "1"], "failure_rate": ["0", "1"]} {}
+2026-10-01 14:41:55 deleted /home/user/.saksi/campaign/runs/sp-1m-ch4-20261001-035446-1/ballots.csv (4059889026 bytes)
+2026-10-01 14:41:56 deleted /home/user/.saksi/campaign/runs/sp-1m-ch4-20261001-044622-2/ballots.csv (4059889026 bytes)
+2026-10-01 14:41:56 deleted /home/user/.saksi/campaign/runs/sp-1m-ch4-20261001-054253-3/ballots.csv (4059889026 bytes)
+2026-10-01 14:48:58 evidence sp-1m-ch4:
+peer0.org1.example.com 35483116738 /var/hyperledger/production
+peer0.org2.example.com 35480530091 /var/hyperledger/production
+orderer.example.com 29132099100 /var/hyperledger/production/orderer
+35479954099	/var/hyperledger/production/ledgersData
+/dev/sdc       1081101176832 120206041088 905902780416  12% /var/hyperledger/production
+total 506412
+-rw-r--r-- 1 user user 100109581 Oct  1 14:48 orderer.example.com.log.gz
+-rw-r--r-- 1 user user 412053664 Oct  1 14:45 peer0.org1.example.com.log.gz
+-rw-r--r-- 1 user user   6392126 Oct  1 14:47 peer0.org2.example.com.log.gz
+
+2026-10-01 14:48:58 === STEP sp1m DONE {"campaign": "campaign-20261001-035442-2", "attempts": [{"campaign": "campaign-20261001-035442-2", "reset": "network-reset-20261001-035309-1", "host_contended": {}, "failed": []}]}
+2026-10-01 14:48:58 === STOP file present: stopping cleanly before sp192m
