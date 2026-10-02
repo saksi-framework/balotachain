@@ -1,0 +1,27 @@
+2026-10-01 16:29:35 reset (warmup) network-reset-20261001-082804-1 done, chain height 6, 81329 ms
+2026-10-01 18:23:52 reset (m1) network-reset-20261001-102119-3 done, chain height 6, 149764 ms
+2026-10-01 20:31:09 reset (pre-compaction wipe) network-reset-20261001-122902-1 done, chain height 6, 107855 ms
+2026-10-01 20:31:09 compaction task start (C: 45.7 GB free, Q: 217.7 GB free, docker vhdx 232.3 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 20:32:09 compaction done: 2026-10-01T20:31:10 start; vhdx 216.3 GB; Q free 202.8 GB | 2026-10-01T20:31:41 done; vhdx 13.2 GB; Q free 405.8 GB | 2026-10-01T20:31:41 docker relaunched
+2026-10-01 20:34:36 reset (m2) network-reset-20261001-123306-1 done, chain height 6, 84007 ms
+2026-10-01 22:16:15 reset (pre-compaction wipe) network-reset-20261001-141444-3 done, chain height 6, 91038 ms
+2026-10-01 22:16:15 compaction task start (C: 45.5 GB free, Q: 207.3 GB free, docker vhdx 242.7 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 22:17:15 compaction done: 2026-10-01T22:16:16 start; vhdx 226 GB; Q free 193 GB | 2026-10-01T22:16:49 done; vhdx 13.3 GB; Q free 405.7 GB | 2026-10-01T22:16:49 docker relaunched
+2026-10-01 22:21:32 reset (m3) network-reset-20261001-142002-1 done, chain height 6, 82470 ms
+2026-10-02 18:04:47 reset (pre-compaction wipe) network-reset-20261002-100317-1 done, chain height 6, 84996 ms
+2026-10-02 18:04:47 compaction task start (C: 46.1 GB free, Q: 223.4 GB free, docker vhdx 226.5 GB, ubuntu vhdx 214.49 GB)
+2026-10-02 18:05:47 compaction done: 2026-10-02T18:04:49 start; vhdx 211 GB; Q free 208.1 GB | 2026-10-02T18:05:22 done; vhdx 13.5 GB; Q free 405.5 GB | 2026-10-02T18:05:22 docker relaunched
+2026-10-02 18:07:26 reset (sp35-warmup) network-reset-20261002-100555-1 done, chain height 6, 84096 ms
+2026-10-02 21:50:11 C: check sp35-m1: run writes ~43.2 GB inside the Ubuntu disk (3524078 records); room 54.0 GB (C: above 15 GB + 43.6 GB ext4.vhdx slack); C: 25.4 GB free, Q: 41.7 GB free, docker vhdx 408.2 GB, ubuntu vhdx 231.53 GB
+2026-10-02 21:50:11 C: sp35-m1 keeps ~13.5 GB after csv deletion and zstd (ratio 0.4904)
+2026-10-02 21:50:22 STOPPED at sp35-m1: reset (pre-compaction wipe): 409 {'busy': ['sp-3-5m-ch4-warmup-20261002-100733-1'], 'error': 'a phase is running on [sp-3-5m-ch4-warmup-20261002-100733-1]: a network-reset would share the network with it; let it finish or cancel it first'}
+2026-10-02 22:09:35 C: check sp35-m1: run writes ~43.2 GB inside the Ubuntu disk (3524078 records); room 71.4 GB (C: above 15 GB + 57.3 GB ext4.vhdx slack); C: 29.0 GB free, Q: 41.7 GB free, docker vhdx 408.2 GB, ubuntu vhdx 231.53 GB
+2026-10-02 22:09:35 C: sp35-m1 keeps ~13.5 GB after csv deletion and zstd (ratio 0.4904)
+2026-10-02 22:11:38 reset (pre-compaction wipe) network-reset-20261002-140936-1 done, chain height 6, 105157 ms
+2026-10-02 22:11:38 compaction task start (C: 29.0 GB free, Q: 41.7 GB free, docker vhdx 408.2 GB, ubuntu vhdx 231.53 GB)
+2026-10-02 22:12:38 compaction done: 2026-10-02T22:11:39 start; vhdx 380.2 GB; Q free 38.8 GB | 2026-10-02T22:12:10 done; vhdx 13.6 GB; Q free 405.4 GB | 2026-10-02T22:12:10 docker relaunched
+2026-10-02 22:14:17 reset (sp35-m1) network-reset-20261002-141246-1 done, chain height 6, 82137 ms
+2026-10-02 22:14:20 preflight sp35-m1 green: host CPU 0.0 %, load1 3.36, phase_timeout {'seconds': 28800, 'longest_phase': 'ballot submission', 'estimated_s': 4369.856719999}, no warnings
+2026-10-02 22:15:21 sp35-m1: run sp-3-5m-ch4-m1-20261002-141424-1
+2026-10-03 01:20:47 sp35-m1: resources: ballot window: 2026-10-02 22:34:48 to 2026-10-03 00:18:26 | host CPU samples in window: 621, max 84.0 % (includes the WSL VM) | host CPU minus the WSL VM (vmmemWSL / CPUs): 621 samples, max 30.3 %, over 25 % (contended): 1 | top container CPU peaks in window: dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 502 %, peer0.org1.example.com 393 %, peer0.org2.example.com 166 %
+2026-10-03 01:24:15 sp35-m1: ledger du: peer0.org1.example.com 41798752107 /var/hyperledger/production | peer0.org2.example.com 41797405324 /var/hyperledger/production | orderer.example.com 34082780983 /var/hyperledger/production/orderer | /dev/sdd       1081101176832 139855843328 886252978176  14% /var/hyperledger/production | 

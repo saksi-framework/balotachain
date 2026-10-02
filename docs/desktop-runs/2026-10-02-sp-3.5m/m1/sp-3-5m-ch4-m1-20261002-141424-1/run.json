@@ -1,0 +1,43 @@
+{
+  "run_id": "sp-3-5m-ch4-m1-20261002-141424-1",
+  "config": {
+    "name": "SP-3.5M ch4 m1",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 1,
+    "candidates": 4,
+    "voters": 3524078,
+    "distribution": "realistic",
+    "mode": "onchain",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "window_s": 0,
+    "rep": {
+      "index": 1,
+      "kind": "measured"
+    },
+    "skip_attacks": true
+  },
+  "created_at": "2026-10-02T14:14:24.632991317Z",
+  "commit": {
+    "git_head_console": "4a38a54fe0223b58f28c53ec54e47fbeab222837",
+    "git_head_saksi": "4a38a54fe0223b58f28c53ec54e47fbeab222837"
+  }
+}
