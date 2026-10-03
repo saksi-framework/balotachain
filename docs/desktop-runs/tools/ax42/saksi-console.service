@@ -1,0 +1,25 @@
+[Unit]
+Description=Saksi research election console (tools/up.sh, study build 4a38a54)
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Code/saksi
+Environment=HOME=/root
+Environment=PATH=/root/Code/fabric-samples/bin:/usr/local/go/bin:/root/go/bin:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=GOTOOLCHAIN=local
+Environment=RUSTUP_TOOLCHAIN=1.98.1
+Environment=SAKSI_PHASE_TIMEOUT=12h
+Environment=SAKSI_ADDR=127.0.0.1:8090
+ExecStart=/root/Code/saksi/tools/up.sh
+StandardOutput=append:/root/ax42/console.log
+StandardError=append:/root/ax42/console.log
+KillSignal=SIGINT
+TimeoutStopSec=90
+Restart=no
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

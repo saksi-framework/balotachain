@@ -1,0 +1,19 @@
+[Unit]
+Description=Chapter 4 AX42 run controller (MP on-chain tiers)
+After=docker.service network-online.target
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/ax42
+Environment=HOME=/root
+Environment=PATH=/root/Code/fabric-samples/bin:/usr/local/go/bin:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/usr/bin/python3 -u /root/ax42/controller.py
+Restart=on-failure
+RestartSec=60
+StandardOutput=append:/root/ax42/controller.out
+StandardError=append:/root/ax42/controller.out
+
+[Install]
+WantedBy=multi-user.target
