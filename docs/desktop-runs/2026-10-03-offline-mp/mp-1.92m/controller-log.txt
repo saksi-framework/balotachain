@@ -1,0 +1,43 @@
+2026-10-01 16:29:35 reset (warmup) network-reset-20261001-082804-1 done, chain height 6, 81329 ms
+2026-10-01 18:23:52 reset (m1) network-reset-20261001-102119-3 done, chain height 6, 149764 ms
+2026-10-01 20:31:09 reset (pre-compaction wipe) network-reset-20261001-122902-1 done, chain height 6, 107855 ms
+2026-10-01 20:31:09 compaction task start (C: 45.7 GB free, Q: 217.7 GB free, docker vhdx 232.3 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 20:32:09 compaction done: 2026-10-01T20:31:10 start; vhdx 216.3 GB; Q free 202.8 GB | 2026-10-01T20:31:41 done; vhdx 13.2 GB; Q free 405.8 GB | 2026-10-01T20:31:41 docker relaunched
+2026-10-01 20:34:36 reset (m2) network-reset-20261001-123306-1 done, chain height 6, 84007 ms
+2026-10-01 22:16:15 reset (pre-compaction wipe) network-reset-20261001-141444-3 done, chain height 6, 91038 ms
+2026-10-01 22:16:15 compaction task start (C: 45.5 GB free, Q: 207.3 GB free, docker vhdx 242.7 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 22:17:15 compaction done: 2026-10-01T22:16:16 start; vhdx 226 GB; Q free 193 GB | 2026-10-01T22:16:49 done; vhdx 13.3 GB; Q free 405.7 GB | 2026-10-01T22:16:49 docker relaunched
+2026-10-01 22:21:32 reset (m3) network-reset-20261001-142002-1 done, chain height 6, 82470 ms
+2026-10-02 18:04:47 reset (pre-compaction wipe) network-reset-20261002-100317-1 done, chain height 6, 84996 ms
+2026-10-02 18:04:47 compaction task start (C: 46.1 GB free, Q: 223.4 GB free, docker vhdx 226.5 GB, ubuntu vhdx 214.49 GB)
+2026-10-02 18:05:47 compaction done: 2026-10-02T18:04:49 start; vhdx 211 GB; Q free 208.1 GB | 2026-10-02T18:05:22 done; vhdx 13.5 GB; Q free 405.5 GB | 2026-10-02T18:05:22 docker relaunched
+2026-10-02 18:07:26 reset (sp35-warmup) network-reset-20261002-100555-1 done, chain height 6, 84096 ms
+2026-10-02 21:50:22 STOPPED at sp35-m1: reset (pre-compaction wipe): 409 {'busy': ['sp-3-5m-ch4-warmup-20261002-100733-1'], 'error': 'a phase is running on [sp-3-5m-ch4-warmup-20261002-100733-1]: a network-reset would share the network with it; let it finish or cancel it first'}
+2026-10-02 22:11:38 reset (pre-compaction wipe) network-reset-20261002-140936-1 done, chain height 6, 105157 ms
+2026-10-02 22:11:38 compaction task start (C: 29.0 GB free, Q: 41.7 GB free, docker vhdx 408.2 GB, ubuntu vhdx 231.53 GB)
+2026-10-02 22:12:38 compaction done: 2026-10-02T22:11:39 start; vhdx 380.2 GB; Q free 38.8 GB | 2026-10-02T22:12:10 done; vhdx 13.6 GB; Q free 405.4 GB | 2026-10-02T22:12:10 docker relaunched
+2026-10-02 22:14:17 reset (sp35-m1) network-reset-20261002-141246-1 done, chain height 6, 82137 ms
+2026-10-03 01:52:29 reset (pre-compaction wipe) network-reset-20261002-175059-3 done, chain height 6, 86110 ms
+2026-10-03 01:52:29 compaction task start (C: 28.9 GB free, Q: 98.2 GB free, docker vhdx 434.8 GB, ubuntu vhdx 231.53 GB)
+2026-10-03 01:53:29 compaction done: 2026-10-03T01:52:29 start; vhdx 405 GB; Q free 91.4 GB | 2026-10-03T01:52:59 done; vhdx 13.8 GB; Q free 482.6 GB | 2026-10-03T01:52:59 docker relaunched
+2026-10-03 01:55:08 reset (sp35-m2) network-reset-20261002-175337-1 done, chain height 6, 81955 ms
+2026-10-03 02:16:59 disk check: Q: 517.9 GB free >= need 432.9 GB and docker vhdx 15.0 GB: compaction not needed
+2026-10-03 02:18:37 reset (sp35-m2) network-reset-20261002-181707-1 done, chain height 6, 85687 ms
+2026-10-03 11:45:40 disk check: Q: 476.2 GB free >= need 432.9 GB and docker vhdx 14.9 GB: compaction not needed
+2026-10-03 11:57:04 disk check: Q: 476.2 GB free >= need 432.9 GB and docker vhdx 14.9 GB: compaction not needed
+2026-10-03 12:00:02 reset (sp35-m3) network-reset-20261003-035832-1 done, chain height 6, 84016 ms
+2026-10-03 15:26:42 reset (post-capstone wipe) network-reset-20261003-072442-3 done, chain height 6, 90571 ms
+2026-10-03 15:26:42 compaction task start (C: 49.5 GB free, Q: 114.8 GB free, docker vhdx 376.3 GB, ubuntu vhdx 212.98 GB)
+2026-10-03 15:27:12 compaction done: 2026-10-03T15:26:43 start; vhdx 350.4 GB; Q free 107 GB | 2026-10-03T15:27:09 done; vhdx 14.1 GB; Q free 443.3 GB | 2026-10-03T15:27:09 docker relaunched
+2026-10-03 15:49:22 reset (post-capstone wipe) network-reset-20261003-074752-1 done, chain height 6, 83935 ms
+2026-10-03 15:49:22 compaction task start (C: 49.5 GB free, Q: 475.7 GB free, docker vhdx 15.4 GB, ubuntu vhdx 212.98 GB)
+2026-10-03 15:49:52 compaction done: 2026-10-03T15:49:23 start; vhdx 14.3 GB; Q free 443 GB | 2026-10-03T15:49:46 done; vhdx 14.2 GB; Q free 443.2 GB | 2026-10-03T15:49:46 docker relaunched
+2026-10-03 16:11:55 reset (post-capstone wipe) network-reset-20261003-081024-1 done, chain height 6, 83791 ms
+2026-10-03 16:11:55 compaction task start (C: 49.4 GB free, Q: 475.6 GB free, docker vhdx 15.5 GB, ubuntu vhdx 212.98 GB)
+2026-10-03 16:12:25 compaction done: 2026-10-03T16:11:55 start; vhdx 14.5 GB; Q free 442.9 GB | 2026-10-03T16:12:18 done; vhdx 14.2 GB; Q free 443.2 GB | 2026-10-03T16:12:18 docker relaunched
+2026-10-03 22:03:39 C: check off-mp-1.92m: run writes ~48.1 GB inside the Ubuntu disk (5765751 records); room 121.1 GB (C: above 15 GB + 87.8 GB ext4.vhdx slack); C: 48.3 GB free, Q: 413.2 GB free, docker vhdx 15.6 GB, ubuntu vhdx 212.98 GB
+2026-10-03 22:03:39 C: off-mp-1.92m keeps ~11.1 GB after csv deletion and zstd (ratio 0.4904)
+2026-10-03 22:03:51 preflight off-mp-1.92m green: host CPU 3.7 %, load1 0.48, phase_timeout {'seconds': 28800, 'longest_phase': 'generate', 'estimated_s': 1037.835179999}, no warnings
+2026-10-03 22:04:51 off-mp-1.92m: run mp-1-92m-ch4-offline-20261003-140355-1
+2026-10-03 22:56:17 off-mp-1.92m: resources: ballot window: 2026-10-03 22:03:55 to 2026-10-03 22:55:36 | host CPU samples in window: 0, max nan % (includes the WSL VM) | host CPU minus the WSL VM (vmmemWSL / CPUs): 0 samples, max nan %, over 25 % (contended): 0 | top container CPU peaks in window: peer0.org2.example.com 4 %, peer0.org1.example.com 2 %, orderer.example.com 1 %
+2026-10-03 22:56:17 off-mp-1.92m: ledger du: offline run: no ledger
