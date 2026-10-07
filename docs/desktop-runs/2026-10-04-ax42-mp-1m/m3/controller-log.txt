@@ -1,0 +1,18 @@
+2026-10-04 01:00:12 reset (mp1k) network-reset-20261003-165857-2 done, chain height 6, 64396 ms
+2026-10-04 01:07:13 reset (mp10k) network-reset-20261003-170558-4 done, chain height 6, 62764 ms
+2026-10-04 01:26:04 reset (mp50k) network-reset-20261003-172449-6 done, chain height 6, 64706 ms
+2026-10-04 02:08:46 reset (mp483k-warmup) network-reset-20261003-180731-8 done, chain height 6, 68388 ms
+2026-10-04 03:16:56 reset (mp483k-m1) network-reset-20261003-191541-10 done, chain height 6, 69061 ms
+2026-10-04 04:27:06 reset (mp483k-m2) network-reset-20261003-202551-12 done, chain height 6, 67942 ms
+2026-10-04 05:37:17 reset (mp483k-m3) network-reset-20261003-213602-14 done, chain height 6, 67842 ms
+2026-10-04 06:47:25 reset (mp1m-warmup) network-reset-20261003-224610-16 done, chain height 6, 68064 ms
+2026-10-04 09:14:36 reset (mp1m-m1) network-reset-20261004-011321-18 done, chain height 6, 68635 ms
+2026-10-04 11:47:45 reset (mp1m-m2) network-reset-20261004-034630-20 done, chain height 6, 66391 ms
+2026-10-04 14:25:37 disk check mp1m-m3: 3,000,000 records x 1 run(s) x 45 KB x 1.15 + 20 GB = 175.2 GB needed; / (md2) 756.4 GB free of 996 GB
+2026-10-04 14:26:52 reset (mp1m-m3) network-reset-20261004-062537-22 done, chain height 6, 65555 ms
+2026-10-04 14:26:57 preflight mp1m-m3 green: host CPU 0.5 % (/proc/stat, 5 s), load1 3.48, orderer 50/2s/2 MB/268435456 saksi_configtx saksi, phase_timeout {'seconds': 43200, 'longest_phase': 'ballot submission', 'estimated_s': 3720}, no warnings
+2026-10-04 14:27:57 mp1m-m3: runs ['mp-1m-ch4-ax42-m3-20261004-062657-43']
+2026-10-04 14:39:57 mp1m-m3: mp-1m-ch4-ax42-m3-20261004-062657-43 ballot window open since 2026-10-04 14:38:43; first throughput 53000 records in 73975 ms -> ~716 records/s
+2026-10-04 17:02:01 mp1m-m3: resources: ballot window(s): 2026-10-04 14:38:43 to 2026-10-04 16:25:52 | host CPU (/proc/stat) samples in window: 643, mean 27.7 %, max 44.5 % | non-run CPU (host minus the containers, dockerd/containerd and the console cgroups): 643 samples, max 0.6 %, over 25 % (contended): 0 | load1 in window: mean 10.42, max 15.75 | top container CPU peaks in window: dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 360 %, peer0.org1.example.com 196 %, peer0.org2.example.com 89 % | bottleneck: none evident from host evidence (no memory, disk-util, queue or CPU saturation flag)
+2026-10-04 17:03:38 mp1m-m3: ledger du: peer0.org1.example.com 35741452260 /var/hyperledger/production | peer0.org2.example.com 35740145477 /var/hyperledger/production | orderer.example.com 29347947069 /var/hyperledger/production/orderer | volume compose_orderer.example.com 29347881533 | volume compose_peer0.org1.example.com 35741202404 | volume compose_peer0.org2.example.com 35739895621 | docker-root 109201867565	/var/lib/docker | /dev/md2       995623145472 226322829312 718650007552  24% / | 
+2026-10-04 17:05:41 mp1m-m3: ndjson stored zstd-compressed (sha256 sidecars): ok /root/.saksi/campaign/runs/mp-1m-ch4-ax42-m3-20261004-062657-43/ballots.ndjson 11781000000 -> 5550887574 ratio 0.4712 sha256 deb19ecfcdad37641cb4d772b44a7675e6341e84f20437dc996533aab94d93ec | ok /root/.saksi/campaign/runs/mp-1m-ch4-ax42-m3-20261004-062657-43/ledger/ballots.ndjson 11781000000 -> 5756180795 ratio 0.4886 sha256 3f5326e3eff0ec9f5ae54a3d8b300095f47fcf09561e570e6651ddb7ad3bb4cc | freed 12254931631 bytes
