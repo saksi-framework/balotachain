@@ -1075,7 +1075,7 @@ proportion, and commit fewer records per second.
 | **AX42** MP-1.92M | 1,921,917 | 160.16 | 464.9 (slowest 456.7) | 2.9x (2.9x) |
 | **AX42** MP-3.5M | 3,524,078 | 293.67 | 423.9 (slowest 421.0) | 1.44x (1.43x) |
 
-Source: arrival = voters x positions / 36,000 s (Chapter III; `run.end` `arrival_tps`); TPS from Table 4.14.
+Source: arrival = voters x positions / 36,000 s (Chapter III), computed here; the console's `run.end` `arrival_tps` is voters / 36,000 for every election (saksi `journal.go:584`), so it matches only the single-position rows and understates multi-position arrival threefold. TPS from Table 4.14.
 
 The console's own `scaling_limit` verdict reads "inconclusive" in closed loop by construction, including on every
 run from SP-483K up on both machines. The measured TPS is therefore compared with the arrival rate directly. Every
