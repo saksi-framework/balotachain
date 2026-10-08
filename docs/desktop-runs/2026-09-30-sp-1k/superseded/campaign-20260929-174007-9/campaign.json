@@ -1,0 +1,349 @@
+{
+  "id": "campaign-20260929-174007-9",
+  "status": "done",
+  "created_at": "2026-09-29T17:40:07.880850527Z",
+  "finished_at": "2026-09-29T17:44:43.607449516Z",
+  "config": {
+    "name": "SP-1K ch4",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 1,
+    "candidates": 4,
+    "voters": 1000,
+    "distribution": "realistic",
+    "mode": "onchain",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "window_s": 0,
+    "skip_attacks": true
+  },
+  "options": {
+    "warmups": 2,
+    "reps": 10
+  },
+  "preflight": {
+    "at": "2026-09-29T17:40:07.880243381Z",
+    "run": {
+      "mode": "onchain",
+      "voters": 1000,
+      "positions": 1,
+      "candidates": 4,
+      "concurrency": 128
+    },
+    "fabric": {
+      "enabled": true,
+      "reachable": true,
+      "peer": "localhost:7051",
+      "channel": "saksi"
+    },
+    "orderer_batch": {
+      "AbsoluteMaxBytes": "99 MB",
+      "BatchTimeout": "2s",
+      "MaxMessageCount": "50",
+      "PreferredMaxBytes": "2 MB",
+      "SnapshotIntervalSize": "268435456",
+      "saksi_configtx": "saksi"
+    },
+    "ladder": {
+      "ok": true,
+      "ladder_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837",
+      "console_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837"
+    },
+    "disk": {
+      "path": "/home/user/.saksi/campaign/runs",
+      "free_bytes": 929645121536,
+      "projected_ledger_bytes": 12000000,
+      "projected_run_bytes": null
+    },
+    "memory": {
+      "available_bytes": 23046356992,
+      "projected_audit_bytes": 33704432
+    },
+    "host": {
+      "at": "2026-09-29T17:40:04.363336397Z",
+      "guest_load1": 1.25,
+      "guest_load5": 0.96,
+      "host_cpu_pct": 8.97606836458233,
+      "cpus": 16
+    },
+    "phase_timeout": {
+      "seconds": 18000,
+      "longest_phase": "ballot submission",
+      "estimated_s": 1.24
+    },
+    "verify_threads_default": 16,
+    "concurrency_min_advised": 50,
+    "warnings": []
+  },
+  "reps": [
+    {
+      "index": 1,
+      "kind": "warmup",
+      "run_id": "sp-1k-ch4-20260929-174011-57",
+      "status": "done",
+      "committed_tps": 894.496,
+      "latency_p99_ms": 247.894,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:40:07.882154522Z",
+        "guest_load1": 1.25,
+        "guest_load5": 0.96,
+        "host_cpu_pct": 21.1381157790967
+      },
+      "host_end": {
+        "at": "2026-09-29T17:40:27.169332464Z",
+        "guest_load1": 1.9,
+        "guest_load5": 1.13,
+        "host_cpu_pct": 33.2735871516925
+      }
+    },
+    {
+      "index": 2,
+      "kind": "warmup",
+      "run_id": "sp-1k-ch4-20260929-174034-58",
+      "status": "done",
+      "committed_tps": 855.098,
+      "latency_p99_ms": 234.066,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:40:30.72311255Z",
+        "guest_load1": 1.75,
+        "guest_load5": 1.11,
+        "host_cpu_pct": 23.4942885945684
+      },
+      "host_end": {
+        "at": "2026-09-29T17:40:50.567961029Z",
+        "guest_load1": 1.25,
+        "guest_load5": 1.04,
+        "host_cpu_pct": 7.59271337654956
+      }
+    },
+    {
+      "index": 1,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174057-59",
+      "status": "done",
+      "committed_tps": 930.595,
+      "latency_p99_ms": 239.94,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:40:54.084124086Z",
+        "guest_load1": 1.15,
+        "guest_load5": 1.02,
+        "host_cpu_pct": 4.20412677487823
+      },
+      "host_end": {
+        "at": "2026-09-29T17:41:13.380861556Z",
+        "guest_load1": 4.38,
+        "guest_load5": 1.77,
+        "host_cpu_pct": 7.61471185122195
+      }
+    },
+    {
+      "index": 2,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174120-60",
+      "status": "done",
+      "committed_tps": 916.805,
+      "latency_p99_ms": 224.965,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:41:16.886015351Z",
+        "guest_load1": 4.38,
+        "guest_load5": 1.77,
+        "host_cpu_pct": 21.4705745361107
+      },
+      "host_end": {
+        "at": "2026-09-29T17:41:36.209370414Z",
+        "guest_load1": 3.14,
+        "guest_load5": 1.66,
+        "host_cpu_pct": 6.86522660176408
+      }
+    },
+    {
+      "index": 3,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174143-61",
+      "status": "done",
+      "committed_tps": 954.948,
+      "latency_p99_ms": 228.139,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:41:39.709043091Z",
+        "guest_load1": 2.89,
+        "guest_load5": 1.63,
+        "host_cpu_pct": 11.6359217145206
+      },
+      "host_end": {
+        "at": "2026-09-29T17:41:58.76377278Z",
+        "guest_load1": 2.22,
+        "guest_load5": 1.56,
+        "host_cpu_pct": 16.0718116171197
+      }
+    },
+    {
+      "index": 4,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174205-62",
+      "status": "done",
+      "committed_tps": 890.254,
+      "latency_p99_ms": 241.24,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:42:02.24572086Z",
+        "guest_load1": 2.22,
+        "guest_load5": 1.56,
+        "host_cpu_pct": 3.02119904144104
+      },
+      "host_end": {
+        "at": "2026-09-29T17:42:21.795001055Z",
+        "guest_load1": 1.59,
+        "guest_load5": 1.46,
+        "host_cpu_pct": 11.6471962524247
+      }
+    },
+    {
+      "index": 5,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174228-63",
+      "status": "done",
+      "committed_tps": 863.099,
+      "latency_p99_ms": 250.245,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:42:25.325099379Z",
+        "guest_load1": 1.46,
+        "guest_load5": 1.43,
+        "host_cpu_pct": 6.32021487336545
+      },
+      "host_end": {
+        "at": "2026-09-29T17:42:44.840824933Z",
+        "guest_load1": 1.13,
+        "guest_load5": 1.35,
+        "host_cpu_pct": 11.3974330700602
+      }
+    },
+    {
+      "index": 6,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174251-64",
+      "status": "done",
+      "committed_tps": 839.55,
+      "latency_p99_ms": 253.906,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:42:48.390885548Z",
+        "guest_load1": 1.04,
+        "guest_load5": 1.33,
+        "host_cpu_pct": 26.6099037362687
+      },
+      "host_end": {
+        "at": "2026-09-29T17:43:08.220168197Z",
+        "guest_load1": 0.95,
+        "guest_load5": 1.29,
+        "host_cpu_pct": 23.5656089593675
+      }
+    },
+    {
+      "index": 7,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174315-65",
+      "status": "done",
+      "committed_tps": 719.121,
+      "latency_p99_ms": 372.449,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:43:11.749033591Z",
+        "guest_load1": 0.95,
+        "guest_load5": 1.29,
+        "host_cpu_pct": 9.16759059371974
+      },
+      "host_end": {
+        "at": "2026-09-29T17:43:31.549223593Z",
+        "guest_load1": 0.96,
+        "guest_load5": 1.27,
+        "host_cpu_pct": 6.13357304512532
+      }
+    },
+    {
+      "index": 8,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174338-66",
+      "status": "done",
+      "committed_tps": 910.642,
+      "latency_p99_ms": 233.948,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:43:35.04932036Z",
+        "guest_load1": 0.88,
+        "guest_load5": 1.25,
+        "host_cpu_pct": 6.4571474025908
+      },
+      "host_end": {
+        "at": "2026-09-29T17:43:54.349857776Z",
+        "guest_load1": 0.87,
+        "guest_load5": 1.22,
+        "host_cpu_pct": 8.84269263050772
+      }
+    },
+    {
+      "index": 9,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174401-67",
+      "status": "done",
+      "committed_tps": 913.292,
+      "latency_p99_ms": 223.351,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:43:57.862772913Z",
+        "guest_load1": 0.87,
+        "guest_load5": 1.22,
+        "host_cpu_pct": 19.2584267217095
+      },
+      "host_end": {
+        "at": "2026-09-29T17:44:17.168203171Z",
+        "guest_load1": 0.62,
+        "guest_load5": 1.14,
+        "host_cpu_pct": 22.8770296089411
+      }
+    },
+    {
+      "index": 10,
+      "kind": "measured",
+      "run_id": "sp-1k-ch4-20260929-174424-68",
+      "status": "done",
+      "committed_tps": 934.784,
+      "latency_p99_ms": 235.114,
+      "failed": false,
+      "host_start": {
+        "at": "2026-09-29T17:44:20.685168066Z",
+        "guest_load1": 0.57,
+        "guest_load5": 1.12,
+        "host_cpu_pct": 14.238080119003
+      },
+      "host_end": {
+        "at": "2026-09-29T17:44:39.993623953Z",
+        "guest_load1": 0.41,
+        "guest_load5": 1.05,
+        "host_cpu_pct": 20.3309414661341
+      }
+    }
+  ]
+}
