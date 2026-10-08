@@ -1,0 +1,27 @@
+# D2 replay committed ballots  Wed Oct  7 08:31:34 AM UTC 2026
+## commit 10 ballots (first submission):
+  [COMMIT]  commit0
+  [COMMIT]  commit1
+  [COMMIT]  commit2
+  [COMMIT]  commit3
+  [COMMIT]  commit4
+  [COMMIT]  commit5
+  [COMMIT]  commit6
+  [COMMIT]  commit7
+  [COMMIT]  commit8
+  [COMMIT]  commit9
+## simulate recovery: restart peer0.org1
+peer restarted
+## replay the same 10 committed ballots (expect gate=nullifier each):
+replaying 10 committed ballot(s)
+[REFUSED] replay[0] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[1] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[2] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[3] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[4] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[5] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[6] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[7] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[8] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+[REFUSED] replay[9] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=nullifier: nullifier already spent in election "d2-083130" (double vote)
+RESULT: 10/10 refused gate=nullifier

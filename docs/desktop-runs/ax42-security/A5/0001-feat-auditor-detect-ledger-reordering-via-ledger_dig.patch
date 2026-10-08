@@ -1,0 +1,528 @@
+From 86e24177f83155c09fee06ff17cb49efef63d061 Mon Sep 17 00:00:00 2001
+From: Banyel3 <138186128+Banyel3@users.noreply.github.com>
+Date: Wed, 7 Oct 2026 23:21:45 +0800
+Subject: [PATCH] feat(auditor): detect ledger reordering via ledger_digest
+
+Wire ledger::ledger_digest into audit-stream as the ledger.order check.
+When a run folder holds the chain read-back (ledger/ballots.ndjson, the
+campaign ledger dump), the auditor now requires that the read-back is in
+the chain canonical order (ascending nullifier, the order the chaincode
+nullifier index serves it in) and that its ledger_digest equals the
+ledger_digest of the served record put into that order. A permuted,
+duplicated, dropped or altered read-back fails the audit; a folder with
+no ledger dump gets no ledger.order finding, so offline runs and the
+in-memory audit are unchanged.
+
+ledger_digest now chains per-ballot leaves (v2 domain tags) so the
+served side can be sorted without holding whole ballots. StreamAudit
+gains an optional ledger_order field carrying the verdict and digest.
+No wire, chaincode or campaign change.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015B2HKZXwcfd5r1J9GG4udm
+---
+ packages/saksi-auditor/src/demo.rs            |  92 +++++-
+ .../src/independent_verification.rs           |  10 +-
+ packages/saksi-auditor/src/ledger.rs          | 263 +++++++++++++++---
+ .../saksi-auditor/src/security_privacy.rs     |  13 +-
+ 4 files changed, 329 insertions(+), 49 deletions(-)
+
+diff --git a/packages/saksi-auditor/src/demo.rs b/packages/saksi-auditor/src/demo.rs
+index 43999b3..69af365 100644
+--- a/packages/saksi-auditor/src/demo.rs
++++ b/packages/saksi-auditor/src/demo.rs
+@@ -145,6 +145,10 @@ pub struct StreamAudit {
+     /// absent (read as empty) from older documents.
+     #[serde(default)]
+     pub failed_checks: Vec<FailedCheck>,
++    /// The `ledger.order` check's verdict and detail (`"pass: ..."` or
++    /// `"fail: ..."`) when the folder held a ledger dump; absent otherwise.
++    #[serde(default, skip_serializing_if = "Option::is_none")]
++    pub ledger_order: Option<String>,
+ }
+ 
+ /// One failed audit check as `audit-stream --json` reports it.
+@@ -774,6 +778,11 @@ pub fn overvote_ballot(dir: &std::path::Path, line: usize) -> Result<String, Str
+     Ok(hex::encode(ballot.encode_to_vec()))
+ }
+ 
++/// The run-folder subdirectory holding the chain's own read-back of a run
++/// (written by the campaign's ledger dump). When it holds ballots,
++/// [`audit_stream_dir`] adds the `ledger.order` check.
++pub const LEDGER_DIR: &str = "ledger";
++
+ /// Audits a **stream run folder** (`header.json` + `ballots.ndjson`, the shape
+ /// [`write_election_stream_params`] writes) and projects the result into
+ /// [`StreamAudit`] — structured per-contest correctness the console's Verify
+@@ -785,6 +794,9 @@ pub fn overvote_ballot(dir: &std::path::Path, line: usize) -> Result<String, Str
+ /// contest `{ground_truth, decoded, E, pass}`. `decoded` is the published tally
+ /// the audit verified equals the homomorphic decode; a divergence fails the
+ /// audit, so `pass` (= overall clean AND `E == 0`) never reports a false green.
++///
++/// A folder that also holds a [`LEDGER_DIR`] dump gets the `ledger.order`
++/// check ([`crate::ledger::check_ledger_order`]).
+ pub fn audit_stream_dir(dir: &std::path::Path) -> Result<StreamAudit, String> {
+     audit_stream_dir_full(dir).map(|(sa, _)| sa)
+ }
+@@ -826,7 +838,7 @@ pub(crate) fn audit_stream_dir_full(
+     let pool = audit_pool_from_env()?;
+ 
+     let ground_truth = header.ground_truth.clone();
+-    let (report, evidence, timings) = crate::audit_streaming(
++    let (mut report, evidence, timings) = crate::audit_streaming(
+         crate::AuditInputs {
+             parameters: &parameters,
+             dkg_transcript: &dkg_transcript,
+@@ -840,6 +852,20 @@ pub(crate) fn audit_stream_dir_full(
+         ballots,
+         pool.as_ref(),
+     );
++    // An on-chain run folder also holds the chain's own read-back in
++    // `ledger/`; hold it to the chain's order and to this record.
++    let ledger_dir = dir.join(LEDGER_DIR);
++    let mut ledger_order = None;
++    if ledger_dir.join(crate::stream::BALLOTS_FILE).exists() {
++        let finding = crate::ledger::check_ledger_order(dir, &ledger_dir);
++        let fail = finding.status == AuditStatus::Fail;
++        if fail {
++            report.overall = AuditStatus::Fail;
++        }
++        let verdict = if fail { "fail" } else { "pass" };
++        ledger_order = Some(format!("{verdict}: {}", finding.detail));
++        report.findings.push(finding);
++    }
+     let overall_pass = report.overall == AuditStatus::Pass;
+ 
+     // Index the per-contest crypto evidence by contest id.
+@@ -889,6 +915,7 @@ pub(crate) fn audit_stream_dir_full(
+             contests,
+             timings_ms: timings.into(),
+             failed_checks: failed_checks(&report),
++            ledger_order,
+         },
+         report,
+     ))
+@@ -1090,6 +1117,69 @@ mod tests {
+         let _ = std::fs::remove_dir_all(&dir);
+     }
+ 
++    #[test]
++    fn audit_stream_dir_checks_the_ledger_dump_order() {
++        let dir = std::env::temp_dir().join("saksi-audit-stream-ledger-order");
++        let _ = std::fs::remove_dir_all(&dir);
++        write_election_stream_params(&dir, &GenParams::simple(5, 2, 2, SelectionProfile::Uniform))
++            .expect("write stream");
++
++        // The chain's read-back: the same records, in ascending nullifier order.
++        let mut chain: Vec<(Vec<u8>, String)> = crate::stream::BallotLines::open(&dir)
++            .expect("open")
++            .map(|b| {
++                let b = b.expect("decodes");
++                let nul = b
++                    .credential_presentation
++                    .as_ref()
++                    .unwrap()
++                    .nullifier
++                    .as_ref()
++                    .unwrap();
++                (nul.value.clone(), hex::encode(b.encode_to_vec()))
++            })
++            .collect();
++        chain.sort();
++        let ledger = dir.join(LEDGER_DIR);
++        std::fs::create_dir_all(&ledger).expect("mkdir ledger");
++        let dump = |rows: &[(Vec<u8>, String)]| {
++            let body: String = rows
++                .iter()
++                .map(|(_, l)| {
++                    format!(
++                        "{l}
++"
++                    )
++                })
++                .collect();
++            std::fs::write(ledger.join(crate::stream::BALLOTS_FILE), body).expect("write dump");
++        };
++
++        dump(&chain);
++        let sa = audit_stream_dir(&dir).expect("audits");
++        assert_eq!(sa.overall, "pass", "{sa:#?}");
++        assert!(
++            sa.ledger_order
++                .as_deref()
++                .is_some_and(|d| d.starts_with("pass")),
++            "{sa:#?}"
++        );
++
++        // A serving node swaps two records: the crypto audit still passes, the
++        // order check does not.
++        chain.swap(0, 1);
++        dump(&chain);
++        let sa = audit_stream_dir(&dir).expect("audits");
++        assert_eq!(sa.overall, "fail", "{sa:#?}");
++        let ids: Vec<&str> = sa.failed_checks.iter().map(|f| f.check.as_str()).collect();
++        assert_eq!(ids, vec!["ledger.order"], "{sa:#?}");
++        assert!(
++            sa.contests.iter().all(|c| c.e == 0),
++            "the tally is unchanged"
++        );
++        let _ = std::fs::remove_dir_all(&dir);
++    }
++
+     #[test]
+     fn audit_stream_dir_flags_tampered_ground_truth() {
+         let dir = std::env::temp_dir().join("saksi-audit-stream-tamper");
+diff --git a/packages/saksi-auditor/src/independent_verification.rs b/packages/saksi-auditor/src/independent_verification.rs
+index f23775d..1c1f2ae 100644
+--- a/packages/saksi-auditor/src/independent_verification.rs
++++ b/packages/saksi-auditor/src/independent_verification.rs
+@@ -15,8 +15,10 @@
+ //! The tamper matrix covers every class of public-record mutation (matrix F5):
+ //! ballot ciphertext/proof, tally total, dropped ballot, partial-decryption
+ //! share, and DKG transcript are each detected. Reordered ballots are the
+-//! exception: **not detected** — the tally is order-independent, so reordering
+-//! cannot change the result; ordering integrity is not claimed.
++//! exception: the stateless audit of one record does **not** detect them — the
++//! tally is order-independent, so reordering cannot change the result. Order is
++//! checked only against the chain's read-back (`ledger.order`, see
++//! [`crate::ledger`]), which an on-chain run folder carries.
+ 
+ use crate::fixtures::{multi_position_fixture, GenParams, SelectionProfile};
+ use crate::{audit, AuditStatus};
+@@ -100,8 +102,8 @@ fn dropped_ballot_detected() {
+ }
+ 
+ /// A pure reorder is NOT detected: the verifier accepts it, with the identical
+-/// decoded tally, because the homomorphic tally is order-independent. Ordering
+-/// integrity is not claimed (no verifier runs `ledger::ledger_digest`).
++/// decoded tally, because the homomorphic tally is order-independent. Order is
++/// checked only against a ledger dump (`ledger.order`, [`crate::ledger`]).
+ #[test]
+ fn reordered_ballots_pass_audit_with_identical_tally() {
+     let tally_findings = |r: &crate::report::AuditReport| -> Vec<String> {
+diff --git a/packages/saksi-auditor/src/ledger.rs b/packages/saksi-auditor/src/ledger.rs
+index 014e72e..29e1b0e 100644
+--- a/packages/saksi-auditor/src/ledger.rs
++++ b/packages/saksi-auditor/src/ledger.rs
+@@ -1,48 +1,154 @@
+-//! Order-dependent digest over a recorded ballot sequence.
++//! Order-dependent digest over a recorded ballot sequence, and the
++//! `ledger.order` check that uses it.
+ //!
+-//! **No verifier uses this.** [`crate::audit`] never calls [`ledger_digest`],
+-//! the chaincode has no ordering check, and the console's `reordered-ballots`
+-//! scenario has no gate. Ballot reordering (paper adversary class 5, a
+-//! malicious bulletin-board node) is therefore **not detected**: the
+-//! homomorphic tally is order-independent, so reordering cannot change the
+-//! result, and ordering integrity is not claimed.
++//! An on-chain run carries two copies of its ballots: the console's own
++//! `<run>/ballots.ndjson` (submission order) and the chain's read-back in
++//! `<run>/ledger/ballots.ndjson`, which the campaign dumps by walking the
++//! chaincode's nullifier index (`ListNullifiers`, then `GetBallot(s)` per page).
++//! That index is a world-state composite key, so the chain serves its ballots
++//! in ascending nullifier order and in no other. The chain does not expose its
++//! block (commit) order through this read path, and nothing here claims it.
+ //!
+-//! A dropped ballot, by contrast, is detected: the recorded set no longer sums
+-//! to the published tally (`tally.homomorphic_sum`).
++//! [`check_ledger_order`] holds the read-back to that canonical order: a serving
++//! node that permutes, drops, duplicates or rewrites the ballots it returns
++//! (paper adversary class 5, a malicious bulletin-board node) changes
++//! [`ledger_digest`] of the read-back away from [`ledger_digest`] of the
++//! console's record put into the same canonical order. `audit-stream` runs it
++//! whenever the run folder holds a ledger dump; a folder without one (an
++//! offline run, or a chain that could not be reached) gets no `ledger.order`
++//! finding at all.
+ //!
+-//! The function is kept as public API, but nothing compares its output against
+-//! a committed order (on Fabric, the block/transaction order).
++//! The homomorphic tally is still order-independent, so the stateless crypto
++//! audit alone passes a reordered set (see `independent_verification.rs`); the
++//! order claim rests on this check and needs the ledger dump.
+ 
+ use saksi_protocol::{domain_hash, Ballot};
+ 
+-/// Order-dependent hash chain over `ballots`. Folds each ballot's identifying
+-/// content (position id, nullifier, credential commitment, and every ciphertext)
+-/// into a running SHA-256 digest, so the result depends on both the set **and**
+-/// its order. Reordering or dropping any ballot changes the output.
+-///
+-/// Not called by [`crate::audit`] or any other verifier (see the module docs).
++/// One ballot's identifying content (position id, nullifier, credential
++/// commitment, every ciphertext) as a 32-byte leaf.
++fn ballot_leaf(ballot: &Ballot) -> [u8; 32] {
++    let nullifier = nullifier_of(ballot);
++    let mut parts: Vec<&[u8]> = Vec::with_capacity(3 + ballot.ciphertexts.len() * 2);
++    parts.push(ballot.position_id.as_bytes());
++    parts.push(nullifier);
++    parts.push(&ballot.voter_credential_commitment);
++    for ct in &ballot.ciphertexts {
++        parts.push(&ct.pad);
++        parts.push(&ct.data);
++    }
++    domain_hash(b"saksi.auditor.ledger.leaf.v2", &parts)
++}
++
++fn nullifier_of(ballot: &Ballot) -> &[u8] {
++    ballot
++        .credential_presentation
++        .as_ref()
++        .and_then(|p| p.nullifier.as_ref())
++        .map(|n| n.value.as_slice())
++        .unwrap_or(&[])
++}
++
++fn digest_start() -> [u8; 32] {
++    domain_hash(b"saksi.auditor.ledger.v2", &[])
++}
++
++fn digest_step(acc: &[u8; 32], leaf: &[u8; 32]) -> [u8; 32] {
++    domain_hash(b"saksi.auditor.ledger.chain.v2", &[acc, leaf])
++}
++
++/// Order-dependent hash chain over `ballots`: each ballot's leaf (position id,
++/// nullifier, credential commitment, every ciphertext) is folded into a running
++/// SHA-256 digest, so the result depends on both the set **and** its order.
++/// Reordering, dropping or altering any ballot changes the output.
+ pub fn ledger_digest(ballots: &[Ballot]) -> [u8; 32] {
+-    let mut acc = domain_hash(b"saksi.auditor.ledger.v1", &[]);
+-    for ballot in ballots {
+-        let nullifier: &[u8] = ballot
+-            .credential_presentation
+-            .as_ref()
+-            .and_then(|p| p.nullifier.as_ref())
+-            .map(|n| n.value.as_slice())
+-            .unwrap_or(&[]);
+-
+-        let mut parts: Vec<&[u8]> = Vec::with_capacity(4 + ballot.ciphertexts.len() * 2);
+-        parts.push(&acc); // chain in the running digest → order-dependent
+-        parts.push(ballot.position_id.as_bytes());
+-        parts.push(nullifier);
+-        parts.push(&ballot.voter_credential_commitment);
+-        for ct in &ballot.ciphertexts {
+-            parts.push(&ct.pad);
+-            parts.push(&ct.data);
++    ballots
++        .iter()
++        .fold(digest_start(), |acc, b| digest_step(&acc, &ballot_leaf(b)))
++}
++
++/// The `ledger.order` check: the chain's read-back in `ledger_dir` must be in
++/// the chain's canonical (ascending nullifier) order, and its [`ledger_digest`]
++/// must equal the digest of the console's record in `served_dir` put into that
++/// order.
++///
++/// Both files are streamed. The served side keeps one (nullifier, leaf) pair per
++/// ballot so it can be sorted.
++/// ponytail: ~100 bytes per ballot record held for the sort (about 1 GB at 10M
++/// records); an external sort if a tier ever outgrows that.
++#[cfg(feature = "demo")]
++pub fn check_ledger_order(
++    served_dir: &std::path::Path,
++    ledger_dir: &std::path::Path,
++) -> crate::report::AuditFinding {
++    use crate::report::AuditFinding;
++    const CHECK: &str = "ledger.order";
++
++    // Chain side, in the order the chain served it.
++    let mut chain = digest_start();
++    let mut prev: Option<Vec<u8>> = None;
++    let mut n_chain = 0usize;
++    let lines = match crate::stream::BallotLines::open(ledger_dir) {
++        Ok(l) => l,
++        Err(e) => return AuditFinding::fatal_fail(CHECK, format!("ledger dump: {e}")),
++    };
++    for (i, ballot) in lines.enumerate() {
++        let ballot = match ballot {
++            Ok(b) => b,
++            Err(e) => return AuditFinding::fatal_fail(CHECK, format!("ledger dump: {e}")),
++        };
++        let nul = nullifier_of(&ballot);
++        if prev.as_deref().is_some_and(|p| p >= nul) {
++            return AuditFinding::fatal_fail(
++                CHECK,
++                format!(
++                    "chain read-back record {} is out of the chain's nullifier order \
++                     (not above record {i}): the ledger dump was reordered or duplicated",
++                    i + 1
++                ),
++            );
+         }
+-        acc = domain_hash(b"saksi.auditor.ledger.chain.v1", &parts);
++        prev = Some(nul.to_vec());
++        chain = digest_step(&chain, &ballot_leaf(&ballot));
++        n_chain += 1;
+     }
+-    acc
++
++    // Served side, put into the chain's canonical order.
++    let lines = match crate::stream::BallotLines::open(served_dir) {
++        Ok(l) => l,
++        Err(e) => return AuditFinding::fatal_fail(CHECK, format!("served stream: {e}")),
++    };
++    let mut served: Vec<(Vec<u8>, [u8; 32])> = Vec::new();
++    for ballot in lines {
++        match ballot {
++            Ok(b) => served.push((nullifier_of(&b).to_vec(), ballot_leaf(&b))),
++            Err(e) => return AuditFinding::fatal_fail(CHECK, format!("served stream: {e}")),
++        }
++    }
++    served.sort_unstable();
++    let canonical = served
++        .iter()
++        .fold(digest_start(), |acc, (_, leaf)| digest_step(&acc, leaf));
++
++    if canonical != chain {
++        return AuditFinding::fatal_fail(
++            CHECK,
++            format!(
++                "ledger_digest of the chain read-back ({}, {n_chain} records) differs from the \
++                 served record in chain order ({}, {} records): a ballot was dropped, added or altered",
++                hex::encode(chain),
++                hex::encode(canonical),
++                served.len()
++            ),
++        );
++    }
++    AuditFinding::fatal_pass(
++        CHECK,
++        format!(
++            "{n_chain} records: the chain read-back is in nullifier order and matches the served \
++             record (ledger_digest {})",
++            hex::encode(chain)
++        ),
++    )
+ }
+ 
+ #[cfg(test)]
+@@ -50,8 +156,7 @@ mod tests {
+     use super::ledger_digest;
+     use crate::fixtures::{multi_position_fixture, GenParams, SelectionProfile};
+ 
+-    /// Unit test of the digest function alone. No verifier runs the digest, so
+-    /// this proves nothing about whether an audit detects a reorder (it does not).
++    /// Unit test of the digest function alone.
+     #[test]
+     fn ledger_digest_is_order_dependent() {
+         let f = multi_position_fixture(&GenParams::simple(4, 2, 2, SelectionProfile::Uniform));
+@@ -62,4 +167,86 @@ mod tests {
+         reversed.reverse();
+         assert_ne!(ledger_digest(&reversed), recorded, "order-dependent");
+     }
++
++    #[cfg(feature = "demo")]
++    mod order_check {
++        use super::super::{check_ledger_order, nullifier_of};
++        use crate::fixtures::{multi_position_fixture, GenParams, SelectionProfile};
++        use crate::report::AuditStatus;
++        use prost::Message;
++        use saksi_protocol::Ballot;
++        use std::path::{Path, PathBuf};
++
++        fn write(dir: &Path, ballots: &[Ballot]) {
++            std::fs::create_dir_all(dir).unwrap();
++            let body: String = ballots
++                .iter()
++                .map(|b| hex::encode(b.encode_to_vec()) + "\n")
++                .collect();
++            std::fs::write(dir.join(crate::stream::BALLOTS_FILE), body).unwrap();
++        }
++
++        /// Served stream in submission order, ledger dump in chain order.
++        fn run(name: &str, edit: impl FnOnce(&mut Vec<Ballot>)) -> (PathBuf, AuditStatus, String) {
++            let dir = std::env::temp_dir().join(format!("saksi-ledger-order-{name}"));
++            let _ = std::fs::remove_dir_all(&dir);
++            let f = multi_position_fixture(&GenParams::simple(5, 2, 2, SelectionProfile::Uniform));
++            let mut chain = f.ballots.clone();
++            chain.sort_by(|a, b| nullifier_of(a).cmp(nullifier_of(b)));
++            assert_ne!(
++                chain, f.ballots,
++                "fixture must not already be in chain order"
++            );
++            edit(&mut chain);
++            write(&dir, &f.ballots);
++            write(&dir.join("ledger"), &chain);
++            let finding = check_ledger_order(&dir, &dir.join("ledger"));
++            (dir, finding.status, finding.detail)
++        }
++
++        #[test]
++        fn clean_dump_in_chain_order_passes() {
++            let (dir, status, detail) = run("clean", |_| {});
++            assert_eq!(status, AuditStatus::Pass, "{detail}");
++            let _ = std::fs::remove_dir_all(dir);
++        }
++
++        #[test]
++        fn reordered_dump_fails() {
++            let (dir, status, detail) = run("swap", |c| c.swap(0, 1));
++            assert_eq!(status, AuditStatus::Fail, "{detail}");
++            assert!(
++                detail.contains("out of the chain's nullifier order"),
++                "{detail}"
++            );
++            let _ = std::fs::remove_dir_all(dir);
++        }
++
++        #[test]
++        fn dropped_ballot_in_dump_fails() {
++            let (dir, status, detail) = run("drop", |c| {
++                c.remove(2);
++            });
++            assert_eq!(status, AuditStatus::Fail, "{detail}");
++            assert!(detail.contains("differs"), "{detail}");
++            let _ = std::fs::remove_dir_all(dir);
++        }
++
++        #[test]
++        fn duplicated_ballot_in_dump_fails() {
++            let (dir, status, detail) = run("dup", |c| {
++                let b = c[1].clone();
++                c.insert(1, b);
++            });
++            assert_eq!(status, AuditStatus::Fail, "{detail}");
++            let _ = std::fs::remove_dir_all(dir);
++        }
++
++        #[test]
++        fn altered_ciphertext_in_dump_fails() {
++            let (dir, status, detail) = run("alter", |c| c[0].ciphertexts[0].pad[0] ^= 1);
++            assert_eq!(status, AuditStatus::Fail, "{detail}");
++            let _ = std::fs::remove_dir_all(dir);
++        }
++    }
+ }
+diff --git a/packages/saksi-auditor/src/security_privacy.rs b/packages/saksi-auditor/src/security_privacy.rs
+index 0dcfb8f..6affab9 100644
+--- a/packages/saksi-auditor/src/security_privacy.rs
++++ b/packages/saksi-auditor/src/security_privacy.rs
+@@ -16,7 +16,7 @@
+ //! | 3 | Sub-threshold trustees       | [`crate::tests::under_threshold_decryptions_are_caught`] (+ positive control below) |
+ //! | 4 | Malicious admin (params)     | [`crate::tests::bad_parameters_version_is_caught`], [`crate::tests::wrong_issuer_pk_is_caught`], [`crate::tests::dkg_transcript_trustee_count_mismatch_is_caught`] (+ control below) |
+ //! | 5 | Malicious BB node (drop)     | [`malicious_bb_node_dropping_a_committed_ballot_is_detected`] (this module) |
+-//! | 5 | Malicious BB node (reorder)  | not detected — the tally is order-independent, so reordering cannot change the result; ordering integrity is not claimed ([`malicious_bb_node_reordering_ballots_is_not_detected_and_leaves_the_tally_unchanged`]) |
++//! | 5 | Malicious BB node (reorder)  | detected only against the chain's read-back: `ledger.order` ([`crate::ledger`]) needs the ledger dump; the stateless audit alone passes a reorder, and the tally is order-independent ([`malicious_bb_node_reordering_ballots_is_not_detected_and_leaves_the_tally_unchanged`]) |
+ //! | 6 | Network replay               | [`crate::tests::reused_nullifier_is_caught`] (replay == duplicate nullifier) |
+ //!
+ //! The chaincode-side rejections for classes 1/2/6 (on-chain, at endorsement)
+@@ -71,11 +71,12 @@ fn malicious_bb_node_dropping_a_committed_ballot_is_detected() {
+ 
+ #[test]
+ fn malicious_bb_node_reordering_ballots_is_not_detected_and_leaves_the_tally_unchanged() {
+-    // Ordering integrity is NOT claimed: no verifier checks ballot order (the
+-    // `ledger::ledger_digest` hash chain exists but nothing runs it), and the
+-    // chaincode has no ordering gate. What this test proves is why that is safe
+-    // for correctness: the homomorphic tally is order-independent, so a pure
+-    // reorder audits clean with the identical decoded tally.
++    // The stateless audit of one record does not check ballot order, and the
++    // chaincode has no ordering gate; order is checked only against the chain's
++    // read-back (`ledger.order` in `audit-stream`, see `crate::ledger`). What
++    // this test proves is why that is safe for correctness: the homomorphic
++    // tally is order-independent, so a pure reorder audits clean with the
++    // identical decoded tally.
+     let tally_findings = |r: &crate::report::AuditReport| -> Vec<String> {
+         r.findings
+             .iter()
+-- 
+2.43.0
+

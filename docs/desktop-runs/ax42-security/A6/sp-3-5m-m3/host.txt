@@ -1,0 +1,4 @@
+Linux balota-ax42 6.8.0-139-generic #139-Ubuntu SMP PREEMPT_DYNAMIC Sat Aug  1 03:52:05 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+16
+usage: saksi-demo <gen [--voters N] [--positions P] [--candidates C] [--distribution uniform|skewed|realistic] [--election-id S] [--election-name S] [--threshold T] [--trustees N] [--trustee-names a,b,c] [--stream DIR] [--chunk N] [outfile] | gen-ground-truth [--voters N] [--positions P] [--candidates C] [--distribution uniform|skewed|realistic] [--election-id S] --out-dir DIR | audit <bundle.json> | audit-stream <dir> [--json] | forge-ballot <dir> --position P --candidate K | overvote-ballot <dir> <line>>
+4a38a54fe0223b58f28c53ec54e47fbeab222837

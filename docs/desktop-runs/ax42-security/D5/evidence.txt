@@ -1,0 +1,7 @@
+capturing 25s on lo: peer 7051 + console 8090 (generate traffic now)
+=== peer 7051: TLS handshake present? (expect Client/Server Hello, then ciphertext) ===
+peer: no plaintext chaincode terms found (TLS ok)
+=== console 8090: plaintext HTTP readable? (expect readable HTTP) ===
+{GET /api/campaigns HTTP/1.1
+{HTTP/1.1 200 OK
+GET /api/trail HTTP/1.1

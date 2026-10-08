@@ -1,0 +1,15 @@
+# X2 TLS on peer gRPC (peer0.org1 localhost:7051)  Wed Oct  7 08:36:18 AM UTC 2026
+## openssl s_client handshake:
+subject=C = US, ST = California, L = San Francisco, CN = peer0.org1.example.com
+issuer=C = US, ST = California, L = San Francisco, O = org1.example.com, CN = tlsca.org1.example.com
+notBefore=Oct  7 08:24:00 2026 GMT
+notAfter=Oct  4 08:24:00 2036 GMT
+## negotiated protocol + verify (CAfile = org1 channel TLS CA):
+Verification: OK
+New, TLSv1.3, Cipher is TLS_AES_128_GCM_SHA256
+Verify return code: 0 (ok)
+## also peer0.org2 (9051) and orderer (7050):
+- peer0.org2.example.com :9051 verify:
+Verify return code: 0 (ok)
+- orderer.example.com :7050 verify:
+Verify return code: 0 (ok)

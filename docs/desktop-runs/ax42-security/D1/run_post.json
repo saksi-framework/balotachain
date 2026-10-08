@@ -1,0 +1,45 @@
+{
+  "config": {
+    "name": "sec-d1-mp10k-20261007-082414",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 3,
+    "candidates": 4,
+    "voters": 10000,
+    "distribution": "realistic",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "skip_attacks": false,
+    "mode": "onchain",
+    "attack_plan": {
+      "stages": [
+        "dkg",
+        "ballots",
+        "close",
+        "ceremony"
+      ],
+      "ballots_at": 0.5,
+      "timeout_s": 3.0
+    }
+  },
+  "post_response": {
+    "run_id": "sec-d1-mp10k-20261007-082414-20261007-082414-53"
+  }
+}

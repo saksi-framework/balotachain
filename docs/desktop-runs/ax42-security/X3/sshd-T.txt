@@ -1,0 +1,5 @@
+usepam yes
+permitrootlogin without-password
+pubkeyauthentication yes
+passwordauthentication yes
+kbdinteractiveauthentication no

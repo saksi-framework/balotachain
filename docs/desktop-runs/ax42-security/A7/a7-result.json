@@ -1,0 +1,14 @@
+{
+  "run": "/root/.saksi/campaign/runs/mp-3-5m-ch4-ax42-m3-20261006-123905-51",
+  "zst": "/root/.saksi/campaign/runs/mp-3-5m-ch4-ax42-m3-20261006-123905-51/ballots.ndjson.zst",
+  "registered_voters_N": 3524078,
+  "ballots": 10572234,
+  "distinct_nullifiers": 10572234,
+  "nullifier_collisions": 0,
+  "distinct_credential_commitments": 3524078,
+  "distinct_voter_credential_commitments": 3524078,
+  "linkage_hits": 0,
+  "linkage_hit_examples": [],
+  "linkage_bound_per_voter": 2.8376216417457276e-07,
+  "note": "hit = public ballot field that is a member of the registration-identifier set"
+}

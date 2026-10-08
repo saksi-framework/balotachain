@@ -1,0 +1,8 @@
+# A2 PublishTally below signature threshold  Wed Oct  7 08:09:58 AM UTC 2026
+## tamper_invoke a2 a2.json
+== a2 | election=secA2-20261007-080958 ==
+  [setup]   15 ballots committed
+  [setup]   election closed
+  [setup]   60 partial decryptions committed
+  tally signatures stripped: kept 2 of 5 (threshold is 3)
+  [REFUSED] PublishTally(2 signatures) -> publish tally: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, tally has 2 valid trustee signatures, threshold is 3

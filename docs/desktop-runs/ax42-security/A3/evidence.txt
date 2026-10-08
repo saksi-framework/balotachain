@@ -1,0 +1,8 @@
+# A3 PublishTally with one total flipped  Wed Oct  7 08:13:00 AM UTC 2026
+## tamper_invoke a3 a3.json
+== a3 | election=secA3-20261007-081300 ==
+  [setup]   15 ballots committed
+  [setup]   election closed
+  [setup]   60 partial decryptions committed
+  tally totals[0] flipped 3 -> 4, signatures left intact
+  [REFUSED] PublishTally(flipped total) -> publish tally: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, tally signature from trustee "1" does not verify: tally signature does not verify

@@ -1,0 +1,9 @@
+president/cand0 match 0
+president/cand1 match 0
+president/cand2 match 0
+president/cand3 match 0
+president/cand0 match 0
+president/cand1 match 0
+president/cand2 match 0
+president/cand3 match 0
+8/8 contests identical to the desktop audit

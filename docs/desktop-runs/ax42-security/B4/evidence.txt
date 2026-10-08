@@ -1,0 +1,11 @@
+# B4 tampered DKG committed live, detected offline  Wed Oct  7 08:07:56 AM UTC 2026
+## on-chain: tamper_invoke b4 b4.json
+== b4 | election=secB4-20261007-080756 ==
+  [COMMIT]  CreateElection
+  dkg tampered: trustee0 coeff-commitment[0] low bit flipped (not a valid ristretto point)
+  [COMMIT]  PublishDKGTranscript(tampered)
+
+## offline control:
+overall=pass failed=
+## offline mutation: stream-dkg + audit-stream
+overall=fail failed=dkg.decode:trustee 1 coefficient_commitments[0] is not a vali

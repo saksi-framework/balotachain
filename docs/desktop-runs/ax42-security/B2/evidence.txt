@@ -1,0 +1,7 @@
+# B2 outside-MSP SubmitBallot  Wed Oct  7 08:07:01 AM UTC 2026
+cmd: outside_msp_invoke.sh b2_ballot.hex
+rogue identity (issuer not a channel MSP):
+subject=CN = rogue-user, OU = client
+issuer=CN = rogue-ca
+submitting SubmitBallot claiming Org1MSP with this foreign cert:
+  [REFUSED] SubmitBallot[rogue-CA cert] -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; error validating proposal: access denied: channel [saksi] creator org unknown, creator is malformed
