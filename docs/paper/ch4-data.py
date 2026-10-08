@@ -228,6 +228,20 @@ def candidates_auto(points):
     return out
 
 
+# ---------- figure points for tiers whose runs are separate single-run campaigns ----------
+
+def figure_auto(paths):
+    """Median per metric, the chapter's convention: one summary.csv -> its own median column;
+    several (one per single-run campaign) -> lower middle of their medians (median_low)."""
+    out = {}
+    for k in ("committed_tps", "latency_p50_ms", "latency_p99_ms"):
+        vals = [num({r["metric"]: r for r in rows(open(os.path.join(REPO, p), "rb").read())}[k]["median"])
+                for p in paths]
+        out[k] = statistics.median_low(vals)
+    out["n_summaries"] = len(paths)
+    return out
+
+
 # ---------- figures ----------
 
 def figures(d):
@@ -237,25 +251,40 @@ def figures(d):
     os.makedirs(FIG, exist_ok=True)
     plt.rcParams.update({"font.family": "Arial", "font.size": 9, "axes.spines.top": False,
                          "axes.spines.right": False})
-    series = {"SP": [], "MP": []}
+    # one series per (host, ballot shape); the two machines are never pooled
+    series, extras = {}, []
     for t in d["tiers"]:
         a = t.get("auto")
         if a and t["mode"] == "onchain" and "committed_tps" in a:
-            series[t["name"][:2]].append((t["voters"], a["committed_tps"]["median"], a["latency_p99_ms"]["median"],
-                                          a["latency_p50_ms"]["median"]))
+            series.setdefault(("desktop", t["name"][:2]), []).append(
+                (t["voters"], a["committed_tps"]["median"], a["latency_p99_ms"]["median"]))
+    for f in d.get("figure_tiers", []):
+        a = f["auto"]
+        pt = (f["voters"], a["committed_tps"], a["latency_p99_ms"])
+        if f.get("separate"):
+            extras.append((f, pt))
+        else:
+            series.setdefault((f["host"], f["name"][:2]), []).append(pt)
+    styles = {("desktop", "SP"): dict(marker="o", color="#1f4e79", label="Desktop, single-position"),
+              ("desktop", "MP"): dict(marker="s", color="#b05a00", linestyle="--", label="Desktop, three-position"),
+              ("ax42", "MP"): dict(marker="^", color="#4f7f3a", linestyle="-.", label="AX42, three-position")}
     for key, idx, ylab, fname in (("tps", 1, "Committed TPS (median)", "fig-4-1-tps.png"),
                                   ("p99", 2, "Latency p99, ms (median)", "fig-4-2-p99.png")):
         fig, ax = plt.subplots(figsize=(5.2, 2.9), dpi=200)
-        for s, style in (("SP", dict(marker="o", color="#1f4e79")), ("MP", dict(marker="s", color="#b05a00", linestyle="--"))):
-            pts = sorted(series[s])
+        for s, style in styles.items():
+            pts = sorted(series.get(s, []))
             if pts:
-                ax.plot([p[0] for p in pts], [p[idx] for p in pts], label=f"{s} (on-chain)", **style)
+                ax.plot([p[0] for p in pts], [p[idx] for p in pts], **style)
+        for f, pt in extras:
+            st = styles[(f["host"], f["name"][:2])]
+            ax.plot([pt[0]], [pt[idx]], marker=st["marker"], color=st["color"], markerfacecolor="white",
+                    linestyle="none", label=f["label"])
         ax.set_xscale("log")
         ax.set_xlabel("Voters per election (log scale)")
         ax.set_ylabel(ylab)
         ax.set_ylim(bottom=0)
         ax.grid(True, which="major", linewidth=0.4, alpha=0.5)
-        ax.legend(frameon=False)
+        ax.legend(frameon=False, fontsize=6.5)
         fig.tight_layout()
         fig.savefig(os.path.join(FIG, fname))
         plt.close(fig)
@@ -299,6 +328,8 @@ def main():
     for s in d["security_runs"]:
         if s.get("source"):
             s["auto"] = security_auto(load_bundle(s["source"]), s["run"])
+    for f in d.get("figure_tiers", []):
+        f["auto"] = figure_auto(f["summaries"])
     json.dump(d, open(DATA, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     figures(d)
     print("ok:", sum(1 for t in d["tiers"] if t.get("auto")), "tiers with data")

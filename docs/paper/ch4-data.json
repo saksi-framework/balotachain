@@ -2369,5 +2369,218 @@
   "ci_sast": "[PENDING — small item: test-suite and CI/SAST log at 4a38a54]",
   "linkage_join": "[PENDING — small item: privacy linkage join over a tier export]",
   "disk": "[PENDING — Night 1 ledger size (du of the peer volume) for SP-483K, SP-1M and SP-1.92M]"
- }
+ },
+ "figure_tiers_source": "Figures 4.1 and 4.2 points beyond the 'tiers' block: summary.csv files named per entry (evidence on branch docs/ch4-night1-2026-10-01). One summary -> its median column; several single-run campaigns -> median_low of their medians per metric (SP-1.92M: m2 and m3 only, m1 has no perf.csv). host is 'desktop' or 'ax42'; the two are never pooled. 'separate' entries are drawn as an open marker, not joined to a series.",
+ "figure_tiers": [
+  {
+   "name": "SP-483K",
+   "host": "desktop",
+   "voters": 483000,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-01-sp-483k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 509.027,
+    "latency_p50_ms": 246.256,
+    "latency_p99_ms": 537.566,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "SP-1M",
+   "host": "desktop",
+   "voters": 1000000,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-01-sp-1m/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 574.466,
+    "latency_p50_ms": 230.351,
+    "latency_p99_ms": 482.31,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "SP-1.92M",
+   "host": "desktop",
+   "voters": 1921917,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-01-sp-1.92m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-01-sp-1.92m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 633.278,
+    "latency_p50_ms": 181.999,
+    "latency_p99_ms": 430.245,
+    "n_summaries": 2
+   }
+  },
+  {
+   "name": "SP-3.5M",
+   "host": "desktop",
+   "voters": 3524078,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-02-sp-3.5m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-02-sp-3.5m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-02-sp-3.5m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 586.447,
+    "latency_p50_ms": 225.935,
+    "latency_p99_ms": 486.86,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "SP-483K fresh",
+   "host": "desktop",
+   "voters": 483000,
+   "positions": 1,
+   "separate": true,
+   "label": "Desktop, SP-483K on a fresh network (1 run)",
+   "summaries": [
+    "docs/desktop-runs/2026-10-07-483k-optional/sp-483k-fresh/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 583.315,
+    "latency_p50_ms": 194.753,
+    "latency_p99_ms": 489.759,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-483K",
+   "host": "desktop",
+   "voters": 483000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-07-483k-optional/mp-483k-m1/summary.csv",
+    "docs/desktop-runs/2026-10-07-483k-optional/mp-483k-m2/summary.csv",
+    "docs/desktop-runs/2026-10-07-483k-optional/mp-483k-m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 635.967,
+    "latency_p50_ms": 180.677,
+    "latency_p99_ms": 421.419,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-1K",
+   "host": "ax42",
+   "voters": 1000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-1k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 830.074,
+    "latency_p50_ms": 170.033,
+    "latency_p99_ms": 208.014,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-10K",
+   "host": "ax42",
+   "voters": 10000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-10k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 835.372,
+    "latency_p50_ms": 169.761,
+    "latency_p99_ms": 209.077,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-50K",
+   "host": "ax42",
+   "voters": 50000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-50k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 820.427,
+    "latency_p50_ms": 172.588,
+    "latency_p99_ms": 212.114,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-483K",
+   "host": "ax42",
+   "voters": 483000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-483k/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-483k/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-483k/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 553.92,
+    "latency_p50_ms": 208.33,
+    "latency_p99_ms": 327.414,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-1M",
+   "host": "ax42",
+   "voters": 1000000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-1m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 473.534,
+    "latency_p50_ms": 292.983,
+    "latency_p99_ms": 376.199,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-1.92M",
+   "host": "ax42",
+   "voters": 1921917,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-1.92m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1.92m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1.92m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 464.944,
+    "latency_p50_ms": 287.638,
+    "latency_p99_ms": 390.415,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-3.5M",
+   "host": "ax42",
+   "voters": 3524078,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-3.5m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-3.5m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-3.5m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 423.904,
+    "latency_p50_ms": 319.011,
+    "latency_p99_ms": 448.935,
+    "n_summaries": 3
+   }
+  }
+ ]
 }

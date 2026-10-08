@@ -20,8 +20,11 @@ resource trace at the point of failure.
   here is eligible for issuer-binding, selection-sum and secrecy claims. The AX42 built the same commit with the
   same compilers; its binaries differ in hash (`saksi-demo` `429868b6...bd29880`) only because they embed absolute
   build paths (`docs/desktop-runs/2026-10-04-ax42-setup.md`). The one exception to the single build is the
-  reordering re-verification (A5), which used an auditor built from Saksi commit `640a7b2` (draft PR #58, not
-  merged); it is labelled wherever it is cited.
+  reordering re-verification (A5), which used an auditor built from Saksi commit `640a7b2`, the head of PR #58. That
+  pull request merged into Saksi `main` on 2026-10-08 as merge commit `37035f9`, whose tree is identical to
+  `640a7b2`'s (tree `2291d6b`). The re-verification therefore ran the merged code, but on a build made after the
+  study runs, which all ran at 4a38a54; it is labelled wherever it is cited. The console's own refusal of a 2-of-5
+  decryption (Saksi PR #57, head `1181015`) merged the same day as `83c78bd`, also after the study runs.
 - **Two environments.** "Desktop" is the WSL2 machine of Table 4.1; "AX42" is the native-Linux server added on
   2026-10-04 for the multi-position on-chain tiers and the security pass. Every AX42 election name carries `ax42`,
   and figures from the two machines are never pooled.
@@ -36,7 +39,8 @@ resource trace at the point of failure.
   - `950ee60` and `072931a`: AX42 setup and validation ladder; `57847c1` to `1844fbe` (19 commits): the AX42
     MP on-chain tiers, evidence bundles 01 to 19;
   - `cb16a93`, `2ca95a1`, `d5c8779`, `1289267` and `51e067b`: the optional desktop SP-483K and MP-483K runs;
-  - `82997d4`: the AX42 security pass (`docs/desktop-runs/ax42-security/`).
+  - `82997d4`: the AX42 security pass (`docs/desktop-runs/ax42-security/`);
+  - `docs/desktop-runs/ci-4a38a54/`: the Saksi CI log of commit 4a38a54 (GitHub Actions run 36567167973).
 
   All but the first are on branch `docs/ch4-night1-2026-10-01`. Each table names its source files beneath it.
 - **Status tags.** Each claim carries one of three tags:
@@ -261,7 +265,7 @@ or test feeds Research Question 3.
 | T3 | Network interruption and recovery | Planned: `peer0.org1` stopped for 20.3 s at 40 % of the SP-10K window; afterwards 10,000 of 10,000 ballots on chain, 0 missing, E = 0. D3 (AX42, 150,000 records): the sole endorsing peer stopped for 25.2 s at 40 % and the orderer stopped and restarted three times during the window; resumed with no reset, 150,000 of 150,000 reconciled, chain linked over blocks 6 to 3,045, E = 0. D4: an MP-50K election under 40 ms delay and 0.5 % loss on the Fabric bridge completed with 0 ballots lost, E = 0. Unplanned: host power losses during SP-1.92M m1 (resumed with 0 lost) and after the MP-483K desktop warm-up's window (Reliability) | Pass for a peer outage, an orderer outage, and a degraded network. With one orderer, recovery is by restart, not failover | demonstrated |
 | T4 | Vote or election-return tampering | Live: a tampered proof and corrupted bytes were refused by the `cds` and `decode` gates. Committed live and then detected (AX42, B4): a key-generation transcript with one commitment altered was accepted by the chaincode and failed the verifier's `dkg.decode`. A3: a tally with one total changed and its signatures left intact was refused (`tally signature does not verify`). A4: a one-byte edit of a published ballot ciphertext or tally total failed the audit. B3: a legacy election created with no issuer key accepted a self-issued ballot on-chain, and the verifier failed it at `parameters.issuer_binding`. On a copy: a dropped ballot was caught by `stream.completeness` | Pass for every mounted input. A total that is wrong but correctly signed would need the trustee keys, and is not tested | demonstrated |
 | T5 | Unauthorized access | Live: a self-issued credential was refused by the `issuer` gate and a reused nullifier by the `nullifier` gate. B2: a ballot submitted with a certificate from a CA outside the channel was refused by the peer's membership service (`creator org unknown`) before the chaincode. An invalid credential signature is covered by a chaincode unit test only. "Expired" credentials cannot occur: credentials carry no validity period | 100 % rejection of the mounted cases, each logged with its gate | demonstrated (mounted); implemented (signature) |
-| T6 | Trustee validation and approval | A1 (AX42): a partial decryption with its Chaum-Pedersen response altered was committed on-chain, because the chaincode checks the proof for presence only, and the verifier then failed it at `decryption.cp_proof`. A2: `PublishTally` with 2 of 5 trustee signatures was refused (`tally has 2 valid trustee signatures, threshold is 3`). Three valid shares decrypted and signed the tally in every study run | Pass: committed then detected, as Table 3.8 expects; sub-threshold publication refused live on 4a38a54. The console's own 2-of-5 refusal remains on unmerged Saksi commit 1181015 (draft PR #57) | demonstrated |
+| T6 | Trustee validation and approval | A1 (AX42): a partial decryption with its Chaum-Pedersen response altered was committed on-chain, because the chaincode checks the proof for presence only, and the verifier then failed it at `decryption.cp_proof`. A2: `PublishTally` with 2 of 5 trustee signatures was refused (`tally has 2 valid trustee signatures, threshold is 3`). Three valid shares decrypted and signed the tally in every study run | Pass: committed then detected, as Table 3.8 expects; sub-threshold publication refused live on 4a38a54. The console's own 2-of-5 refusal was added by Saksi PR #57 (`1181015`), merged as `83c78bd` after the study runs, and was not exercised in a study run | demonstrated |
 | T7 | Concurrent voting and result transmission | MP-1K security run: 3,000 records from 1,000 voters x 3 positions carried distinct per-position nullifiers and all were admitted; a copied nullifier was refused; every accepted ballot was counted exactly once (E = 0 on all 12 contests). D1 and D1-L repeated this at MP-10K and MP-1M. The verifier ran after close, not during submission | Pass for per-position enforcement. Concurrent verifier read not exercised | demonstrated |
 | T8 | Peak election conditions | SP-483K burst: 144,900 ballots unthrottled, completed at 512.9 TPS, p99 549.9 ms, 0 dropped, E = 0. The largest configured tiers completed: SP-3.5M (3,524,078 records, desktop) and MP-3.5M (10,572,234 records, AX42), every run with 0 dropped and E = 0 | Pass, including the largest configured tiers | demonstrated |
 
@@ -277,8 +281,9 @@ was not tested. The two departures from Table 3.8 noted in the 2026-10-02 draft 
 - T4 lists manipulated manifests. B3 mounted the nearest case the build allows, an election created without an issuer
   key, and the verifier caught it; a manifest edit of another field was not mounted.
 
-The sub-threshold half of T6 is demonstrated at the chaincode by A2. The console's own refusal at 2 of 5 shares
-remains implemented and tested on an unmerged branch only.
+The sub-threshold half of T6 is demonstrated at the chaincode by A2. The console's own refusal at 2 of 5 shares is
+implemented and unit-tested in Saksi `83c78bd` (PR #57, merged 2026-10-08), a build later than the study's; it is
+not part of 4a38a54 and was not exercised in a study run.
 
 ### Attack Scenarios in the Security Runs
 
@@ -331,24 +336,26 @@ and every security run was on that build.
 | A2 | `PublishTally` with 2 of 5 trustee signatures | Malicious trustees | Refused: `tally has 2 valid trustee signatures, threshold is 3` | Pass; closes catalogue case 8 |
 | A3 | `PublishTally` with one total changed (3 to 4), signatures kept | Ledger administrator | Refused: `tally signature from trustee "1" does not verify` | Pass, with a stated limit: the signatures bind the totals; a wrong total that is correctly signed needs the trustee keys and is not checked on-chain against the aggregate |
 | A4 | One byte flipped in an exported public record (AX42 MP-1K run 5): a ballot ciphertext; a tally total | Ledger administrator | Ballot: audit fails at `ballot.cds_proof`. Total: audit fails at `tally.homomorphic_sum` (decode 172, published 173) and `tally.signatures` (0 of 5 valid) | Pass: detected |
-| A5 | Reordering of the chain's read-back, with an auditor check `ledger.order` (Saksi `640a7b2`, draft PR #58, not merged) | Bulletin-board node | All 47 archived AX42 MP on-chain runs (MP-1K x 12, MP-10K x 12, MP-50K x 7, and the 16 runs of MP-483K to MP-3.5M) re-verified: overall pass, `ledger.order` pass, sum of \|E\| 0. A copy of MP-1K run 5's ledger dump with records 1,001 and 1,002 swapped failed with `ledger.order` only | Pass on re-verified runs; limits below |
+| A5 | Reordering of the chain's read-back, with an auditor check `ledger.order` (Saksi `640a7b2`, PR #58, merged after the study as `37035f9` with an identical tree) | Bulletin-board node | All 47 archived AX42 MP on-chain runs (MP-1K x 12, MP-10K x 12, MP-50K x 7, and the 16 runs of MP-483K to MP-3.5M) re-verified: overall pass, `ledger.order` pass, sum of \|E\| 0. A copy of MP-1K run 5's ledger dump with records 1,001 and 1,002 swapped failed with `ledger.order` only | Pass on re-verified runs; limits below |
 | A6 | Verifier on a second machine | (RQ1 e) | SP-3.5M m3 public record audited on the AX42 in 1,073 s: overall pass, 8 of 8 contests identical to the desktop audit | Pass; closes RQ1(e) |
 | A7 | Linkage join of every public ballot field against the registration list, MP-3.5M m3 (AX42) | Privacy adversary | N = 3,524,078 voters, 10,572,234 ballots; 0 linkage hits; 10,572,234 distinct nullifiers, 0 collisions | Pass; bound 1/N = 2.84 x 10^-7 |
 | D1 | Attack timeline, MP-10K | Voter, client | Table 4.7 | Pass |
 | D1-L | Attack timeline during an MP-1M ballot window (3,000,000 records, 440 TPS) | Voter, client | Table 4.7; E = 0 on 24 contest rows | Pass |
 | D2 | Replay of 10 committed ballots after a peer restart | Network | 10 of 10 refused, `gate=nullifier` (double vote); tally unchanged | Pass |
 | D3 | Sole endorsing peer stopped 25.2 s at 40 % of the window; orderer stopped and restarted three times | Infrastructure | 15,050 committed at the fault; resume with no reset re-submitted 134,950; 150,000 of 150,000 reconciled, chain linked (blocks 6 to 3,045), E = 0 on 12 contests | Pass |
-| D4 | 40 ms delay and 0.5 % loss on the Fabric bridge for a whole MP-50K window | Network | Completed: 150,000 committed, 0 dropped, E = 0 on 24 contest rows, at 52.0 TPS (p50 2,414.7 ms) against about 820 clean | Pass, with a large degradation |
+| D4 | 40 ms delay and 0.5 % loss on the Fabric bridge for a whole MP-50K window | Network | Completed: 150,000 committed, 0 dropped, E = 0 on 24 contest rows, at 52.0 TPS (p50 2,414.7 ms) against about 820 clean; ballot window 2,885.9 s (48.1 min) against about 3 min clean | Pass, with a large degradation |
 | D5 | Packet capture of peer gRPC and of the console | Eavesdropper | Peer gRPC: 4,512 packets, no readable election term. Console: plain HTTP, requests and responses readable | Limitation demonstrated: plain-HTTP console |
-| X1 | Full TCP scan of the server from outside | External attacker | Before: 22, 7050, 7051, 7053, 9051, 9443, 9444 and 9445 open (Fabric ports published on 0.0.0.0 by `docker-proxy`, no host firewall); console 8090 loopback-only. After a firewall (`fabric-firewall.service`, DOCKER-USER and INPUT drop, IPv4 and IPv6): only 22 open | Found and fixed |
+| X1 | Full TCP scan of the server from outside | External attacker | Before: 22, 7050, 7051, 7053, 9051, 9443, 9444 and 9445 open (Fabric ports published on 0.0.0.0 by `docker-proxy`, no host firewall); console 8090 loopback-only. After a firewall (`fabric-firewall.service`, DOCKER-USER and INPUT drop, IPv4 and IPv6): a targeted IPv4 connect scan of the eight formerly open ports and 8090 found only 22 open, the rest filtered; the IPv6 scan found every probed port, 22 included, filtered | Found and fixed |
 | X2 | TLS on peer and orderer gRPC | Network | TLS 1.3 (TLS_AES_128_GCM_SHA256); peer0.org1, peer0.org2 and the orderer verify against the channel TLS CAs | Pass |
-| X3 | SSH configuration (`sshd -T`) | External attacker | Before: root key-only, but password authentication enabled for other accounts. After hardening: `passwordauthentication no`, password login refused. An SSH bot flood against the server was also mitigated [TODO: evidence for the SSH bot-flood mitigation; not found under `docs/desktop-runs/ax42-security/`] | Found and fixed |
+| X3 | SSH configuration (`sshd -T`) | External attacker | Before: root key-only, but password authentication enabled for other accounts. After hardening: `passwordauthentication no`, password login refused. Separately, a connection flood from many hosting-provider addresses (2,059,936 connections closed before authentication over three days; 3,381 in ten minutes on 2026-10-07) overflowed sshd's default `MaxStartups` and dropped the researchers' own sessions. Raising `MaxStartups` to 100:30:300, setting `PerSourceMaxStartups` 10 and exempting the researchers' address from a per-source rate limit restored access; the flood itself continued (2,864 in the ten minutes before the record was taken), because the limit of 10 per minute per source sits just above each bot's rate | Found and fixed (password login); access restored, flood not stopped |
 
 Source: `docs/desktop-runs/ax42-security/STATUS.md`, `security-ax42-track-N.md`, `security-ax42-track-O.md`, the
 per-test folders `B1` to `X3`, `A5/report.md` and `A5/verdicts.tsv`, `D1-L/journal.ndjson` (`stage.ballots.end`) and
-`D4/perf.csv` (`82997d4`); plan `docs/plans/2026-10-04-ax42-security-tests.md`, section "Paper impact". The X1
-rescan after the fix is recorded in `STATUS.md`; the archived IPv4 `nmap` file is empty and the archived IPv6 file
-shows every probed port filtered.
+`D4/perf.csv` and `D4/journal.ndjson` (`82997d4`); plan `docs/plans/2026-10-04-ax42-security-tests.md`, section
+"Paper impact". The X1 rescan after the fix is `X1-rescan/nmap-v4-targeted.txt` (`nmap -sT`, 2026-10-08) and
+`X1-rescan/nmap-v6.txt`; `X1-rescan/nmap-v4-allports.txt` is empty because that full-range scan was stopped while it
+saturated the link during the A6 upload. The SSH flood is recorded in `SSH-flood/ssh-flood-evidence.txt` (`sshd -T`
+settings, iptables rules, counts of connections closed before authentication and their top sources).
 
 Six rows change what the 2026-10-02 draft could claim. B2 and A2 close catalogue cases 10 and 8 live. B4 and A1 show
 "committed, then detected" on the study build. A6 closes RQ1(e). A7 closes the privacy-linkage placeholder. Three rows
@@ -362,8 +369,8 @@ ballots reordered, dropped, duplicated or altered is detected *on re-verified ru
 - Fabric's block (commit) order is not exposed by this read path and is not checked.
 - The console's own record is compared as a sorted set, so the `reordered-ballots` scenario of Table 4.7 stays
   SKIPPED.
-- The check is not in the study build; it rests on a draft pull request, and runs not re-verified with that build
-  report reordering as not checked.
+- The check is not in the study build. It merged into Saksi after the study runs (PR #58, merge commit `37035f9`,
+  tree identical to `640a7b2`), and runs not re-verified with it report reordering as not checked.
 
 ### Tamper Trial
 
@@ -392,7 +399,7 @@ entry of 2026-09-15).
 | 5 | Duplicate vote for the same position | nullifier (chaincode), per position | reused-nullifier on the three-position MP-1K, MP-10K (D1) and MP-1M (D1-L) elections: PASS, live | `TestSubmitBallotRejectsDoubleVote`; auditor `per_position_double_vote_is_caught` | demonstrated |
 | 6 | Altered transaction | Fabric endorsement and signature checks | Not mounted. Transport is TLS 1.3 with certificates from the channel CAs (X2) | none named | design intent (platform) |
 | 7 | Altered manifest | verifier (election parameters, issuer binding) | B3: an election created with no issuer key was accepted on-chain and failed by the verifier at `parameters.issuer_binding`. No edit of another manifest field was mounted | `TestCreateElectionValidatesTheIssuerKey`; auditor `malicious_admin_altering_a_contest_id_is_detected` | demonstrated (issuer key, verifier); implemented (other fields) |
-| 8 | Decryption with fewer than three shares | tally signature threshold (chaincode); `decryption.threshold` (verifier) | A2: `PublishTally` with 2 of 5 signatures refused live (`threshold is 3`); every study ceremony published with 3 of 5 signers | `TestPublishTallyRejectsBelowThreshold`; on commit 1181015 (unmerged) `TestPublishAtTwoOfFiveIsRefusedWithReason` | demonstrated |
+| 8 | Decryption with fewer than three shares | tally signature threshold (chaincode); `decryption.threshold` (verifier) | A2: `PublishTally` with 2 of 5 signatures refused live (`threshold is 3`); every study ceremony published with 3 of 5 signers | `TestPublishTallyRejectsBelowThreshold`; from `83c78bd` (PR #57, merged after the study) `TestPublishAtTwoOfFiveIsRefusedWithReason` | demonstrated |
 | 9 | Incorrect trustee decryption proof | `decryption.cp_proof` (verifier) | tamper-partial-decryption: PASS, simulated, all four timeline runs; A1: committed live, then failed by the verifier | chaincode checks presence only | demonstrated (verifier) |
 | 10 | Submission from outside the channel membership | Fabric membership service | B2: refused at the peer's membership layer (`creator org unknown`), before the chaincode | none named | demonstrated (platform) |
 | 11 | Credential not issued under the election's issuer key | issuer (chaincode) | self-issued-credential: PASS, live, all four timeline runs | `TestSubmitBallotIssuerBinding` | demonstrated |
@@ -405,10 +412,13 @@ Source: manuscript, Security section; Saksi test names at 4a38a54
 `.superpowers/sdd/2026-09-14-study-grade-wizard/adviser-items-5-6.md`; security-run `negative-tests.csv`; Table 4.7a.
 
 Eleven of the fourteen cases were exercised on the study build, each refused or detected at its guarding gate (cases
-1, 2, 4, 5, 7, 8, 9, 10, 11, 12 and 14); case 7 only for the issuer key. Cases 3 and 13 have named unit tests, but no
-archived test-suite log at 4a38a54 yet: [PENDING: test-suite and CI/SAST log at 4a38a54]. (The A5 branch's workspace
-suite, 276 passed and 0 failed, ran at `640a7b2`, not at 4a38a54.) Case 6 rests on Fabric itself and was not
-exercised. The claim that every case "must be rejected by the specific gate that guards it" is therefore shown for
+1, 2, 4, 5, 7, 8, 9, 10, 11, 12 and 14); case 7 only for the issuer key. Cases 3 and 13 are covered by named unit
+tests (`TestSubmitBallotRejectsBadCredentialSignature`, `contract_test.go:707`;
+`TestSubmitBallotRefusesAnEmptyPositionOnAPositionedElection`, `selection_test.go:192`, both at 4a38a54). Saksi's CI
+ran on 4a38a54 itself (GitHub Actions run 36567167973, push to `main`, 2026-09-29, conclusion success): the chaincode
+package passed `go test -race` on Ubuntu and macOS, and `cargo test --workspace` passed 270 tests with 0 failed and 0
+ignored on both. (The A5 branch's workspace suite, 276 passed and 0 failed, ran at `640a7b2`.) Case 6 rests on Fabric
+itself and was not exercised. The claim that every case "must be rejected by the specific gate that guards it" is therefore shown for
 eleven cases, implemented for two, and assumed of the platform for one.
 
 ### The Verifier's Fourteen Checks
@@ -430,7 +440,7 @@ eleven cases, implemented for two, and assumed of the platform for one.
 | 11 | Chaum-Pedersen decryption proof per trustee | `decryption.cp_proof` | No failure | tamper-partial-decryption caught (simulated); A1 partial committed live, then caught | demonstrated |
 | 12 | At least three of five trustees contributed | `decryption.threshold` | No failure (3 of 5 in every run) | Unit tests; the chaincode's own threshold refused 2 of 5 live (A2) | implemented (verifier); demonstrated (chaincode) |
 | 13 | Announced tally equals the decrypted aggregate | `tally.accuracy`, `tally.signatures` | No failure; E = 0 everywhere | A4: an edited total failed `tally.signatures` (0 of 5 valid); unit tests `wrong_tally_is_caught`, `tampered_tally_signature_is_caught` | demonstrated |
-| 14 | Append-only consistency of the ledger | chain walk (`verify_only.chain`); `run.end` `ledger_audit`; `ledger.order` at `640a7b2` only (A5) | `ledger_audit` "ok" on every run cited; chain walk PASS, linked, in T3, SP-1.92M m1 and D3; `ledger.order` pass on 47 re-verified AX42 runs | A5: a swapped ledger dump caught by `ledger.order` (unmerged build) | demonstrated (positive); demonstrated on an unmerged build (negative) |
+| 14 | Append-only consistency of the ledger | chain walk (`verify_only.chain`); `run.end` `ledger_audit`; `ledger.order` from `640a7b2` (merged as `37035f9`) only (A5) | `ledger_audit` "ok" on every run cited; chain walk PASS, linked, in T3, SP-1.92M m1 and D3; `ledger.order` pass on 47 re-verified AX42 runs | A5: a swapped ledger dump caught by `ledger.order` (build later than the study's) | demonstrated (positive); demonstrated on a later build (negative) |
 
 Source: `journal.ndjson` `stage.verify.end` (`overall`, `failed_checks`) and `run.end` of every run; auditor check
 identifiers from `git grep` over `packages/saksi-auditor/src` at 4a38a54; Table 4.7a. The mapping of identifiers to
@@ -440,7 +450,7 @@ The verifier passed every audited election with no failed check *[demonstrated]*
 the study also showed the negative direction: a fault was mounted, by the console or directly against the chaincode or
 the published record, and the verifier caught it. For checks 4, 5 and 7 the chaincode refused the faulty input first,
 so the verifier never received it. Checks 3 and 12 rest on unit tests for their verifier-side negative direction, and
-check 14's negative direction rests on an unmerged build.
+check 14's negative direction rests on an auditor check merged after the study runs (`37035f9`).
 
 ### Adversary Coverage
 
@@ -452,7 +462,7 @@ check 14's negative direction rests on an unmerged build.
 | Compromised client | tamper-ballot-proof (substituted proof), corrupted-ballot-bytes; cases 1, 2, 3 | Live; credential misuse by unit test | Partial | A ciphertext altered to another valid point with the old proof; "client holds no key material" is a design claim with no test |
 | Malicious trustees (up to two) | tamper-partial-decryption, tamper-dkg-transcript; B4, A1, A2; cases 8, 9 | Live on-chain: B4 and A1 committed then detected, A2 refused | Strong for the mounted cases | Collusion of three or more trustees is outside the threat model; the ceremony was simulated by one process |
 | Network adversary | reused-nullifier (replay), D2, D4, D5, X2; case 4 | Live | Replay and degradation covered; peer transport encrypted | **Interception of the console: demonstrated readable** (plain HTTP, D5) |
-| Ledger administrator or malicious bulletin-board node | dropped-ballot, reordered-ballots, A3, A4, A5; case 14 | Simulated drop; edited records detected (A4); reordering detected on re-verified runs at `640a7b2` (A5) | Partial | No attack by an actual peer or orderer operator; reordering not detected on the study build; block order not checked; **front-running a transcript or partial: demonstrated possible** (B1, no caller authorization) |
+| Ledger administrator or malicious bulletin-board node | dropped-ballot, reordered-ballots, A3, A4, A5; case 14 | Simulated drop; edited records detected (A4); reordering detected on re-verified runs at `640a7b2`, merged after the study as `37035f9` (A5) | Partial | No attack by an actual peer or orderer operator; reordering not detected on the study build; block order not checked; **front-running a transcript or partial: demonstrated possible** (B1, no caller authorization) |
 | External attacker | self-issued-credential, B2, X1, X3; cases 10, 11 | Live | Covered | X1 and X3 found exposed Fabric ports and password SSH on the rented server, both fixed during the pass |
 | Malicious administrator (text and Table 3.10; no Table 3.9 row) | B3; case 7 | Live on-chain, detected by the verifier | Partial | Manifest fields other than the issuer key not mounted; the class lacks a Table 3.9 row |
 | Privacy adversary (text and Table 3.10) | A7 | Linkage join at MP-3.5M (10,572,234 ballots) | Covered for identity linkage | A voter's own ballots are linkable to each other pseudonymously (A7 note); timing analysis not run |
@@ -485,7 +495,7 @@ the gaps the 2026-10-02 draft listed:
 | SP-3.5M (1 + 3) | 3 | 0 | 3,524,078 | 0 | one earlier m2 attempt cut by a host power loss (Event 41 at 2026-10-03 02:12) during generation, before any ballot was submitted: discarded and rerun from a fresh reset | 100 % success |
 | Offline MP-483K to MP-3.5M | 4 | 0 | not applicable (no ledger) | 0 | none | 100 % success |
 | AX42 MP on-chain, MP-1K to MP-3.5M | 37 (10 + 10 + 5 + 4 x 3), plus 10 warm-ups | 0 of 47 runs | 3,000 to 10,572,234 | 0 | none: every run `failed` false, `resumed` false; no controller crash | 100 % success |
-| SP-483K fresh and MP-483K, desktop (optional) | 1 + 3 | 0 measured | 483,000; 1,449,000 | 0 | MP-483K warm-up (2026-10-08): a host power interruption (brownout) after its ballot window (1,449,000 committed, 0 dropped, window closed 01:04) [TODO: Windows Kernel-Power event record for 2026-10-08; the archive shows only the controller restart]; the controller restarted at 01:36 and the run was verified on its surviving ledger (reconciled 1,449,000 of 1,449,000, chain linked over 25,139 blocks, verify pass); flagged `failed` (`nothing_submitted`) and discarded as a warm-up | 0 ballots lost |
+| SP-483K fresh and MP-483K, desktop (optional) | 1 + 3 | 0 measured | 483,000; 1,449,000 | 0 | MP-483K warm-up (2026-10-08): a host power loss (brownout) after its ballot window (1,449,000 committed, 0 dropped, window closed 01:04:21). Windows logged Kernel-Power Event 41 on reboot at 01:34:15 and Event 6008 dating the unexpected shutdown 00:35:44; the external sampler on the same host kept writing until 01:10:01, so the loss fell between 01:10:01 and 01:34:15 and the 6008 time is not used; the controller restarted at 01:36 and the run was verified on its surviving ledger (reconciled 1,449,000 of 1,449,000, chain linked over 25,139 blocks, verify pass); flagged `failed` (`nothing_submitted`) and discarded as a warm-up | 0 ballots lost |
 | T3, SP-10K | 1 | 0 | 10,000 | 6,000 recorded as dropped by the closed loop at the stop, all resubmitted; 0 missing after resume | `peer0.org1` down 20.3 s at 40 % | 0 ballots lost, E = 0 |
 | D3, MP-50K (AX42 security) | 1 | 0 | 150,000 | 134,950 recorded as dropped by the closed loop at the fault, all resubmitted; 0 missing after resume | sole endorsing peer down 25.2 s at 40 %; orderer stopped and restarted three times; resume with no reset | 0 ballots lost, E = 0, chain linked |
 | D4, MP-50K under netem (AX42 security) | 1 | 0 | 150,000 | 0 | 40 ms delay, 0.5 % loss for the whole window | 0 ballots lost, E = 0 |
@@ -498,7 +508,9 @@ driver counted 4,000 committed. The chain held 4,045 when the resume began. The 
 Source: `summary.csv` per tier; `docs/desktop-runs/2026-10-01-sp-1m-night1.md`; `docs/desktop-runs/2026-09-30-sp-10k-t3.md`;
 `docs/desktop-runs/2026-10-01-sp-1.92m/m1/RESUMED.md` and its `journal.ndjson` (`run.end` `resumed: true`); study log
 sections "Capstone 2" (02:12, 11:45) and "AX42 (Hetzner)" (queue complete 10-07 06:34);
-`docs/desktop-runs/2026-10-07-483k-optional/mp-483k-warmup/` (`NOTE.md`, `journal.ndjson` `verify_only.*`);
+`docs/desktop-runs/2026-10-07-483k-optional/mp-483k-warmup/` (`NOTE.md`, `resources.csv` sample gap 01:10:01 to
+02:01:35, `journal.ndjson` `verify_only.*`); `docs/desktop-runs/ax42-security/power/kernel-power-2026-10-07-08.txt`
+(Windows System log export);
 `docs/desktop-runs/ax42-security/D3/evidence.txt`, `D4/perf.csv`.
 
 No accepted ballot was lost in any standing run, on either machine, so the Table 3.7 reliability criterion (100 %
@@ -507,7 +519,9 @@ during the study, each a Kernel-Power Event 41 or a brownout with no clean shutd
 and discard policy fixed before the campaign: a cut during generation, before any ballot is on the chain, is
 discarded and rerun from a fresh reset (SP-3.5M m2, 2026-10-03 02:12); a cut with ballots on the chain is resumed on
 the surviving ledger (SP-1.92M m1); a cut with nothing running (2026-10-03 11:15) needs no action; and a warm-up hit
-after its window is verified and then discarded (MP-483K, 2026-10-08). None lost a ballot. The AX42 ran its 47
+after its window is verified and then discarded (MP-483K, 2026-10-08). None lost a ballot. The same System-log export
+also records two unclean shutdowns on 2026-10-07 (reboots at 00:30:48 and 02:16:20), when no study run was active:
+the desktop controller's log has no entry between 2026-10-03 16:12 and 2026-10-07 23:03. The AX42 ran its 47
 multi-position elections back to back, from 2026-10-04 00:58 to 2026-10-07 06:34, with no interruption. The console's failure flag on SP-1.92M m1 is a bookkeeping
 outcome of the resume: the run has no single uninterrupted ballot window and so no `perf.csv`. All 1,921,917 ballots
 committed and the verification passed, so m1 is reported as a correctness record and excluded from the throughput
@@ -528,7 +542,7 @@ ballot loss it is 0. Two qualifications apply:
 |---|---|---|---|
 | Unlinkability | Linkage join of every voter-linked public field (nullifier, credential commitment, voter credential commitment) against the registration identifiers; success compared with 1/N (A7) | MP-3.5M m3 (AX42, `mp-3-5m-ch4-ax42-m3-20261006-123905-51`): N = 3,524,078 voters, 10,572,234 ballots; **0 linkage hits**; 10,572,234 distinct nullifiers, 0 collisions; residual bound 1/N = 2.84 x 10^-7 | demonstrated |
 | Ballot secrecy | Inspection of the tally path in the run records | Held: each trustee submitted one partial decryption per contest (4 at SP-10K, 12 at MP-1K), on the aggregate ciphertext only; no ballot-level decryption occurs | demonstrated |
-| Sub-threshold resistance | Decryption attempted with fewer than three shares | A2: `PublishTally` with 2 of 5 trustee signatures refused live on 4a38a54 (`threshold is 3`). The console refusal at 2 of 5 is on unmerged commit 1181015 (draft PR #57); every study ceremony published with 3 of 5 | demonstrated (chaincode); implemented (console) |
+| Sub-threshold resistance | Decryption attempted with fewer than three shares | A2: `PublishTally` with 2 of 5 trustee signatures refused live on 4a38a54 (`threshold is 3`). The console refusal at 2 of 5 was merged after the study runs (PR #57, `83c78bd`); every study ceremony published with 3 of 5 | demonstrated (chaincode); implemented after the study build (console) |
 
 Source: ceremony journal events of `sp-10k-ch4-sec-20260929-183410-129` and `mp-1k-ch4-sec-20260930-185139-29`;
 saksi PR #57; `docs/desktop-runs/ax42-security/A7/a7-result.json` and `A2/` (`82997d4`).
@@ -553,7 +567,7 @@ support. Three limits bound them:
 | Malicious voter: malformed ballot | BP 881, Sec. 261(j); RA 9369, Sec. 35 | Refused live by the decode, CDS and selection gates |
 | Sub-threshold trustees: corrupt decryption | RA 9369, Sec. 35(a) | Altered decryption proof committed and then detected by the verifier (A1); publication with 2 of 5 signatures refused (A2) |
 | Malicious administrator: manipulate manifest | BP 881, Sec. 261(j); RA 9369, Sec. 35(a) | Election without an issuer key detected by the verifier (B3); altered key-generation commitment detected (B4); other manifest fields not mounted |
-| Malicious bulletin-board node: drop or reorder | RA 9369, Sec. 35(a) | Drop detected; edited record detected (A4); reordering of the chain's read-back detected on re-verified runs at an unmerged build (A5), not on the study build (no effect on the tally) |
+| Malicious bulletin-board node: drop or reorder | RA 9369, Sec. 35(a) | Drop detected; edited record detected (A4); reordering of the chain's read-back detected on re-verified runs by an auditor check merged after the study (A5, `37035f9`), not on the study build (no effect on the tally) |
 | Network adversary: interception or replay | RA 9369, Sec. 35; RA 10173, Sec. 29 | Replay refused (D2); peer transport TLS 1.3 (X2); console traffic readable (plain HTTP, D5) |
 | Privacy adversary: linkage or secrecy | RA 10173, Secs. 25, 28, 29 | Aggregate-only decryption held; 0 identity linkages over 3,524,078 voters (A7) |
 
@@ -581,11 +595,28 @@ claim of security. Several limits were observed directly:
 - one machine hosted every node, on each of the two environments;
 - the console served plain HTTP, readable to an eavesdropper on the host (D5);
 - the test network as deployed on the rented server published the Fabric ports to the internet and allowed password
-  SSH (X1, X3); both were fixed during the pass, and an SSH bot flood was mitigated
-  [TODO: evidence for the SSH bot-flood mitigation].
+  SSH (X1, X3); both were fixed during the pass;
+- the rented server drew a constant SSH connection flood (about 340 connections a minute closed before
+  authentication) that overflowed sshd's default start-up limit and dropped the researchers' own sessions; raising the
+  limit and exempting the researchers' address restored access, but the flood continued. It cannot log in, because
+  password login is off (X3), so it is an availability nuisance, not an intrusion.
 
-The implementation-level testing of Chapter III (input validation, static analysis, dependency scanning) has no
-archived log at 4a38a54: [PENDING: test-suite and CI/SAST log at 4a38a54].
+The implementation-level testing of Chapter III is covered at 4a38a54 by Saksi's CI (GitHub Actions run 36567167973,
+push of 4a38a54 to `main`, 2026-09-29; log in `docs/desktop-runs/ci-4a38a54/`), every job of which concluded
+success on Ubuntu and macOS:
+- tests: `cargo test --workspace` 270 passed, 0 failed, 0 ignored; `go test -race ./...` passed for every Go package
+  with tests, the chaincode and its four verifier packages included;
+- static analysis: `cargo fmt --check`, `cargo clippy --workspace --all-targets -D warnings`, `gofmt`, `go vet` and
+  `staticcheck`; no dedicated security-focused SAST tool (such as gosec or Semgrep) is configured;
+- dependency scanning: `cargo audit` found no vulnerability in 127 Rust crate dependencies (one allowed warning,
+  RUSTSEC-2026-0190, unsoundness in `anyhow`). `govulncheck` runs as an advisory step that cannot fail the build, and
+  at 4a38a54 it reported the chaincode module affected by five vulnerabilities from two modules, all in transitive
+  dependencies of the Fabric contract API: four in `google.golang.org/grpc` v1.59.0 and one in `golang.org/x/net`
+  v0.17.0. The scan stopped at that module, so the client SDK and campaign modules were not scanned in this run.
+  Three concern resource exhaustion or panics in the HTTP/2 transport (GO-2026-6443, GO-2026-6348, GO-2024-2687) and
+  two concern gRPC authorization (GO-2026-4762, a `:path` check bypass; GO-2026-6061, the xDS RBAC engine and the
+  HTTP/2 server); govulncheck traced each to code reachable from the chaincode's start-up. None was exercised in the
+  study, and they are reported as a limit of the dependency set, fixed upstream in later gRPC and `x/net` releases.
 
 ---
 
@@ -673,13 +704,20 @@ Source: `summary.csv` medians divided by records (`proof_gen_cpu_ms`, `proof_ver
 `docs/desktop-runs/2026-10-01-night1.md` section 2; repetition layout from Table 4.2. SP-483K fresh is one run, and
 its per-record proof cost is the highest recorded; its sampler logged one host CPU sample above 25 %.
 
-**Figure 4.1. Committed throughput against election size, single- and multi-position, on-chain.**
-`docs/paper/ch4-figures/fig-4-1-tps.png` plots tiers to 50,000 voters only.
-[PENDING: Figure 4.1 regeneration with SP-483K to SP-3.5M and the AX42 MP tiers, the two machines as separate series]
+**Figure 4.1. Committed throughput against election size, single- and multi-position, on-chain, by machine.**
+`docs/paper/ch4-figures/fig-4-1-tps.png`
 
-**Figure 4.2. p99 submit-to-commit latency against election size, on-chain.**
-`docs/paper/ch4-figures/fig-4-2-p99.png` plots tiers to 50,000 voters only.
-[PENDING: Figure 4.2 regeneration with SP-483K to SP-3.5M and the AX42 MP tiers, the two machines as separate series]
+**Figure 4.2. p99 submit-to-commit latency against election size, on-chain, by machine.**
+`docs/paper/ch4-figures/fig-4-2-p99.png`
+
+Source for both: the medians of Table 4.14, recomputed by `docs/paper/ch4-data.py` from the `summary.csv` files named in
+`ch4-data.json` (`tiers` and `figure_tiers`). Three series: desktop single-position (SP-1K to SP-3.5M), desktop
+three-position (MP-1K to MP-50K and the optional MP-483K) and AX42 three-position (MP-1K to MP-3.5M); the machines are
+never joined or pooled. The open marker is the single SP-483K run on a fresh network. Points from 483,000 voters up
+on the AX42, and the desktop's SP-1.92M, SP-3.5M and MP-483K points, are single-run campaigns on fresh networks; the
+desktop's smaller tiers and SP-483K and SP-1M shared one network across their repetitions (Table 4.15), so the
+desktop lines join points measured under different ledger histories. The SP-1.92M point is the lower middle of m2 and
+m3 per metric (633.3 TPS, p99 430.2 ms).
 
 The per-record cryptographic cost was flat across a 3,500-fold range of election size *[demonstrated]*: 1.56 to 1.67
 ms of CPU for proof generation on the desktop (1.53 to 1.65 on the AX42) and 0.16 to 0.18 ms for verification per
@@ -870,16 +908,17 @@ accounting against Docker Engine's cgroup accounting, or a real difference) was 
 | m1 (window includes the outage) | 18:38:48 to 19:50:35 | 364 | 89.1 | flagged: user at the machine (354 raw) | 400.0 / 252.0, one sample 1,506.1 at 19:02:29 | 118.7 | 227 | 21.6 | 14.0 | 130.4 / 49.4 |
 | m2 | 20:45:44 to 21:36:19 | 303 | 85.3 | 0 (reclassified; preflight host CPU 2.8 %) | 404.1 / 262.8 | 85.0 | 594 | 21.8 | 15.6 | 15.9 / 49.2 |
 | m3 | 22:32:51 to 23:23:49 | 303 | 81.0 | 0 (max 23.3 % excluding the VM) | 416.2 / 270.6 | 103.8 | 461 | 21.7 | 15.4 | 21.7 / 47.9 |
-| SP-3.5M warm-up | 10-02 18:30:41 to 20:24:35 | 577 | 89.1 | 0 (max 17.4 %); overlapped a compression pass | 446.0 / 258.4 | 91.6 | 2 (controller line) | 21.4 | 16.9 | 836.7 / 109.7 |
-| SP-3.5M m1 | 10-02 22:34:48 to 10-03 00:18:26 | 621 | 84.0 | 1 (max 30.3 %): minor spike, the run stands | 392.5 / 236.7 | 92.3 | 998 (controller line) | 21.4 | 15.3 | 3.4 / 82.8 |
-| SP-3.5M m2 | 10-03 02:39:55 to 04:18:53 | 593 | 85.3 | 0 (max 12.9 %) | 420.9 / 259.5 | 90.2 | 574 (controller line) | 21.5 | 15.1 | 5.6 / 75.3 |
-| SP-3.5M m3 | 10-03 12:17:41 to 13:57:51 | 600 | 81.3 | 0 (max 22.6 %) | 393.6 / 255.6 | 83.8 | 265 (controller line) | 21.4 | 15.2 | 11.0 / 72.5 |
+| SP-3.5M warm-up | 10-02 18:30:41 to 20:24:35 | 577 | 89.1 | 0 (max 17.4 %); overlapped a compression pass | 446.0 / 258.4 | 91.6 | 12 (1.6 at 21:04:52, after the window) | 21.4 | 16.9 | 836.7 / 109.7 |
+| SP-3.5M m1 | 10-02 22:34:48 to 10-03 00:18:26 | 621 | 84.0 | 1 (max 30.3 %): minor spike, the run stands | 392.5 / 236.7 | 92.3 | 2,227 (998 at 00:38:18, after the window) | 21.4 | 15.3 | 3.4 / 82.8 |
+| SP-3.5M m2 | 10-03 02:39:55 to 04:18:53 | 593 | 85.3 | 0 (max 12.9 %) | 420.9 / 259.5 | 90.2 | 2,730 (574 at 05:23:36, after the window) | 21.5 | 15.1 | 5.6 / 75.3 |
+| SP-3.5M m3 | 10-03 12:17:41 to 13:57:51 | 600 | 81.3 | 0 (max 22.6 %) | 393.6 / 255.6 | 83.8 | 265 (at 13:37:01) | 21.4 | 15.2 | 11.0 / 72.5 |
 
 Source: `resources.csv` and `resources-summary.txt` under `docs/desktop-runs/2026-10-01-sp-1.92m/<run>/` and
 `2026-10-02-sp-3.5m/<run>/`; minima recomputed from `resources.csv` over each ballot window; `m2/NOTE.md` "Contention
-(corrected 22:20)". For SP-3.5M the Windows available-memory minimum is the controller's `bottleneck` line in
-`NOTE.md`. A minimum recomputed from the archived `resources.csv` over the same window agrees for m3 (265 MB) but
-not for the warm-up, m1 and m2 (12, 2,227 and 2,730 MB); the difference is not resolved. The SP-3.5M m1 contention rule was changed during the
+(corrected 22:20)". Every Windows available-memory minimum is recomputed from `resources.csv` over the ballot window.
+The controller's `bottleneck` line in each SP-3.5M `NOTE.md` (2, 998, 574 and 265 MB) is the minimum over the whole
+trace, from reset to export: for the warm-up, m1 and m2 it fell after the window, during export and compression, at
+the times shown in brackets; for m3 it fell inside the window. The SP-3.5M m1 contention rule was changed during the
 capstone (from any sample above 25 % to more than 2 % of samples and at least six), before m1's result was used.
 
 Across the tiers no single container used more than about a quarter of the 1,600 % of processor available. On the
@@ -895,10 +934,11 @@ The capstone trace shows where the load went:
 
 The SP-3.5M trace repeats the pattern. The guest's run queue again sat at its 16 processors (mean 15.1 to 15.3 in the
 measured runs), at least 21.4 GB of guest memory stayed available, and the data drive Q:, which holds the Docker
-virtual disk, was busy 73 to 83 % of the window on average. Windows' own available memory again fell to the hundreds
-of megabytes. The SP-3.5M warm-up, which overlapped a background compression of earlier ballot files on the system
-drive, shows what contention for that drive does: C: busy 837 % (summed over its queue), Windows memory near zero,
-and 515.7 TPS against 567 to 594 for the measured runs. The warm-up is discarded.
+virtual disk, was busy 73 to 83 % of the window on average. Windows' own available memory fell to 265 MB in m3 and
+stayed above 2.2 GB in m1 and m2 during the window; it fell lower after the window, during export (998 and 574 MB).
+The SP-3.5M warm-up, which overlapped a background compression of earlier ballot files on the system drive, shows
+what contention for that drive does: C: busy 837 % (summed over its queue), Windows memory down to 12 MB in the
+window, and 515.7 TPS against 567 to 594 for the measured runs. The warm-up is discarded.
 
 No resource was exhausted in any completed capstone run. Under the Chapter III rule there is therefore no scaling
 limit to attribute at 3,524,078 voters on the desktop, or at 10,572,234 records on the AX42 (Scalability).
@@ -1163,9 +1203,9 @@ Source: `docs/desktop-runs/2026-09-30-ch4-study.md` section 2(c) (`8739722`); `d
 section 3.
 
 1. **The build difference.** The study build was 9 to 28 % slower than ef663d1 on the same six tiers and machine,
-   and the gap widened with scale. The study did not isolate the cause:
-   [PENDING: A/B of ef663d1 against 4a38a54 on one network (deferred by the researchers)]. The two sets of figures are
-   not pooled.
+   and the gap widened with scale. The study did not isolate the cause, and this is a stated limitation: isolating it
+   needs a new measured A/B run of both builds on one network, which the researchers deferred and which was not
+   performed. The two sets of figures are not pooled.
 2. **Throughput follows the accumulated ledger, and the host's state.** Throughput fell repetition over repetition
    wherever repetitions shared a desktop network (SP-483K, SP-1M), was highest on fresh networks (SP-1.92M; SP-1M m1),
    and a fresh-network SP-483K rerun committed 583.3 TPS against 509.0. On the AX42, by contrast, seven MP-50K
@@ -1211,7 +1251,7 @@ section 3.
 | Objective | Finding | Status |
 |---|---|---|
 | 1. Implement the framework and verify correct end-to-end operation across scales | E = 0, no ballot lost, ledger matching the local record, and a passing verifier on every election from 1,000 to 3,524,078 voters, single-position (desktop) and three-position (AX42 on-chain and desktop offline), warm-ups included; also under a peer restart, a peer and orderer kill, injected network loss and host power losses; the full-region record reproduced on a second machine | Met at every tier |
-| 2. Evaluate integrity, privacy and security under the threat model | 8 of 8 mounted attacks refused or detected at the declared gate in each of four attack-timeline runs (5 live), to MP-1M; tampered transcript and partial committed then detected, sub-threshold publication and outside-membership submission refused live; 11 of 14 catalogue cases exercised; 0 identity linkages over 3,524,078 voters; limits demonstrated: no caller authorization (front-running), plain-HTTP console, totals bound by signatures only; reordering detected only on an unmerged build | Met for the mounted scenarios, with the stated limits. [PENDING: test-suite and CI/SAST log at 4a38a54] |
+| 2. Evaluate integrity, privacy and security under the threat model | 8 of 8 mounted attacks refused or detected at the declared gate in each of four attack-timeline runs (5 live), to MP-1M; tampered transcript and partial committed then detected, sub-threshold publication and outside-membership submission refused live; 11 of 14 catalogue cases exercised; 0 identity linkages over 3,524,078 voters; limits demonstrated: no caller authorization (front-running), plain-HTTP console, totals bound by signatures only; reordering detected only by an auditor check merged after the study (`37035f9`); CI at 4a38a54 green (270 Rust tests, Go tests with the race detector, lint, `cargo audit`), with five advisory govulncheck findings in the chaincode's gRPC dependencies | Met for the mounted scenarios, with the stated limits |
 | 3. Characterize performance and compare with a baseline on the same platform | Desktop: 509 to 925 TPS, p99 208 to 538 ms; plateau 610.9 TPS and burst completed at SP-483K; capstones at 633 to 637 (SP-1.92M) and 586.4 (SP-3.5M) TPS. AX42: 820 to 835 TPS to MP-50K, falling to 423.9 at MP-3.5M, p99 208 to 449 ms. No resource exhausted on either machine; every tier above the ten-hour arrival rate (MP-3.5M by 1.44 times); per-record crypto cost flat with scale and linear in candidates; validation gate under 1 s at every tier; about 150 times the throughput of [18] at 50,000 voters (cross-study) | Met at every tier, on two single-machine deployments |
 
 The framework operated correctly at every tier, up to the full ZAMBASULTA electorate of 3,524,078 voters in both the
@@ -1291,17 +1331,14 @@ references at 4a38a54); counts re-run as above.
 
 ## Open Placeholders
 
-Placeholders 1 to 7 and 9 of the 2026-10-02 draft are closed: SP-3.5M (1), the four offline MP tiers (2 to 5), RQ1(e)
-by A6 (6), the privacy linkage join by A7 (7), and the sub-threshold demonstration at the chaincode by A2 (9; the
-console's own 2-of-5 refusal stays on unmerged PR #57). The open items are:
+Placeholders 1 to 11 and 13 to 16 are closed: SP-3.5M (1), the four offline MP tiers (2 to 5), RQ1(e) by A6 (6), the
+privacy linkage join by A7 (7), the CI log at 4a38a54 (8, GitHub Actions run 36567167973), the sub-threshold
+demonstration at the chaincode by A2 (9; the console's own 2-of-5 refusal merged after the study as `83c78bd`),
+Figures 4.1 and 4.2 regenerated with both machines as separate series (10, 11), the ef663d1 A/B run restated as a
+limitation (13), the SSH flood record (14), the Windows Kernel-Power record of 2026-10-08 (15), and reordering detection
+on a merged build (16: PR #58 merged as `37035f9`, tree identical to `640a7b2`; the study runs remain at 4a38a54).
+The open item is:
 
 | # | Placeholder | Where | What closes it |
 |---|---|---|---|
-| 8 | [PENDING: test-suite and CI/SAST log at 4a38a54] | Tables 4.8, 4.30; Limits | Archived chaincode and auditor test-suite log plus the CI/SAST and dependency-scan log at commit 4a38a54 |
-| 10 | [PENDING: Figure 4.1 regeneration with SP-483K to SP-3.5M and the AX42 MP tiers, the two machines as separate series] | Figure 4.1 | Rebuild `fig-4-1-tps.png` from the summary files of Table 4.14 (`ch4-data.json` update) |
-| 11 | [PENDING: Figure 4.2 regeneration with SP-483K to SP-3.5M and the AX42 MP tiers, the two machines as separate series] | Figure 4.2 | Rebuild `fig-4-2-p99.png` likewise |
-| 12 | [PENDING: [18] beyond-one-million projection figure, quoted from the source] | Table 4.27 | Quote [18]'s projected figure beyond one million voters, with page, from the reference itself |
-| 13 | [PENDING: A/B of ef663d1 against 4a38a54 on one network (deferred by the researchers)] | Performance Log Analysis, finding 1 | A/B run of the two builds on one network; deferred until the researchers request it |
-| 14 | [TODO: evidence for the SSH bot-flood mitigation] | Table 4.7a (X3); Limits | Archive the server-side record (auth log extract, the mitigation applied) under `docs/desktop-runs/ax42-security/` |
-| 15 | [TODO: Windows Kernel-Power event record for 2026-10-08] | Table 4.11 | Export the System-log event for the 2026-10-08 interruption beside the MP-483K warm-up's evidence |
-| 16 | Reordering detection on a merged build | Tables 4.7a, 4.9, 4.13 | Merge of saksi PR #58 (`640a7b2`); then replace the commit with the merge commit, as `A5/report.md` asks |
+| 12 | [PENDING: [18] beyond-one-million projection figure, quoted from the source] | Table 4.27 | Quote [18]'s projected figure beyond one million voters, with page, from the reference itself; the reference is not in the repository, and the manuscript names the projection without giving its value |
