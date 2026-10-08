@@ -1,0 +1,50 @@
+2026-10-01 16:29:35 reset (warmup) network-reset-20261001-082804-1 done, chain height 6, 81329 ms
+2026-10-01 18:23:52 reset (m1) network-reset-20261001-102119-3 done, chain height 6, 149764 ms
+2026-10-01 20:31:09 reset (pre-compaction wipe) network-reset-20261001-122902-1 done, chain height 6, 107855 ms
+2026-10-01 20:31:09 compaction task start (C: 45.7 GB free, Q: 217.7 GB free, docker vhdx 232.3 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 20:32:09 compaction done: 2026-10-01T20:31:10 start; vhdx 216.3 GB; Q free 202.8 GB | 2026-10-01T20:31:41 done; vhdx 13.2 GB; Q free 405.8 GB | 2026-10-01T20:31:41 docker relaunched
+2026-10-01 20:34:36 reset (m2) network-reset-20261001-123306-1 done, chain height 6, 84007 ms
+2026-10-01 22:16:15 reset (pre-compaction wipe) network-reset-20261001-141444-3 done, chain height 6, 91038 ms
+2026-10-01 22:16:15 compaction task start (C: 45.5 GB free, Q: 207.3 GB free, docker vhdx 242.7 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 22:17:15 compaction done: 2026-10-01T22:16:16 start; vhdx 226 GB; Q free 193 GB | 2026-10-01T22:16:49 done; vhdx 13.3 GB; Q free 405.7 GB | 2026-10-01T22:16:49 docker relaunched
+2026-10-01 22:21:32 reset (m3) network-reset-20261001-142002-1 done, chain height 6, 82470 ms
+2026-10-02 18:04:47 reset (pre-compaction wipe) network-reset-20261002-100317-1 done, chain height 6, 84996 ms
+2026-10-02 18:04:47 compaction task start (C: 46.1 GB free, Q: 223.4 GB free, docker vhdx 226.5 GB, ubuntu vhdx 214.49 GB)
+2026-10-02 18:05:47 compaction done: 2026-10-02T18:04:49 start; vhdx 211 GB; Q free 208.1 GB | 2026-10-02T18:05:22 done; vhdx 13.5 GB; Q free 405.5 GB | 2026-10-02T18:05:22 docker relaunched
+2026-10-02 18:07:26 reset (sp35-warmup) network-reset-20261002-100555-1 done, chain height 6, 84096 ms
+2026-10-02 21:50:22 STOPPED at sp35-m1: reset (pre-compaction wipe): 409 {'busy': ['sp-3-5m-ch4-warmup-20261002-100733-1'], 'error': 'a phase is running on [sp-3-5m-ch4-warmup-20261002-100733-1]: a network-reset would share the network with it; let it finish or cancel it first'}
+2026-10-02 22:11:38 reset (pre-compaction wipe) network-reset-20261002-140936-1 done, chain height 6, 105157 ms
+2026-10-02 22:11:38 compaction task start (C: 29.0 GB free, Q: 41.7 GB free, docker vhdx 408.2 GB, ubuntu vhdx 231.53 GB)
+2026-10-02 22:12:38 compaction done: 2026-10-02T22:11:39 start; vhdx 380.2 GB; Q free 38.8 GB | 2026-10-02T22:12:10 done; vhdx 13.6 GB; Q free 405.4 GB | 2026-10-02T22:12:10 docker relaunched
+2026-10-02 22:14:17 reset (sp35-m1) network-reset-20261002-141246-1 done, chain height 6, 82137 ms
+2026-10-03 01:52:29 reset (pre-compaction wipe) network-reset-20261002-175059-3 done, chain height 6, 86110 ms
+2026-10-03 01:52:29 compaction task start (C: 28.9 GB free, Q: 98.2 GB free, docker vhdx 434.8 GB, ubuntu vhdx 231.53 GB)
+2026-10-03 01:53:29 compaction done: 2026-10-03T01:52:29 start; vhdx 405 GB; Q free 91.4 GB | 2026-10-03T01:52:59 done; vhdx 13.8 GB; Q free 482.6 GB | 2026-10-03T01:52:59 docker relaunched
+2026-10-03 01:55:08 reset (sp35-m2) network-reset-20261002-175337-1 done, chain height 6, 81955 ms
+2026-10-03 02:16:59 disk check: Q: 517.9 GB free >= need 432.9 GB and docker vhdx 15.0 GB: compaction not needed
+2026-10-03 02:18:37 reset (sp35-m2) network-reset-20261002-181707-1 done, chain height 6, 85687 ms
+2026-10-03 11:45:40 disk check: Q: 476.2 GB free >= need 432.9 GB and docker vhdx 14.9 GB: compaction not needed
+2026-10-03 11:57:04 disk check: Q: 476.2 GB free >= need 432.9 GB and docker vhdx 14.9 GB: compaction not needed
+2026-10-03 12:00:02 reset (sp35-m3) network-reset-20261003-035832-1 done, chain height 6, 84016 ms
+2026-10-03 15:26:42 reset (post-capstone wipe) network-reset-20261003-072442-3 done, chain height 6, 90571 ms
+2026-10-03 15:26:42 compaction task start (C: 49.5 GB free, Q: 114.8 GB free, docker vhdx 376.3 GB, ubuntu vhdx 212.98 GB)
+2026-10-03 15:27:12 compaction done: 2026-10-03T15:26:43 start; vhdx 350.4 GB; Q free 107 GB | 2026-10-03T15:27:09 done; vhdx 14.1 GB; Q free 443.3 GB | 2026-10-03T15:27:09 docker relaunched
+2026-10-03 15:49:22 reset (post-capstone wipe) network-reset-20261003-074752-1 done, chain height 6, 83935 ms
+2026-10-03 15:49:22 compaction task start (C: 49.5 GB free, Q: 475.7 GB free, docker vhdx 15.4 GB, ubuntu vhdx 212.98 GB)
+2026-10-03 15:49:52 compaction done: 2026-10-03T15:49:23 start; vhdx 14.3 GB; Q free 443 GB | 2026-10-03T15:49:46 done; vhdx 14.2 GB; Q free 443.2 GB | 2026-10-03T15:49:46 docker relaunched
+2026-10-03 16:11:55 reset (post-capstone wipe) network-reset-20261003-081024-1 done, chain height 6, 83791 ms
+2026-10-03 16:11:55 compaction task start (C: 49.4 GB free, Q: 475.6 GB free, docker vhdx 15.5 GB, ubuntu vhdx 212.98 GB)
+2026-10-03 16:12:25 compaction done: 2026-10-03T16:11:55 start; vhdx 14.5 GB; Q free 442.9 GB | 2026-10-03T16:12:18 done; vhdx 14.2 GB; Q free 443.2 GB | 2026-10-03T16:12:18 docker relaunched
+2026-10-07 23:03:23 disk check: Q: 382.2 GB free >= need 68.0 GB and docker vhdx 15.6 GB: compaction not needed
+2026-10-07 23:05:01 reset (sp483k-fresh) network-reset-20261007-150331-1 done, chain height 6, 88718 ms
+2026-10-08 00:06:12 C: check mp483k-warmup: run writes ~17.8 GB inside the Ubuntu disk (1449000 records); room 105.3 GB (C: above 15 GB + 87.1 GB ext4.vhdx slack); C: 33.2 GB free, Q: 316.4 GB free, docker vhdx 79.6 GB, ubuntu vhdx 212.98 GB
+2026-10-08 00:06:12 C: mp483k-warmup keeps ~5.6 GB after csv deletion and zstd (ratio 0.4904)
+2026-10-08 00:08:19 reset (pre-compaction wipe) network-reset-20261007-160618-3 done, chain height 6, 100392 ms
+2026-10-08 00:08:19 compaction task start (C: 46.7 GB free, Q: 316.4 GB free, docker vhdx 79.6 GB, ubuntu vhdx 212.98 GB)
+2026-10-08 00:08:49 compaction done: 2026-10-08T00:08:20 start; vhdx 74.1 GB; Q free 294.6 GB | 2026-10-08T00:08:46 done; vhdx 14.5 GB; Q free 354.3 GB | 2026-10-08T00:08:47 docker relaunched
+2026-10-08 00:11:26 reset (mp483k-warmup) network-reset-20261007-160925-1 done, chain height 6, 90884 ms
+2026-10-08 00:11:30 preflight mp483k-warmup green: host CPU 8.7 %, load1 1.91, phase_timeout {'seconds': 28800, 'longest_phase': 'ballot submission', 'estimated_s': 1796.76}, no warnings
+2026-10-08 00:12:30 mp483k-warmup: run mp-483k-ch4-desktop-warmup-20261007-161133-1
+2026-10-08 01:36:15 recovering mp483k-warmup (campaign campaign-20261007-161130-2, run mp-483k-ch4-desktop-warmup-20261007-161133-1)
+2026-10-08 02:21:12 mp483k-warmup: resources: ballot window: 2026-10-08 00:19:28 to 2026-10-08 01:04:21 | host CPU samples in window: 269, max 93.3 % (includes the WSL VM) | host CPU minus the WSL VM (vmmemWSL / CPUs): 269 samples, max 43.9 %, over 25 % (contended): 86 | top container CPU peaks in window: dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 444 %, peer0.org1.example.com 408 %, peer0.org2.example.com 176 %
+2026-10-08 02:23:03 mp483k-warmup: ledger du: peer0.org1.example.com 17343526802 /var/hyperledger/production | peer0.org2.example.com 17337788674 /var/hyperledger/production | orderer.example.com 14758184721 /var/hyperledger/production/orderer | /dev/sdc       1081101176832 67174232064 958934589440   7% /var/hyperledger/production | 

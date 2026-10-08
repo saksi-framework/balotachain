@@ -1,0 +1,33 @@
+campaign campaign-20260930-174002-6 (status done)
+
+mp-1k-ch4-cand28-20260930-174006-15 (warmup 1, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-1k-ch4-cand28-20260930-174140-16 (warmup 2, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-1k-ch4-cand28-20260930-174316-17 (measured 1, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-1k-ch4-cand28-20260930-174454-18 (measured 2, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-1k-ch4-cand28-20260930-174633-19 (measured 3, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-1k-ch4-cand28-20260930-174811-20 (measured 4, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-1k-ch4-cand28-20260930-174946-21 (measured 5, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+campaign
+  included: summary.csv, campaign.json, preflight.json
+  missing:  

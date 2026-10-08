@@ -1,0 +1,15 @@
+{"containers":null,"cpu_model":"AMD Ryzen 7 5700G with Radeon Graphics","docker_info":null,"docker_version":null,"event":"env","git_head_console":"4a38a54fe0223b58f28c53ec54e47fbeab222837","git_head_saksi":"4a38a54fe0223b58f28c53ec54e47fbeab222837","go_arch":"amd64","go_os":"linux","go_version":"go1.23.4","null_probes":["docker_version","docker_info","containers"],"orderer_batch":{"AbsoluteMaxBytes":"99 MB","BatchTimeout":"2s","MaxMessageCount":"50","PreferredMaxBytes":"2 MB","SnapshotIntervalSize":"268435456","saksi_configtx":"saksi"},"phase_timeout_s":18000,"saksi_demo_sha256":"112fffa0124943a4160f4b43f1178459c0db845c9b19aa4998d890e49c763c52","ts":"2026-09-30T23:39:16Z","uname":"Linux Ban-PC 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux"}
+{"candidates":4,"distribution":"realistic","event":"run.start","mode":"onchain","mono_ms":2,"positions":1,"run_id":"sp-1m-ch4-20260930-233845-42","ts":"2026-09-30T23:39:16Z","voters":1000000}
+{"event":"rep.start","index":3,"kind":"measured","mono_ms":4,"ts":"2026-09-30T23:39:16Z"}
+{"event":"stage.generate.start","mono_ms":6,"ts":"2026-09-30T23:39:16Z"}
+{"event":"stage.generate.end","mono_ms":724704,"ok":true,"ts":"2026-09-30T23:51:20Z"}
+{"event":"stage.check.start","mono_ms":0,"ts":"2026-09-30T23:52:20Z"}
+{"event":"stage.check.end","mono_ms":1100,"ok":true,"rows":1000000,"ts":"2026-09-30T23:52:21Z"}
+{"event":"stage.submit.start","mono_ms":0,"ts":"2026-09-30T23:52:21Z"}
+{"event":"stage.bundle.start","mono_ms":0,"ts":"2026-09-30T23:52:21Z"}
+{"event":"stage.bundle.end","mono_ms":250,"ok":true,"ts":"2026-09-30T23:52:21Z"}
+{"error":"CreateElection: submit CreateElection: rpc error: code = Unavailable desc = connection error: desc = \"transport: Error while dialing: dial tcp 127.0.0.1:7051: connect: connection refused\"","event":"stage.submit.end","mono_ms":297,"ok":false,"ts":"2026-09-30T23:52:21Z"}
+{"event":"stage.verify.start","mono_ms":0,"ts":"2026-09-30T23:52:21Z"}
+{"ballots":0,"event":"ledger.dump","mono_ms":28,"ok":false,"read_path":"","ts":"2026-09-30T23:52:21Z"}
+{"event":"stage.verify.end","failed_checks":[],"mono_ms":230351,"ok":true,"overall":"pass","ts":"2026-09-30T23:56:12Z"}
+{"arrival_tps":27.77777777777778,"event":"run.end","failed":true,"ledger_audit":"not run","mono_ms":230403,"reason":"stage_error: submit: CreateElection: submit CreateElection: rpc error: code = Unavailable desc = connection error: desc = \"transport: Error while dialing: dial tcp 127.0.0.1:7051: connect: connection refused\"","scaling_limit":"inconclusive","sustained":false,"sustained_tps":null,"ts":"2026-09-30T23:56:12Z"}

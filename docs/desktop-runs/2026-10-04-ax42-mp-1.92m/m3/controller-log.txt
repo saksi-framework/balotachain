@@ -1,0 +1,25 @@
+2026-10-04 01:00:12 reset (mp1k) network-reset-20261003-165857-2 done, chain height 6, 64396 ms
+2026-10-04 01:07:13 reset (mp10k) network-reset-20261003-170558-4 done, chain height 6, 62764 ms
+2026-10-04 01:26:04 reset (mp50k) network-reset-20261003-172449-6 done, chain height 6, 64706 ms
+2026-10-04 02:08:46 reset (mp483k-warmup) network-reset-20261003-180731-8 done, chain height 6, 68388 ms
+2026-10-04 03:16:56 reset (mp483k-m1) network-reset-20261003-191541-10 done, chain height 6, 69061 ms
+2026-10-04 04:27:06 reset (mp483k-m2) network-reset-20261003-202551-12 done, chain height 6, 67942 ms
+2026-10-04 05:37:17 reset (mp483k-m3) network-reset-20261003-213602-14 done, chain height 6, 67842 ms
+2026-10-04 06:47:25 reset (mp1m-warmup) network-reset-20261003-224610-16 done, chain height 6, 68064 ms
+2026-10-04 09:14:36 reset (mp1m-m1) network-reset-20261004-011321-18 done, chain height 6, 68635 ms
+2026-10-04 11:47:45 reset (mp1m-m2) network-reset-20261004-034630-20 done, chain height 6, 66391 ms
+2026-10-04 14:26:52 reset (mp1m-m3) network-reset-20261004-062537-22 done, chain height 6, 65555 ms
+2026-10-04 17:07:02 reset (mp1.92m-warmup) network-reset-20261004-090547-24 done, chain height 6, 66891 ms
+2026-10-04 22:26:49 reset (mp1.92m-m1) network-reset-20261004-142534-26 done, chain height 6, 69561 ms
+2026-10-05 03:35:37 reset (mp1.92m-m2) network-reset-20261004-193422-28 done, chain height 6, 65351 ms
+2026-10-05 08:23:08 disk check mp1.92m-m3: 5,765,751 records x 1 run(s) x 45 KB x 1.15 + 20 GB = 318.4 GB needed; / (md2) 568.3 GB free of 996 GB
+2026-10-05 08:24:23 reset (mp1.92m-m3) network-reset-20261005-002308-30 done, chain height 6, 67094 ms
+2026-10-05 08:24:28 preflight mp1.92m-m3 green: host CPU 0.5 % (/proc/stat, 5 s), load1 1.71, orderer 50/2s/2 MB/268435456 saksi_configtx saksi, phase_timeout {'seconds': 43200, 'longest_phase': 'ballot submission', 'estimated_s': 7149.53124}, no warnings
+2026-10-05 08:25:28 mp1.92m-m3: runs ['mp-1-92m-ch4-ax42-m3-20261005-002428-47']
+2026-10-05 08:48:28 mp1.92m-m3: mp-1-92m-ch4-ax42-m3-20261005-002428-47 ballot window open since 2026-10-05 08:47:07; first throughput 54000 records in 79671 ms -> ~678 records/s
+2026-10-05 11:25:41 main session: disk factor 1.15 -> 1.0 (measured ~45 KB/record covers ledger + run files); MP-3.5M needs ~496 GB vs ~544 GB expected free after mp1.92m-m3
+2026-10-05 11:25:41 recovering mp1.92m-m3 (campaign campaign-20261005-002428-31, runs ['mp-1-92m-ch4-ax42-m3-20261005-002428-47'])
+2026-10-05 11:26:42 mp1.92m-m3: mp-1-92m-ch4-ax42-m3-20261005-002428-47 ballot window open since 2026-10-05 08:47:07; first throughput 4423000 records in 9573488 ms -> ~462 records/s
+2026-10-05 13:27:51 mp1.92m-m3: resources: ballot window(s): 2026-10-05 08:47:07 to 2026-10-05 12:17:35 | host CPU (/proc/stat) samples in window: 1263, mean 27.4 %, max 44.7 % | non-run CPU (host minus the containers, dockerd/containerd and the console cgroups): 1263 samples, max 0.8 %, over 25 % (contended): 0 | load1 in window: mean 10.81, max 16.23 | top container CPU peaks in window: dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 364 %, peer0.org1.example.com 199 %, peer0.org2.example.com 91 % | bottleneck: none evident from host evidence (no memory, disk-util, queue or CPU saturation flag)
+2026-10-05 13:30:59 mp1.92m-m3: ledger du: peer0.org1.example.com 68870402851 /var/hyperledger/production | peer0.org2.example.com 68866631754 /var/hyperledger/production | orderer.example.com 55679986041 /var/hyperledger/production/orderer | volume compose_orderer.example.com 55679904121 | volume compose_peer0.org1.example.com 68870017827 | volume compose_peer0.org2.example.com 68866267210 | docker-root 208794522154	/var/lib/docker | /dev/md2       995623145472 449406578688 495566258176  48% / | 
+2026-10-05 13:34:53 mp1.92m-m3: ndjson stored zstd-compressed (sha256 sidecars): ok /root/.saksi/campaign/runs/mp-1-92m-ch4-ax42-m3-20261005-002428-47/ballots.ndjson 22676698683 -> 10668993184 ratio 0.4705 sha256 bb1e854e693fd1c05137de98f5d70fb1a3b8657fc26f6bf0c08d9a9fc85546c6 | ok /root/.saksi/campaign/runs/mp-1-92m-ch4-ax42-m3-20261005-002428-47/ledger/ballots.ndjson 22676698683 -> 11062908446 ratio 0.4879 sha256 5e83d026e11f3bfbb48aefe6e64c8388a132e551f0781b160f51aa0a39402829 | freed 23621495736 bytes

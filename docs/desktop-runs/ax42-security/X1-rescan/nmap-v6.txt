@@ -1,0 +1,16 @@
+# Nmap 7.80 scan initiated Wed Oct 07 23:09:28 2026 as: "C:\\Program Files (x86)\\Nmap\\nmap.exe" -6 -sT -Pn -p 22,7050,7051,7053,9051,9443,9444,9445,8090 -oN "Q:/Code - LAPTOP/Code/projects/balotachain/.superpowers/sdd/2026-09-14-study-grade-wizard/x1-rescan/nmap-v6.txt" 2a01:4f9:3100:43ce::2
+Nmap scan report for 2a01:4f9:3100:43ce::2
+Host is up.
+
+PORT     STATE    SERVICE
+22/tcp   filtered ssh
+7050/tcp filtered unknown
+7051/tcp filtered unknown
+7053/tcp filtered unknown
+8090/tcp filtered opsmessaging
+9051/tcp filtered tor-control
+9443/tcp filtered tungsten-https
+9444/tcp filtered wso2esb-console
+9445/tcp filtered mindarray-ca
+
+# Nmap done at Wed Oct 07 23:09:39 2026 -- 1 IP address (1 host up) scanned in 11.43 seconds

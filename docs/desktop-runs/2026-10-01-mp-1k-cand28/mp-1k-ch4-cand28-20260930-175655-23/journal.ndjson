@@ -1,0 +1,30 @@
+{"containers":[{"HostConfig.Memory":0,"HostConfig.NanoCpus":0,"Name":"/peer0.org1.example.com"},{"HostConfig.Memory":0,"HostConfig.NanoCpus":0,"Name":"/orderer.example.com"},{"HostConfig.Memory":0,"HostConfig.NanoCpus":0,"Name":"/peer0.org2.example.com"}],"cpu_model":"AMD Ryzen 7 5700G with Radeon Graphics","docker_info":{"NCPU":16,"MemTotal":25199005696,"ServerVersion":"29.7.2","OSType":"linux"},"docker_version":{"Client":{"ApiVersion":"1.55","Arch":"amd64","BuildTime":"Wed Aug  5 18:27:38 2026","Context":"default","DefaultAPIVersion":"1.55","GitCommit":"a7dcaa6","GoVersion":"go1.26.5","Os":"linux","Version":"29.7.2"},"Server":{"ApiVersion":"1.55","Arch":"amd64","BuildTime":"2026-08-05T18:28:36.000000000+00:00","Components":[{"Details":{"ApiVersion":"1.55","Arch":"amd64","BuildTime":"Wed Aug  5 18:28:36 2026","Experimental":"false","GitCommit":"6a43e3d","GoVersion":"go1.26.5","KernelVersion":"6.18.33.2-microsoft-standard-WSL2","MinAPIVersion":"1.40","Module":"github.com/moby/moby/v2","ModuleVersion":"v2.0.0+unknown","Os":"linux"},"Name":"Engine","Version":"29.7.2"},{"Details":{"GitCommit":"aad11006b869517fcd3009450b6f82da282e1a9b"},"Name":"containerd","Version":"v2.3.3"},{"Details":{"GitCommit":"v1.4.3-0-gbb14dabe"},"Name":"runc","Version":"1.4.3"},{"Details":{"GitCommit":"de40ad0"},"Name":"docker-init","Version":"0.19.0"}],"GitCommit":"6a43e3d","GoVersion":"go1.26.5","KernelVersion":"6.18.33.2-microsoft-standard-WSL2","MinAPIVersion":"1.40","Os":"linux","Platform":{"Name":"Docker Desktop 4.90.0 (238679)"},"Version":"29.7.2"}},"event":"env","git_head_console":"4a38a54fe0223b58f28c53ec54e47fbeab222837","git_head_saksi":"4a38a54fe0223b58f28c53ec54e47fbeab222837","go_arch":"amd64","go_os":"linux","go_version":"go1.23.4","null_probes":[],"orderer_batch":{"AbsoluteMaxBytes":"99 MB","BatchTimeout":"2s","MaxMessageCount":"50","PreferredMaxBytes":"2 MB","SnapshotIntervalSize":"268435456","saksi_configtx":"saksi"},"phase_timeout_s":18000,"saksi_demo_sha256":"112fffa0124943a4160f4b43f1178459c0db845c9b19aa4998d890e49c763c52","ts":"2026-09-30T17:56:55Z","uname":"Linux Ban-PC 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux"}
+{"candidates":28,"distribution":"realistic","event":"run.start","mode":"onchain","mono_ms":3,"positions":3,"run_id":"mp-1k-ch4-cand28-20260930-175655-23","ts":"2026-09-30T17:56:55Z","voters":1000}
+{"event":"rep.start","index":2,"kind":"warmup","mono_ms":6,"ts":"2026-09-30T17:56:55Z"}
+{"event":"stage.generate.start","mono_ms":7,"ts":"2026-09-30T17:56:55Z"}
+{"event":"stage.generate.end","mono_ms":5029,"ok":true,"ts":"2026-09-30T17:57:00Z"}
+{"event":"stage.check.start","mono_ms":0,"ts":"2026-09-30T17:57:00Z"}
+{"event":"stage.check.end","mono_ms":3,"ok":true,"rows":1000,"ts":"2026-09-30T17:57:00Z"}
+{"event":"stage.submit.start","mono_ms":0,"ts":"2026-09-30T17:57:00Z"}
+{"event":"stage.bundle.start","mono_ms":0,"ts":"2026-09-30T17:57:00Z"}
+{"event":"stage.bundle.end","mono_ms":8,"ok":true,"ts":"2026-09-30T17:57:00Z"}
+{"concurrency":128,"event":"stage.ballots.start","mono_ms":0,"n":3000,"send_rate":0,"ts":"2026-09-30T17:57:05Z"}
+{"event":"segment.start","index":0,"mono_ms":2,"tag":"warmup","ts":"2026-09-30T17:57:05Z"}
+{"done":1000,"event":"ballots.progress","mono_ms":3956,"ts":"2026-09-30T17:57:09Z"}
+{"block_in_bytes":0,"block_out_bytes":453000000,"container":"peer0.org1.example.com","cpu_pct":211.5,"event":"sample","mem_bytes":384617676,"mono_ms":7270,"net_in_bytes":504000000,"net_out_bytes":681000000,"ts":"2026-09-30T17:57:12Z"}
+{"block_in_bytes":0,"block_out_bytes":335000000,"container":"orderer.example.com","cpu_pct":64.08,"event":"sample","mem_bytes":589824000,"mono_ms":7270,"net_in_bytes":170000000,"net_out_bytes":337000000,"ts":"2026-09-30T17:57:12Z"}
+{"block_in_bytes":0,"block_out_bytes":465000000,"container":"peer0.org2.example.com","cpu_pct":60.35,"event":"sample","mem_bytes":273992908,"mono_ms":7270,"net_in_bytes":171000000,"net_out_bytes":866000,"ts":"2026-09-30T17:57:12Z"}
+{"container":"client","cpu_pct":null,"event":"sample","mem_bytes":195785776,"mono_ms":7271,"ts":"2026-09-30T17:57:12Z"}
+{"done":2000,"event":"ballots.progress","mono_ms":8148,"ts":"2026-09-30T17:57:13Z"}
+{"done":3000,"event":"ballots.progress","mono_ms":12162,"ts":"2026-09-30T17:57:17Z"}
+{"block_in_bytes":0,"block_out_bytes":624000000,"container":"peer0.org1.example.com","cpu_pct":226.65,"event":"sample","mem_bytes":386714828,"mono_ms":12260,"net_in_bytes":658000000,"net_out_bytes":851000000,"ts":"2026-09-30T17:57:17Z"}
+{"block_in_bytes":0,"block_out_bytes":423000000,"container":"orderer.example.com","cpu_pct":61.22,"event":"sample","mem_bytes":718693990,"mono_ms":12260,"net_in_bytes":215000000,"net_out_bytes":425000000,"ts":"2026-09-30T17:57:17Z"}
+{"block_in_bytes":0,"block_out_bytes":585000000,"container":"peer0.org2.example.com","cpu_pct":78.02,"event":"sample","mem_bytes":273678336,"mono_ms":12260,"net_in_bytes":205000000,"net_out_bytes":959000,"ts":"2026-09-30T17:57:17Z"}
+{"container":"client","cpu_pct":46.433952549647266,"event":"sample","mem_bytes":195785776,"mono_ms":12261,"ts":"2026-09-30T17:57:17Z"}
+{"committed":3000,"dropped":0,"event":"stage.ballots.end","mono_ms":12387,"stopped":false,"submitted":3000,"ts":"2026-09-30T17:57:17Z","window_ms":12339}
+{"committed":3000,"driver_ceiling_tps":248.268191651965,"event":"segment.end","index":0,"mono_ms":12390,"p50_ms":515.571,"tps":243.1313494715829,"ts":"2026-09-30T17:57:17Z","window_ms":12339}
+{"event":"stage.submit.end","mono_ms":79513,"ok":true,"ts":"2026-09-30T17:58:20Z"}
+{"event":"stage.verify.start","mono_ms":0,"ts":"2026-09-30T17:58:20Z"}
+{"ballots":0,"event":"ledger.dump","mono_ms":602,"ok":false,"read_path":"","ts":"2026-09-30T17:58:21Z"}
+{"event":"stage.verify.end","failed_checks":[],"mono_ms":5032,"ok":true,"overall":"pass","ts":"2026-09-30T17:58:25Z"}
+{"arrival_tps":0.027777777777777776,"event":"run.end","failed":false,"ledger_audit":"not run","mono_ms":5039,"reason":"","scaling_limit":"inconclusive","sustained":true,"sustained_tps":243.1313494715829,"ts":"2026-09-30T17:58:25Z"}

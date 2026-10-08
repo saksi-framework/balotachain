@@ -1,0 +1,43 @@
+{
+  "run_id": "mp-483k-ch4-offline-20261003-095458-1",
+  "config": {
+    "name": "MP-483K ch4 offline",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 3,
+    "candidates": 4,
+    "voters": 483000,
+    "distribution": "realistic",
+    "mode": "offline",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "window_s": 0,
+    "rep": {
+      "index": 1,
+      "kind": "measured"
+    },
+    "skip_attacks": true
+  },
+  "created_at": "2026-10-03T09:54:58.548624633Z",
+  "commit": {
+    "git_head_console": "4a38a54fe0223b58f28c53ec54e47fbeab222837",
+    "git_head_saksi": "4a38a54fe0223b58f28c53ec54e47fbeab222837"
+  }
+}

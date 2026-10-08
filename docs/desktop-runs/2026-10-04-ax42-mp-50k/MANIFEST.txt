@@ -1,0 +1,33 @@
+campaign campaign-20261003-172609-7 (status done)
+
+mp-50k-ch4-ax42-20261003-172609-29 (warmup 1, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-50k-ch4-ax42-20261003-173147-30 (warmup 2, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-50k-ch4-ax42-20261003-173729-31 (measured 1, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-50k-ch4-ax42-20261003-174311-32 (measured 2, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-50k-ch4-ax42-20261003-174852-33 (measured 3, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-50k-ch4-ax42-20261003-175434-34 (measured 4, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+mp-50k-ch4-ax42-20261003-180015-35 (measured 5, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+campaign
+  included: summary.csv, campaign.json, preflight.json
+  missing:  

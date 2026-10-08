@@ -1,0 +1,8 @@
+{"event":"stage.generate.end","mono_ms":32225,"ok":true,"ts":"2026-10-07T08:34:25Z"}
+{"event":"stage.bundle.end","mono_ms":21,"ok":true,"ts":"2026-10-07T08:34:25Z"}
+{"concurrency":128,"event":"stage.ballots.start","mono_ms":0,"n":150000,"send_rate":0,"ts":"2026-10-07T08:34:31Z"}
+{"committed":150000,"dropped":0,"event":"stage.ballots.end","mono_ms":2885963,"stopped":false,"submitted":150000,"ts":"2026-10-07T09:22:36Z","window_ms":2885906}
+{"committed":150000,"driver_ceiling_tps":53.00817704511812,"event":"segment.end","index":0,"mono_ms":2885994,"p50_ms":2414.721,"tps":51.9767386525131,"ts":"2026-10-07T09:22:37Z","window_ms":2885906}
+{"event":"stage.submit.end","mono_ms":3058251,"ok":true,"ts":"2026-10-07T09:25:23Z"}
+{"event":"stage.verify.end","failed_checks":[],"mono_ms":105566,"ok":true,"overall":"pass","ts":"2026-10-07T09:27:08Z"}
+{"arrival_tps":1.3888888888888888,"event":"run.end","failed":false,"ledger_audit":"ok","ledger_matches_local":true,"mono_ms":105604,"reason":"","scaling_limit":"inconclusive","sustained":true,"sustained_tps":51.9767386525131,"ts":"2026-10-07T09:27:08Z"}

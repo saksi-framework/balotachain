@@ -1,0 +1,20 @@
+[17:43:00] POST /generate voters=50000
+[17:43:00] run_id=d3-crash-174300-20261007-094300-57
+[17:43:40] arm peer-restart fault at=0.4 down_s=25
+[17:43:40] fault arm -> 200 {'at': 0.4, 'at_index': 60000, 'ballots': 150000, 'container': 'peer0.org1.example.com', 'down_s': 25, 'kind': 'peer-restart', 'run_id': 'd3-crash-174300-202610
+[17:43:40] POST /submit (ballot window)
+[17:43:40] submit -> 202 {'run_id': 'd3-crash-174300-20261007-094300-57'}
+[17:43:48] ballot window open; starting orderer-kill cycles
+[17:43:48] orderer cycle 1: stop orderer.example.com
+[17:43:59] orderer cycle 1: started
+[17:44:29] orderer cycle 2: stop orderer.example.com
+[17:44:39] orderer cycle 2: started
+[17:45:09] run idle before orderer cycle 3
+[17:45:09] waiting for submit/window to settle
+[17:45:09] post-window status: {'busy': False, 'run_id': 'd3-crash-174300-20261007-094300-57'}
+[17:45:09] journal interrupted stamped: True
+[17:45:29] resume attempt 0 -> 202 {'segment': 1, 'remaining': 134950}
+[17:50:19] verify-only -> 202 {'run_id': 'd3-crash-174300-20261007-094300-57'}
+no correctness.csv produced
+run dir: /root/.saksi/campaign/runs/d3-crash-174300-20261007-094300-57
+DONE

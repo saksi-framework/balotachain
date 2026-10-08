@@ -1,0 +1,17 @@
+campaign campaign-20261001-035442-2 (status done)
+
+sp-1m-ch4-20261001-035446-1 (measured 1, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+sp-1m-ch4-20261001-044622-2 (measured 2, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+sp-1m-ch4-20261001-054253-3 (measured 3, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv
+  missing:  negative-tests.csv
+
+campaign
+  included: summary.csv, campaign.json, preflight.json
+  missing:  

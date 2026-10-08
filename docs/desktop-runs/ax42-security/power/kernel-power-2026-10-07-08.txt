@@ -1,0 +1,19 @@
+
+TimeCreated             Id ProviderName                   Msg                                                                                                                                           
+-----------             -- ------------                   ---                                                                                                                                           
+10/8/2026 1:34:15 AM    41 Microsoft-Windows-Kernel-Power The system has rebooted without cleanly shutting down first. This error could be caused if the system stopped responding, crashed, or lost    
+                                                          power unexpectedly.                                                                                                                           
+10/8/2026 1:34:22 AM  6008 EventLog                       The previous system shutdown at 12:35:44 AM on ?10/?8/?2026 was unexpected.                                                                   
+10/7/2026 3:13:14 PM  1074 User32                         The process C:\Windows\SystemApps\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\StartMenuExperienceHost.exe (BAN-PC) has initiated  
+                                                          the power off of computer BAN-PC on behalf of user BAN-PC\User for the following reason: Other (Unplanned)                                    
+10/7/2026 3:46:29 AM  1074 User32                         The process C:\Windows\SystemApps\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\StartMenuExperienceHost.exe (BAN-PC) has initiated  
+                                                          the power off of computer BAN-PC on behalf of user BAN-PC\User for the following reason: Other (Unplanned)                                    
+10/7/2026 2:16:20 AM    41 Microsoft-Windows-Kernel-Power The system has rebooted without cleanly shutting down first. This error could be caused if the system stopped responding, crashed, or lost    
+                                                          power unexpectedly.                                                                                                                           
+10/7/2026 2:16:26 AM  6008 EventLog                       The previous system shutdown at 1:50:54 AM on ?10/?7/?2026 was unexpected.                                                                    
+10/7/2026 12:30:48 AM   41 Microsoft-Windows-Kernel-Power The system has rebooted without cleanly shutting down first. This error could be caused if the system stopped responding, crashed, or lost    
+                                                          power unexpectedly.                                                                                                                           
+10/7/2026 12:30:54 AM 6008 EventLog                       The previous system shutdown at 12:05:44 AM on ?10/?7/?2026 was unexpected.                                                                   
+
+
+

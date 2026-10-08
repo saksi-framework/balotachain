@@ -1,0 +1,5 @@
+2026-10-01T20:28:57+0800
+peer0.org1.example.com 22845034111 /var/hyperledger/production
+peer0.org2.example.com 22846292058 /var/hyperledger/production
+orderer.example.com 19151726583 /var/hyperledger/production/orderer
+/dev/sde       1081101176832 82402213888 943706607616   9% /var/hyperledger/production

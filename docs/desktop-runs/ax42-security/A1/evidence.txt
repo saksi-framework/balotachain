@@ -1,0 +1,12 @@
+# A1 tampered partial decryption committed live, detected offline  Wed Oct  7 08:09:07 AM UTC 2026
+## on-chain: tamper_invoke a1 a1.json
+== a1 | election=secA1-20261007-080907 ==
+  [setup]   15 ballots committed
+  [setup]   election closed
+  partial[0] tampered: Chaum-Pedersen response low bit flipped (well-formed, does not verify)
+  [COMMIT]  SubmitPartialDecryption(tampered)
+
+## offline control:
+overall=pass failed=
+## offline mutation: stream-partial + audit-stream
+overall=fail failed=decryption.cp_proof:partial_decryptions[0] (trustee 1, contest preside

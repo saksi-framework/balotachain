@@ -1,0 +1,35 @@
+{
+  "config": {
+    "name": "d3-crash-174300",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 3,
+    "candidates": 4,
+    "voters": 50000,
+    "distribution": "realistic",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "skip_attacks": true,
+    "mode": "onchain"
+  },
+  "post": {
+    "run_id": "d3-crash-174300-20261007-094300-57"
+  }
+}

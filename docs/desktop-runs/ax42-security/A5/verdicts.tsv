@@ -1,0 +1,49 @@
+mp-1k-ch4-ax42-20261003-170017-5	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest bc5
+mp-1k-ch4-ax42-20261003-170041-6	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 001
+mp-1k-ch4-ax42-20261003-170105-7	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 20a
+mp-1k-ch4-ax42-20261003-170129-8	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 829
+mp-1k-ch4-ax42-20261003-170153-9	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 24b
+mp-1k-ch4-ax42-20261003-170217-10	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest b15
+mp-1k-ch4-ax42-20261003-170241-11	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest af3
+mp-1k-ch4-ax42-20261003-170305-12	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 05f
+mp-1k-ch4-ax42-20261003-170329-13	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest de1
+mp-1k-ch4-ax42-20261003-170353-14	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 077
+mp-1k-ch4-ax42-20261003-170417-15	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 3b2
+mp-1k-ch4-ax42-20261003-170441-16	overall=pass	failed=[]	sumE=0	contests=12	1s	ledger.order=pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 0db
+mp-10k-ch4-ax42-20261003-170718-17	overall=pass	failed=[]	sumE=0	contests=12	9s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest b2
+mp-10k-ch4-ax42-20261003-170840-18	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 8a
+mp-10k-ch4-ax42-20261003-171002-19	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 86
+mp-10k-ch4-ax42-20261003-171124-20	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 77
+mp-10k-ch4-ax42-20261003-171246-21	overall=pass	failed=[]	sumE=0	contests=12	13s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 22
+mp-10k-ch4-ax42-20261003-171408-22	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest d4
+mp-10k-ch4-ax42-20261003-171529-23	overall=pass	failed=[]	sumE=0	contests=12	13s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest f7
+mp-10k-ch4-ax42-20261003-171651-24	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest c1
+mp-10k-ch4-ax42-20261003-171812-25	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest be
+mp-10k-ch4-ax42-20261003-171934-26	overall=pass	failed=[]	sumE=0	contests=12	13s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 7a
+mp-10k-ch4-ax42-20261003-172056-27	overall=pass	failed=[]	sumE=0	contests=12	14s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 3b
+mp-10k-ch4-ax42-20261003-172217-28	overall=pass	failed=[]	sumE=0	contests=12	13s	ledger.order=pass: 30000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 9f
+mp-50k-ch4-ax42-20261003-172609-29	overall=pass	failed=[]	sumE=0	contests=12	67s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest b
+mp-50k-ch4-ax42-20261003-173147-30	overall=pass	failed=[]	sumE=0	contests=12	67s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 5
+mp-50k-ch4-ax42-20261003-173729-31	overall=pass	failed=[]	sumE=0	contests=12	67s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest d
+mp-50k-ch4-ax42-20261003-174311-32	overall=pass	failed=[]	sumE=0	contests=12	68s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest c
+mp-50k-ch4-ax42-20261003-174852-33	overall=pass	failed=[]	sumE=0	contests=12	72s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest c
+mp-50k-ch4-ax42-20261003-175434-34	overall=pass	failed=[]	sumE=0	contests=12	72s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 6
+mp-50k-ch4-ax42-20261003-180015-35	overall=pass	failed=[]	sumE=0	contests=12	71s	ledger.order=pass: 150000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 6
+mp-483k-ch4-ax42-m1-20261003-191701-37	overall=pass	failed=[]	sumE=0	contests=12	574s	ledger.order=pass: 1449000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-3-5m-ch4-ax42-m3-20261006-123905-51	overall=pass	failed=[]	sumE=0	contests=12	2770s	ledger.order=pass: 10572234 records: the chain read-back is in nullifier order and matches the served record (ledger_digest
+BATCH-DONE 00:40:00
+mp-483k-ch4-ax42-warmup-20261003-180851-36	overall=pass	failed=[]	sumE=0	contests=12	362s	ledger.order=pass: 1449000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-483k-ch4-ax42-m2-20261003-202711-38	overall=pass	failed=[]	sumE=0	contests=12	379s	ledger.order=pass: 1449000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-483k-ch4-ax42-m3-20261003-213722-39	overall=pass	failed=[]	sumE=0	contests=12	378s	ledger.order=pass: 1449000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1m-ch4-ax42-m1-20261004-011441-41	overall=pass	failed=[]	sumE=0	contests=12	783s	ledger.order=pass: 3000000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1m-ch4-ax42-m2-20261004-034750-42	overall=pass	failed=[]	sumE=0	contests=12	783s	ledger.order=pass: 3000000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1m-ch4-ax42-m3-20261004-062657-43	overall=pass	failed=[]	sumE=0	contests=12	782s	ledger.order=pass: 3000000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1m-ch4-ax42-warmup-20261003-224730-40	overall=pass	failed=[]	sumE=0	contests=12	783s	ledger.order=pass: 3000000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1-92m-ch4-ax42-m1-20261004-142654-45	overall=pass	failed=[]	sumE=0	contests=12	1506s	ledger.order=pass: 5765751 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1-92m-ch4-ax42-m2-20261004-193542-46	overall=pass	failed=[]	sumE=0	contests=12	1507s	ledger.order=pass: 5765751 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1-92m-ch4-ax42-m3-20261005-002428-47	overall=pass	failed=[]	sumE=0	contests=12	1506s	ledger.order=pass: 5765751 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-1-92m-ch4-ax42-warmup-20261004-090707-44	overall=pass	failed=[]	sumE=0	contests=12	1508s	ledger.order=pass: 5765751 records: the chain read-back is in nullifier order and matches the served record (ledger_digest 
+mp-3-5m-ch4-ax42-warmup-20261005-053700-48	overall=pass	failed=[]	sumE=0	contests=12	2768s	ledger.order=pass: 10572234 records: the chain read-back is in nullifier order and matches the served record (ledger_digest
+mp-3-5m-ch4-ax42-m1-20261005-163337-49	overall=pass	failed=[]	sumE=0	contests=12	2766s	ledger.order=pass: 10572234 records: the chain read-back is in nullifier order and matches the served record (ledger_digest
+mp-3-5m-ch4-ax42-m2-20261006-023716-50	overall=pass	failed=[]	sumE=0	contests=12	2765s	ledger.order=pass: 10572234 records: the chain read-back is in nullifier order and matches the served record (ledger_digest
+BATCH2-DONE 05:51:42

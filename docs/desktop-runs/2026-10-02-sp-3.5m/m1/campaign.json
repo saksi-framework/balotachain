@@ -1,0 +1,118 @@
+{
+  "id": "campaign-20261002-141421-2",
+  "status": "done",
+  "created_at": "2026-10-02T14:14:21.15286919Z",
+  "finished_at": "2026-10-02T17:20:16.938011336Z",
+  "config": {
+    "name": "SP-3.5M ch4 m1",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 1,
+    "candidates": 4,
+    "voters": 3524078,
+    "distribution": "realistic",
+    "mode": "onchain",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "window_s": 0,
+    "skip_attacks": true
+  },
+  "options": {
+    "warmups": 0,
+    "reps": 1
+  },
+  "preflight": {
+    "at": "2026-10-02T14:14:21.152450992Z",
+    "run": {
+      "mode": "onchain",
+      "voters": 3524078,
+      "positions": 1,
+      "candidates": 4,
+      "concurrency": 128
+    },
+    "fabric": {
+      "enabled": true,
+      "reachable": true,
+      "peer": "localhost:7051",
+      "channel": "saksi"
+    },
+    "orderer_batch": {
+      "AbsoluteMaxBytes": "99 MB",
+      "BatchTimeout": "2s",
+      "MaxMessageCount": "50",
+      "PreferredMaxBytes": "2 MB",
+      "SnapshotIntervalSize": "268435456",
+      "saksi_configtx": "saksi"
+    },
+    "ladder": {
+      "ok": true,
+      "ladder_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837",
+      "console_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837"
+    },
+    "disk": {
+      "path": "/home/user/.saksi/campaign/runs",
+      "free_bytes": 851912376320,
+      "projected_ledger_bytes": 42288936000,
+      "projected_run_bytes": null
+    },
+    "memory": {
+      "available_bytes": 23267229696,
+      "projected_audit_bytes": 562166132
+    },
+    "host": {
+      "at": "2026-10-02T14:14:17.364041186Z",
+      "guest_load1": 3.36,
+      "guest_load5": 1.51,
+      "host_cpu_pct": 0,
+      "cpus": 16
+    },
+    "phase_timeout": {
+      "seconds": 28800,
+      "longest_phase": "ballot submission",
+      "estimated_s": 4369.856719999
+    },
+    "verify_threads_default": 16,
+    "concurrency_min_advised": 50,
+    "warnings": []
+  },
+  "reps": [
+    {
+      "index": 1,
+      "kind": "measured",
+      "run_id": "sp-3-5m-ch4-m1-20261002-141424-1",
+      "status": "done",
+      "committed_tps": 567.176,
+      "latency_p99_ms": 521.768,
+      "failed": false,
+      "host_start": {
+        "at": "2026-10-02T14:14:21.153899763Z",
+        "guest_load1": 3.09,
+        "guest_load5": 1.49,
+        "host_cpu_pct": 3.81555965106988
+      },
+      "host_end": {
+        "at": "2026-10-02T17:20:13.323876033Z",
+        "guest_load1": 5.37,
+        "guest_load5": 11.81,
+        "host_cpu_pct": 2.58771627233899
+      }
+    }
+  ]
+}

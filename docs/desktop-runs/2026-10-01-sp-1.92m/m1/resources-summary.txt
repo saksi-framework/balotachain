@@ -1,0 +1,45 @@
+ballot window: 2026-10-01 18:38:48 to 2026-10-01 19:50:35
+host CPU samples in window: 364, max 89.1 %, over 25 %: 354
+top container CPU peaks in window: peer0.org1.example.com 1506 %, dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 460 %, peer0.org2.example.com 426 %
+bottleneck: Windows available memory fell to 227 MB; win.PhysicalDisk(0 C:)\% Disk Time mean 130 % busy in the ballot window
+
+metric                                                             run peak    window mean    window peak
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.cpu_pct          937.9          248.5          460.5
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.mem_bytes     53435433.0     22971801.9     32033996.8
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.cpu_pct            0.2            0.0            0.0
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.mem_bytes     15707668.5      9089933.4     15707668.5
+docker.orderer.example.com.cpu_pct                                    118.7           48.6          118.7
+docker.orderer.example.com.mem_bytes                           8698382516.2   4449944645.7   8698382516.2
+docker.peer0.org1.example.com.cpu_pct                                1506.1          252.0         1506.1
+docker.peer0.org1.example.com.mem_bytes                        4124242346.0    437685076.8    727921459.2
+docker.peer0.org2.example.com.cpu_pct                                 425.6           96.5          425.6
+docker.peer0.org2.example.com.mem_bytes                         674758656.0    400915441.5    674758656.0
+host.c_free_bytes                                             43414011904.0  27741000362.7  41387245568.0
+host.docker_vhdx_bytes                                       232254341120.0 204610073090.8 229536432128.0
+host.q_free_bytes                                            246741544960.0 245361227026.2 246741544960.0
+host.ubuntu_vhdx_bytes                                       214485172224.0 214485172224.0 214485172224.0
+win.Memory\Available MBytes                                          7101.0         3005.4         7101.0
+win.PhysicalDisk(0 C:)\% Disk Time                                  18473.6          130.4         4051.1
+win.PhysicalDisk(0 C:)\Current Disk Queue Length                      252.0            1.9          252.0
+win.PhysicalDisk(1 Q:)\% Disk Time                                    295.3           49.4          295.3
+win.PhysicalDisk(1 Q:)\Current Disk Queue Length                        7.0            1.0            7.0
+win.PhysicalDisk(_Total)\% Disk Time                                 9237.0           89.9         2031.0
+win.PhysicalDisk(_Total)\Current Disk Queue Length                    252.0            3.0          252.0
+win.Processor(_Total)\% Processor Time                                 94.5           58.2           89.1
+wsl.Dirty_kb                                                      2037164.0        22776.5       217088.0
+wsl.MemAvailable_kb                                              23212324.0     22103028.0     23161948.0
+wsl.MemTotal_kb                                                  24608404.0     24608400.5     24608404.0
+wsl.SwapFree_kb                                                         0.0            0.0            0.0
+wsl.SwapTotal_kb                                                        0.0            0.0            0.0
+wsl.load1                                                              19.6           14.0           19.6
+wsl.load5                                                              16.6           12.6           16.6
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_read_bytes total 0.03 GB over the run (cumulative counter)
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_write_bytes total 0.00 GB over the run (cumulative counter)
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_read_bytes total 0.02 GB over the run (cumulative counter)
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_write_bytes total 0.00 GB over the run (cumulative counter)
+docker.orderer.example.com.blk_read_bytes                    total 0.32 GB over the run (cumulative counter)
+docker.orderer.example.com.blk_write_bytes                   total 19.90 GB over the run (cumulative counter)
+docker.peer0.org1.example.com.blk_read_bytes                 total 33.20 GB over the run (cumulative counter)
+docker.peer0.org1.example.com.blk_write_bytes                total 153.00 GB over the run (cumulative counter)
+docker.peer0.org2.example.com.blk_read_bytes                 total 2.06 GB over the run (cumulative counter)
+docker.peer0.org2.example.com.blk_write_bytes                total 147.00 GB over the run (cumulative counter)

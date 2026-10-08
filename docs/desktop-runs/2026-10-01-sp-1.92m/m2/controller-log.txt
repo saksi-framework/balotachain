@@ -1,0 +1,13 @@
+2026-10-01 16:29:35 reset (warmup) network-reset-20261001-082804-1 done, chain height 6, 81329 ms
+2026-10-01 18:23:52 reset (m1) network-reset-20261001-102119-3 done, chain height 6, 149764 ms
+2026-10-01 20:31:09 reset (pre-compaction wipe) network-reset-20261001-122902-1 done, chain height 6, 107855 ms
+2026-10-01 20:31:09 compaction task start (C: 45.7 GB free, Q: 217.7 GB free, docker vhdx 232.3 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 20:32:09 compaction done: 2026-10-01T20:31:10 start; vhdx 216.3 GB; Q free 202.8 GB | 2026-10-01T20:31:41 done; vhdx 13.2 GB; Q free 405.8 GB | 2026-10-01T20:31:41 docker relaunched
+2026-10-01 20:34:36 reset (m2) network-reset-20261001-123306-1 done, chain height 6, 84007 ms
+2026-10-01 20:34:40 preflight m2 green: host CPU 2.8 %, load1 3.49, phase_timeout {'seconds': 28800, 'longest_phase': 'ballot submission', 'estimated_s': 2383.17708}
+2026-10-01 20:34:40 SP-1.92M ch4 m2: campaign campaign-20261001-123440-2 started (C: 45.6 GB free, Q: 435.6 GB free, docker vhdx 14.4 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 20:35:50 m2: run sp-1-92m-ch4-m2-20261001-123444-1
+2026-10-01 22:12:18 SP-1.92M ch4 m2: campaign campaign-20261001-123440-2 done error=None run sp-1-92m-ch4-m2-20261001-123444-1 tps 633.278 p99 460.389 failed False  resumed False
+2026-10-01 22:12:18 m2: resources: ballot window: 2026-10-01 20:45:44 to 2026-10-01 21:36:19 | host CPU samples in window: 303, max 85.3 %, over 25 %: 302 | top container CPU peaks in window: dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 487 %, peer0.org1.example.com 404 %, peer0.org2.example.com 178 % | bottleneck: Windows available memory fell to 594 MB; WSL load1 mean 15.6 of 16 CPUs in the ballot window
+2026-10-01 22:14:38 m2: ledger du: peer0.org1.example.com 22839034598 /var/hyperledger/production | peer0.org2.example.com 22840108955 /var/hyperledger/production | orderer.example.com 19070735690 /var/hyperledger/production/orderer | /dev/sdc       1081101176832 82461999104 943646822400   9% /var/hyperledger/production | 
+2026-10-01 22:14:39 deleted sp-1-92m-ch4-m2-20261001-123444-1/ballots.csv (7826856967 bytes)

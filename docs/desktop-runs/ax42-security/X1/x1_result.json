@@ -1,0 +1,16 @@
+{
+  "ip": "157.180.56.166",
+  "open_tcp": [
+    22,
+    7050,
+    7051,
+    7053,
+    9051,
+    9443,
+    9444,
+    9445
+  ],
+  "scanned_ports": 65535,
+  "elapsed_s": 98.2,
+  "method": "python full-connect"
+}

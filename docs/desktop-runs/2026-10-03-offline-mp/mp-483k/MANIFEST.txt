@@ -1,0 +1,9 @@
+campaign campaign-20261003-095455-1 (status done)
+
+mp-483k-ch4-offline-20261003-095458-1 (measured 1, done)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json
+  missing:  negative-tests.csv, receipts-lifecycle.csv
+
+campaign
+  included: summary.csv, campaign.json, preflight.json
+  missing:  

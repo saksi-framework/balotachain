@@ -1,0 +1,2586 @@
+{
+ "_readme": "Every number in chapter-4-draft.docx comes from this file. 'auto' blocks are written by ch4-data.py from the run files named in 'source'; everything else is hand-kept and carries its own source string. A tier with 'pending' and no 'source' prints its pending marker.",
+ "build": {
+  "saksi_commit": "4a38a54fe0223b58f28c53ec54e47fbeab222837",
+  "saksi_demo_sha256": "112fffa0124943a4160f4b43f1178459c0db845c9b19aa4998d890e49c763c52",
+  "evidence_branch": "docs/ch4-study-2026-09-30",
+  "source": "docs/desktop-runs/2026-09-30-ch4-study.md (branch docs/ch4-study-2026-09-30); tier notes section 1"
+ },
+ "environment": {
+  "source": "docs/desktop-runs/2026-09-30-mp-50k.md section 1 (branch docs/ch4-study-2026-09-30); journal line 1 of every run",
+  "rows": [
+   [
+    "Processor",
+    "AMD Ryzen 7 5700G, 8 cores, 16 threads"
+   ],
+   [
+    "Memory",
+    "31.9 GB on the host; 24 GB allotted to WSL2 (docker_info.MemTotal 25,199,009,792 bytes), swap off"
+   ],
+   [
+    "Storage",
+    "Docker Desktop data disk on the Kingston NVMe solid-state drive; LevelDB state database"
+   ],
+   [
+    "Operating system and container runtime",
+    "Windows 11 Pro 10.0.26200; WSL2 Ubuntu 26.04, kernel 6.18.33.2-microsoft-standard-WSL2; Docker Desktop 4.90.0, server 29.7.2"
+   ],
+   [
+    "Blockchain platform",
+    "Hyperledger Fabric 2.5.15 test network, channel saksi, chaincode saksi-bulletin, single Raft orderer"
+   ],
+   [
+    "Orderer block configuration",
+    "BatchTimeout 2 s, MaxMessageCount 50, PreferredMaxBytes 2 MB, AbsoluteMaxBytes 99 MB"
+   ],
+   [
+    "Network topology",
+    "Two organizations with one peer each and one Raft orderer, all on the one machine; a fresh network and empty ledger for every attempt (network reset)"
+   ],
+   [
+    "Toolchain versions",
+    "Console Go 1.23.4; saksi and console at commit 4a38a54; saksi-demo SHA-256 112fffa0...763c52 in all 119 study runs"
+   ],
+   [
+    "Container resource limits",
+    "None (HostConfig.Memory 0, NanoCpus 0 on every container); 16 vCPU visible to Docker"
+   ],
+   [
+    "Load generator",
+    "Closed loop, 128 ballots in flight, no send-rate cap (send_rate 0); verifier on 16 threads"
+   ]
+  ]
+ },
+ "election_config": {
+  "text": "4 candidates per position, 5 trustees with threshold 3, realistic selection distribution, on-chain mode",
+  "source": "campaign.json config of each tier export"
+ },
+ "tiers": [
+  {
+   "name": "SP-1K",
+   "row": 2,
+   "voters": 1000,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "2 + 10",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-sp-1k"
+   },
+   "superseded": 1,
+   "auto": {
+    "committed_tps": {
+     "min": 741.061,
+     "median": 893.92,
+     "mean": 870.929,
+     "p99": 944.427,
+     "stddev": 75.388,
+     "n": 10.0
+    },
+    "driver_ceiling_tps": {
+     "min": 794.519,
+     "median": 862.523,
+     "mean": 874.996,
+     "p99": 949.564,
+     "stddev": 49.468,
+     "n": 10.0
+    },
+    "latency_p50_ms": {
+     "min": 134.798,
+     "median": 143.92,
+     "mean": 146.758,
+     "p99": 161.103,
+     "stddev": 8.355,
+     "n": 10.0
+    },
+    "latency_p95_ms": {
+     "min": 164.75,
+     "median": 179.953,
+     "mean": 221.947,
+     "p99": 340.535,
+     "stddev": 68.891,
+     "n": 10.0
+    },
+    "latency_p99_ms": {
+     "min": 211.328,
+     "median": 227.941,
+     "mean": 262.914,
+     "p99": 358.079,
+     "stddev": 54.435,
+     "n": 10.0
+    },
+    "gen_wall_ms": {
+     "min": 199.0,
+     "median": 210.0,
+     "mean": 211.3,
+     "p99": 219.0,
+     "stddev": 5.984,
+     "n": 10.0
+    },
+    "gen_cpu_ms": {
+     "min": 2627.0,
+     "median": 2742.0,
+     "mean": 2788.5,
+     "p99": 2926.0,
+     "stddev": 90.678,
+     "n": 10.0
+    },
+    "proof_gen_cpu_ms": {
+     "min": 1542.0,
+     "median": 1620.0,
+     "mean": 1629.8,
+     "p99": 1704.0,
+     "stddev": 50.338,
+     "n": 10.0
+    },
+    "proof_verify_inproc_ms": {
+     "min": 169.0,
+     "median": 182.0,
+     "mean": 182.2,
+     "p99": 190.0,
+     "stddev": 7.125,
+     "n": 10.0
+    },
+    "aggregate_inproc_ms": {
+     "min": 1.0,
+     "median": 1.0,
+     "mean": 1.0,
+     "p99": 1.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "combine_inproc_ms": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "decrypt_inproc_ms": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "submit_window_ms": {
+     "min": 1058.0,
+     "median": 1087.0,
+     "mean": 1156.9,
+     "p99": 1349.0,
+     "stddev": 107.062,
+     "n": 10.0
+    },
+    "committed": {
+     "min": 1000.0,
+     "median": 1000.0,
+     "mean": 1000.0,
+     "p99": 1000.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "dropped": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "verify_threads": {
+     "min": 16.0,
+     "median": 16.0,
+     "mean": 16.0,
+     "p99": 16.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "runs_measured": {
+     "min": 10.0,
+     "median": 10.0,
+     "mean": 10.0,
+     "p99": 10.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "runs_failed": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "failure_rate": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "campaign": "campaign-20260929-174641-11",
+    "warmups": 2,
+    "measured": 10,
+    "contended_host": 2,
+    "contended_guest": 1,
+    "host_cpu_max": 27.6366789733508,
+    "correctness": {
+     "runs": 12,
+     "contest_rows": 96,
+     "ledger_rows": 48,
+     "E_max": 0,
+     "all_pass": true,
+     "ledger_matches_local": true,
+     "dropped_total": 0
+    },
+    "accuracy_sample": {
+     "run": "sp-1k-ch4-20260929-174731-71",
+     "rows": [
+      [
+       "president/cand0",
+       490,
+       490,
+       0
+      ],
+      [
+       "president/cand1",
+       180,
+       180,
+       0
+      ],
+      [
+       "president/cand2",
+       170,
+       170,
+       0
+      ],
+      [
+       "president/cand3",
+       160,
+       160,
+       0
+      ]
+     ]
+    },
+    "wall_h_per_run_median": 0.004166666666666667,
+    "verify_overall_pass": true,
+    "scaling_limit_counts": {
+     "inconclusive": 10
+    },
+    "arrival_voters_per_s": 0.027777777777777776,
+    "arrival_records_per_s": 0.027777777777777776,
+    "arrival_margin": 32181.12
+   }
+  },
+  {
+   "name": "MP-1K",
+   "row": 2,
+   "voters": 1000,
+   "positions": 3,
+   "mode": "onchain",
+   "planned": "2 + 10",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-mp-1k"
+   },
+   "superseded": 1,
+   "auto": {
+    "committed_tps": {
+     "min": 675.544,
+     "median": 924.606,
+     "mean": 889.496,
+     "p99": 973.696,
+     "stddev": 88.191,
+     "n": 10.0
+    },
+    "driver_ceiling_tps": {
+     "min": 817.135,
+     "median": 856.527,
+     "mean": 863.209,
+     "p99": 892.148,
+     "stddev": 23.052,
+     "n": 10.0
+    },
+    "latency_p50_ms": {
+     "min": 143.473,
+     "median": 146.739,
+     "mean": 148.391,
+     "p99": 156.644,
+     "stddev": 4.01,
+     "n": 10.0
+    },
+    "latency_p95_ms": {
+     "min": 165.468,
+     "median": 174.543,
+     "mean": 217.73,
+     "p99": 381.458,
+     "stddev": 71.85,
+     "n": 10.0
+    },
+    "latency_p99_ms": {
+     "min": 171.761,
+     "median": 208.238,
+     "mean": 262.374,
+     "p99": 400.915,
+     "stddev": 85.783,
+     "n": 10.0
+    },
+    "gen_wall_ms": {
+     "min": 542.0,
+     "median": 568.0,
+     "mean": 572.0,
+     "p99": 622.0,
+     "stddev": 19.256,
+     "n": 10.0
+    },
+    "gen_cpu_ms": {
+     "min": 7171.0,
+     "median": 7529.0,
+     "mean": 7577.3,
+     "p99": 8213.0,
+     "stddev": 245.708,
+     "n": 10.0
+    },
+    "proof_gen_cpu_ms": {
+     "min": 4587.0,
+     "median": 4841.0,
+     "mean": 4879.1,
+     "p99": 5318.0,
+     "stddev": 172.845,
+     "n": 10.0
+    },
+    "proof_verify_inproc_ms": {
+     "min": 500.0,
+     "median": 527.0,
+     "mean": 530.4,
+     "p99": 556.0,
+     "stddev": 14.368,
+     "n": 10.0
+    },
+    "aggregate_inproc_ms": {
+     "min": 4.0,
+     "median": 4.0,
+     "mean": 4.0,
+     "p99": 4.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "combine_inproc_ms": {
+     "min": 1.0,
+     "median": 1.0,
+     "mean": 1.0,
+     "p99": 1.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "decrypt_inproc_ms": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.1,
+     "p99": 1.0,
+     "stddev": 0.3,
+     "n": 10.0
+    },
+    "submit_window_ms": {
+     "min": 3081.0,
+     "median": 3242.0,
+     "mean": 3411.9,
+     "p99": 4440.0,
+     "stddev": 401.944,
+     "n": 10.0
+    },
+    "committed": {
+     "min": 3000.0,
+     "median": 3000.0,
+     "mean": 3000.0,
+     "p99": 3000.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "dropped": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "verify_threads": {
+     "min": 16.0,
+     "median": 16.0,
+     "mean": 16.0,
+     "p99": 16.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "runs_measured": {
+     "min": 10.0,
+     "median": 10.0,
+     "mean": 10.0,
+     "p99": 10.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "runs_failed": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "failure_rate": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "campaign": "campaign-20260929-180218-15",
+    "warmups": 2,
+    "measured": 10,
+    "contended_host": 3,
+    "contended_guest": 3,
+    "host_cpu_max": 30.1495264248419,
+    "correctness": {
+     "runs": 12,
+     "contest_rows": 288,
+     "ledger_rows": 144,
+     "E_max": 0,
+     "all_pass": true,
+     "ledger_matches_local": true,
+     "dropped_total": 0
+    },
+    "accuracy_sample": {
+     "run": "mp-1k-ch4-20260929-180333-95",
+     "rows": [
+      [
+       "president/cand0",
+       490,
+       490,
+       0
+      ],
+      [
+       "president/cand1",
+       180,
+       180,
+       0
+      ],
+      [
+       "president/cand2",
+       170,
+       170,
+       0
+      ],
+      [
+       "president/cand3",
+       160,
+       160,
+       0
+      ],
+      [
+       "vice-president/cand0",
+       485,
+       485,
+       0
+      ],
+      [
+       "vice-president/cand1",
+       186,
+       186,
+       0
+      ],
+      [
+       "vice-president/cand2",
+       172,
+       172,
+       0
+      ],
+      [
+       "vice-president/cand3",
+       157,
+       157,
+       0
+      ],
+      [
+       "senator/cand0",
+       480,
+       480,
+       0
+      ],
+      [
+       "senator/cand1",
+       193,
+       193,
+       0
+      ],
+      [
+       "senator/cand2",
+       173,
+       173,
+       0
+      ],
+      [
+       "senator/cand3",
+       154,
+       154,
+       0
+      ]
+     ]
+    },
+    "wall_h_per_run_median": 0.006944444444444444,
+    "verify_overall_pass": true,
+    "scaling_limit_counts": {
+     "inconclusive": 10
+    },
+    "arrival_voters_per_s": 0.027777777777777776,
+    "arrival_records_per_s": 0.08333333333333333,
+    "arrival_margin": 11095.272
+   }
+  },
+  {
+   "name": "SP-10K",
+   "row": 3,
+   "voters": 10000,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "2 + 10",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-sp-10k"
+   },
+   "superseded": 1,
+   "auto": {
+    "committed_tps": {
+     "min": 853.896,
+     "median": 885.846,
+     "mean": 906.3,
+     "p99": 955.927,
+     "stddev": 34.419,
+     "n": 10.0
+    },
+    "driver_ceiling_tps": {
+     "min": 838.505,
+     "median": 872.512,
+     "mean": 871.678,
+     "p99": 897.687,
+     "stddev": 17.233,
+     "n": 10.0
+    },
+    "latency_p50_ms": {
+     "min": 142.588,
+     "median": 145.956,
+     "mean": 146.901,
+     "p99": 152.652,
+     "stddev": 2.924,
+     "n": 10.0
+    },
+    "latency_p95_ms": {
+     "min": 178.361,
+     "median": 206.243,
+     "mean": 208.802,
+     "p99": 284.428,
+     "stddev": 30.635,
+     "n": 10.0
+    },
+    "latency_p99_ms": {
+     "min": 235.263,
+     "median": 252.675,
+     "mean": 273.527,
+     "p99": 403.719,
+     "stddev": 49.247,
+     "n": 10.0
+    },
+    "gen_wall_ms": {
+     "min": 1873.0,
+     "median": 1976.0,
+     "mean": 1991.8,
+     "p99": 2117.0,
+     "stddev": 75.935,
+     "n": 10.0
+    },
+    "gen_cpu_ms": {
+     "min": 25967.0,
+     "median": 27398.0,
+     "mean": 27646.2,
+     "p99": 29498.0,
+     "stddev": 1111.299,
+     "n": 10.0
+    },
+    "proof_gen_cpu_ms": {
+     "min": 15232.0,
+     "median": 16092.0,
+     "mean": 16219.9,
+     "p99": 17371.0,
+     "stddev": 677.315,
+     "n": 10.0
+    },
+    "proof_verify_inproc_ms": {
+     "min": 1654.0,
+     "median": 1849.0,
+     "mean": 1819.0,
+     "p99": 1923.0,
+     "stddev": 96.303,
+     "n": 10.0
+    },
+    "aggregate_inproc_ms": {
+     "min": 14.0,
+     "median": 14.0,
+     "mean": 14.6,
+     "p99": 17.0,
+     "stddev": 1.02,
+     "n": 10.0
+    },
+    "combine_inproc_ms": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "decrypt_inproc_ms": {
+     "min": 3.0,
+     "median": 3.0,
+     "mean": 3.0,
+     "p99": 3.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "submit_window_ms": {
+     "min": 10461.0,
+     "median": 10779.0,
+     "mean": 11049.4,
+     "p99": 11711.0,
+     "stddev": 421.768,
+     "n": 10.0
+    },
+    "committed": {
+     "min": 10000.0,
+     "median": 10000.0,
+     "mean": 10000.0,
+     "p99": 10000.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "dropped": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "peak_cpu_pct_peer": {
+     "min": 301.31,
+     "median": 343.97,
+     "mean": 342.679,
+     "p99": 356.84,
+     "stddev": 14.654,
+     "n": 10.0
+    },
+    "peak_cpu_pct_orderer": {
+     "min": 82.95,
+     "median": 86.45,
+     "mean": 87.733,
+     "p99": 99.76,
+     "stddev": 4.387,
+     "n": 10.0
+    },
+    "peak_cpu_pct_client": {
+     "min": 59.167,
+     "median": 74.115,
+     "mean": 73.297,
+     "p99": 78.87,
+     "stddev": 5.524,
+     "n": 10.0
+    },
+    "peak_mem_mb_peer": {
+     "min": 194.8,
+     "median": 256.7,
+     "mean": 249.82,
+     "p99": 284.7,
+     "stddev": 25.319,
+     "n": 10.0
+    },
+    "peak_mem_mb_orderer": {
+     "min": 522.3,
+     "median": 1030.144,
+     "mean": 1013.468,
+     "p99": 1366.016,
+     "stddev": 252.105,
+     "n": 10.0
+    },
+    "peak_mem_mb_client": {
+     "min": 59.022,
+     "median": 59.022,
+     "mean": 59.022,
+     "p99": 59.022,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "verify_threads": {
+     "min": 16.0,
+     "median": 16.0,
+     "mean": 16.0,
+     "p99": 16.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "runs_measured": {
+     "min": 10.0,
+     "median": 10.0,
+     "mean": 10.0,
+     "p99": 10.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "runs_failed": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "failure_rate": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "campaign": "campaign-20260929-182259-19",
+    "warmups": 2,
+    "measured": 10,
+    "contended_host": 0,
+    "contended_guest": 10,
+    "host_cpu_max": 24.6419917719829,
+    "correctness": {
+     "runs": 12,
+     "contest_rows": 96,
+     "ledger_rows": 48,
+     "E_max": 0,
+     "all_pass": true,
+     "ledger_matches_local": true,
+     "dropped_total": 0
+    },
+    "accuracy_sample": {
+     "run": "sp-10k-ch4-20260929-182431-119",
+     "rows": [
+      [
+       "president/cand0",
+       4900,
+       4900,
+       0
+      ],
+      [
+       "president/cand1",
+       1800,
+       1800,
+       0
+      ],
+      [
+       "president/cand2",
+       1700,
+       1700,
+       0
+      ],
+      [
+       "president/cand3",
+       1600,
+       1600,
+       0
+      ]
+     ]
+    },
+    "wall_h_per_run_median": 0.010833333333333334,
+    "verify_overall_pass": true,
+    "scaling_limit_counts": {
+     "inconclusive": 10
+    },
+    "arrival_voters_per_s": 0.2777777777777778,
+    "arrival_records_per_s": 0.2777777777777778,
+    "arrival_margin": 3189.0456
+   }
+  },
+  {
+   "name": "MP-10K",
+   "row": 3,
+   "voters": 10000,
+   "positions": 3,
+   "mode": "onchain",
+   "planned": "2 + 10",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-mp-10k"
+   },
+   "superseded": 1,
+   "auto": {
+    "committed_tps": {
+     "min": 460.672,
+     "median": 789.345,
+     "mean": 762.405,
+     "p99": 881.126,
+     "stddev": 126.303,
+     "n": 10.0
+    },
+    "driver_ceiling_tps": {
+     "min": 787.799,
+     "median": 836.3,
+     "mean": 837.63,
+     "p99": 866.813,
+     "stddev": 21.584,
+     "n": 10.0
+    },
+    "latency_p50_ms": {
+     "min": 147.667,
+     "median": 152.832,
+     "mean": 152.916,
+     "p99": 162.478,
+     "stddev": 4.043,
+     "n": 10.0
+    },
+    "latency_p95_ms": {
+     "min": 214.405,
+     "median": 253.311,
+     "mean": 328.16,
+     "p99": 964.047,
+     "stddev": 215.106,
+     "n": 10.0
+    },
+    "latency_p99_ms": {
+     "min": 272.275,
+     "median": 372.804,
+     "mean": 775.384,
+     "p99": 2903.014,
+     "stddev": 855.249,
+     "n": 10.0
+    },
+    "gen_wall_ms": {
+     "min": 5425.0,
+     "median": 5608.0,
+     "mean": 5629.4,
+     "p99": 5860.0,
+     "stddev": 118.083,
+     "n": 10.0
+    },
+    "gen_cpu_ms": {
+     "min": 73791.0,
+     "median": 75596.0,
+     "mean": 75801.8,
+     "p99": 79825.0,
+     "stddev": 1753.72,
+     "n": 10.0
+    },
+    "proof_gen_cpu_ms": {
+     "min": 47361.0,
+     "median": 48500.0,
+     "mean": 48758.8,
+     "p99": 51558.0,
+     "stddev": 1182.282,
+     "n": 10.0
+    },
+    "proof_verify_inproc_ms": {
+     "min": 5038.0,
+     "median": 5173.0,
+     "mean": 5179.1,
+     "p99": 5299.0,
+     "stddev": 89.099,
+     "n": 10.0
+    },
+    "aggregate_inproc_ms": {
+     "min": 43.0,
+     "median": 44.0,
+     "mean": 44.9,
+     "p99": 49.0,
+     "stddev": 1.814,
+     "n": 10.0
+    },
+    "combine_inproc_ms": {
+     "min": 1.0,
+     "median": 1.0,
+     "mean": 1.0,
+     "p99": 1.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "decrypt_inproc_ms": {
+     "min": 9.0,
+     "median": 9.0,
+     "mean": 9.0,
+     "p99": 9.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "submit_window_ms": {
+     "min": 34047.0,
+     "median": 36442.0,
+     "mean": 40824.3,
+     "p99": 65122.0,
+     "stddev": 9070.728,
+     "n": 10.0
+    },
+    "committed": {
+     "min": 30000.0,
+     "median": 30000.0,
+     "mean": 30000.0,
+     "p99": 30000.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "dropped": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "peak_cpu_pct_peer": {
+     "min": 369.89,
+     "median": 376.47,
+     "mean": 380.623,
+     "p99": 400.34,
+     "stddev": 8.575,
+     "n": 10.0
+    },
+    "peak_cpu_pct_orderer": {
+     "min": 80.61,
+     "median": 84.8,
+     "mean": 86.189,
+     "p99": 101.72,
+     "stddev": 5.699,
+     "n": 10.0
+    },
+    "peak_cpu_pct_client": {
+     "min": 72.77,
+     "median": 73.947,
+     "mean": 74.405,
+     "p99": 76.69,
+     "stddev": 1.301,
+     "n": 10.0
+    },
+    "peak_mem_mb_peer": {
+     "min": 255.4,
+     "median": 325.5,
+     "mean": 319.4,
+     "p99": 347.8,
+     "stddev": 26.728,
+     "n": 10.0
+    },
+    "peak_mem_mb_orderer": {
+     "min": 1326.08,
+     "median": 2340.864,
+     "mean": 2443.776,
+     "p99": 3456.0,
+     "stddev": 675.792,
+     "n": 10.0
+    },
+    "peak_mem_mb_client": {
+     "min": 179.403,
+     "median": 179.403,
+     "mean": 179.465,
+     "p99": 179.528,
+     "stddev": 0.062,
+     "n": 10.0
+    },
+    "verify_threads": {
+     "min": 16.0,
+     "median": 16.0,
+     "mean": 16.0,
+     "p99": 16.0,
+     "stddev": 0.0,
+     "n": 10.0
+    },
+    "runs_measured": {
+     "min": 10.0,
+     "median": 10.0,
+     "mean": 10.0,
+     "p99": 10.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "runs_failed": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "failure_rate": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "campaign": "campaign-20260929-191104-23",
+    "warmups": 2,
+    "measured": 10,
+    "contended_host": 0,
+    "contended_guest": 10,
+    "host_cpu_max": 19.8328122477776,
+    "correctness": {
+     "runs": 12,
+     "contest_rows": 288,
+     "ledger_rows": 144,
+     "E_max": 0,
+     "all_pass": true,
+     "ledger_matches_local": true,
+     "dropped_total": 0
+    },
+    "accuracy_sample": {
+     "run": "mp-10k-ch4-20260929-191445-145",
+     "rows": [
+      [
+       "president/cand0",
+       4900,
+       4900,
+       0
+      ],
+      [
+       "president/cand1",
+       1800,
+       1800,
+       0
+      ],
+      [
+       "president/cand2",
+       1700,
+       1700,
+       0
+      ],
+      [
+       "president/cand3",
+       1600,
+       1600,
+       0
+      ],
+      [
+       "vice-president/cand0",
+       4850,
+       4850,
+       0
+      ],
+      [
+       "vice-president/cand1",
+       1866,
+       1866,
+       0
+      ],
+      [
+       "vice-president/cand2",
+       1717,
+       1717,
+       0
+      ],
+      [
+       "vice-president/cand3",
+       1567,
+       1567,
+       0
+      ],
+      [
+       "senator/cand0",
+       4800,
+       4800,
+       0
+      ],
+      [
+       "senator/cand1",
+       1933,
+       1933,
+       0
+      ],
+      [
+       "senator/cand2",
+       1733,
+       1733,
+       0
+      ],
+      [
+       "senator/cand3",
+       1534,
+       1534,
+       0
+      ]
+     ]
+    },
+    "wall_h_per_run_median": 0.026944444444444444,
+    "verify_overall_pass": true,
+    "scaling_limit_counts": {
+     "inconclusive": 8,
+     "false": 2
+    },
+    "arrival_voters_per_s": 0.2777777777777778,
+    "arrival_records_per_s": 0.8333333333333334,
+    "arrival_margin": 947.2139999999999
+   }
+  },
+  {
+   "name": "SP-50K",
+   "row": 4,
+   "voters": 50000,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "2 + 5",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-sp-50k"
+   },
+   "superseded": 1,
+   "auto": {
+    "committed_tps": {
+     "min": 613.702,
+     "median": 697.349,
+     "mean": 688.324,
+     "p99": 734.959,
+     "stddev": 43.264,
+     "n": 5.0
+    },
+    "driver_ceiling_tps": {
+     "min": 727.99,
+     "median": 785.171,
+     "mean": 781.893,
+     "p99": 826.134,
+     "stddev": 34.441,
+     "n": 5.0
+    },
+    "latency_p50_ms": {
+     "min": 154.938,
+     "median": 163.021,
+     "mean": 164.027,
+     "p99": 175.826,
+     "stddev": 7.336,
+     "n": 5.0
+    },
+    "latency_p95_ms": {
+     "min": 272.406,
+     "median": 277.724,
+     "mean": 284.811,
+     "p99": 313.654,
+     "stddev": 15.481,
+     "n": 5.0
+    },
+    "latency_p99_ms": {
+     "min": 357.22,
+     "median": 417.186,
+     "mean": 676.449,
+     "p99": 1784.954,
+     "stddev": 554.696,
+     "n": 5.0
+    },
+    "gen_wall_ms": {
+     "min": 9919.0,
+     "median": 9970.0,
+     "mean": 9988.0,
+     "p99": 10092.0,
+     "stddev": 60.05,
+     "n": 5.0
+    },
+    "gen_cpu_ms": {
+     "min": 137127.0,
+     "median": 137702.0,
+     "mean": 137647.8,
+     "p99": 138308.0,
+     "stddev": 398.937,
+     "n": 5.0
+    },
+    "proof_gen_cpu_ms": {
+     "min": 80343.0,
+     "median": 80810.0,
+     "mean": 80717.8,
+     "p99": 81163.0,
+     "stddev": 294.531,
+     "n": 5.0
+    },
+    "proof_verify_inproc_ms": {
+     "min": 8622.0,
+     "median": 8646.0,
+     "mean": 8660.2,
+     "p99": 8703.0,
+     "stddev": 33.814,
+     "n": 5.0
+    },
+    "aggregate_inproc_ms": {
+     "min": 73.0,
+     "median": 73.0,
+     "mean": 73.8,
+     "p99": 75.0,
+     "stddev": 0.98,
+     "n": 5.0
+    },
+    "combine_inproc_ms": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "decrypt_inproc_ms": {
+     "min": 4.0,
+     "median": 4.0,
+     "mean": 4.2,
+     "p99": 5.0,
+     "stddev": 0.4,
+     "n": 5.0
+    },
+    "submit_window_ms": {
+     "min": 68030.0,
+     "median": 71700.0,
+     "mean": 72941.6,
+     "p99": 81472.0,
+     "stddev": 4807.923,
+     "n": 5.0
+    },
+    "committed": {
+     "min": 50000.0,
+     "median": 50000.0,
+     "mean": 50000.0,
+     "p99": 50000.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "dropped": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "peak_cpu_pct_peer": {
+     "min": 370.84,
+     "median": 377.43,
+     "mean": 376.022,
+     "p99": 378.79,
+     "stddev": 2.931,
+     "n": 5.0
+    },
+    "peak_cpu_pct_orderer": {
+     "min": 77.95,
+     "median": 78.86,
+     "mean": 79.494,
+     "p99": 82.32,
+     "stddev": 1.524,
+     "n": 5.0
+    },
+    "peak_cpu_pct_client": {
+     "min": 71.111,
+     "median": 73.334,
+     "mean": 73.862,
+     "p99": 76.651,
+     "stddev": 1.877,
+     "n": 5.0
+    },
+    "peak_mem_mb_peer": {
+     "min": 289.2,
+     "median": 304.8,
+     "mean": 303.14,
+     "p99": 313.2,
+     "stddev": 7.81,
+     "n": 5.0
+    },
+    "peak_mem_mb_orderer": {
+     "min": 1787.904,
+     "median": 2465.792,
+     "mean": 2513.51,
+     "p99": 3274.752,
+     "stddev": 505.351,
+     "n": 5.0
+    },
+    "peak_mem_mb_client": {
+     "min": 179.528,
+     "median": 179.528,
+     "mean": 179.528,
+     "p99": 179.528,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "verify_threads": {
+     "min": 16.0,
+     "median": 16.0,
+     "mean": 16.0,
+     "p99": 16.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "runs_measured": {
+     "min": 5.0,
+     "median": 5.0,
+     "mean": 5.0,
+     "p99": 5.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "runs_failed": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "failure_rate": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "campaign": "campaign-20260929-195715-27",
+    "warmups": 2,
+    "measured": 5,
+    "contended_host": 1,
+    "contended_guest": 5,
+    "host_cpu_max": 25.4549995018215,
+    "correctness": {
+     "runs": 7,
+     "contest_rows": 56,
+     "ledger_rows": 28,
+     "E_max": 0,
+     "all_pass": true,
+     "ledger_matches_local": true,
+     "dropped_total": 0
+    },
+    "accuracy_sample": {
+     "run": "sp-50k-ch4-20260929-200228-164",
+     "rows": [
+      [
+       "president/cand0",
+       24500,
+       24500,
+       0
+      ],
+      [
+       "president/cand1",
+       9000,
+       9000,
+       0
+      ],
+      [
+       "president/cand2",
+       8500,
+       8500,
+       0
+      ],
+      [
+       "president/cand3",
+       8000,
+       8000,
+       0
+      ]
+     ]
+    },
+    "wall_h_per_run_median": 0.04388888888888889,
+    "verify_overall_pass": true,
+    "scaling_limit_counts": {
+     "inconclusive": 4,
+     "false": 1
+    },
+    "arrival_voters_per_s": 1.3888888888888888,
+    "arrival_records_per_s": 1.3888888888888888,
+    "arrival_margin": 502.09128000000004
+   }
+  },
+  {
+   "name": "MP-50K",
+   "row": 4,
+   "voters": 50000,
+   "positions": 3,
+   "mode": "onchain",
+   "planned": "2 + 5",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-mp-50k"
+   },
+   "superseded": 0,
+   "note": "rerun interrupted by a power loss before any measured repetition; attempt 1 stands",
+   "auto": {
+    "committed_tps": {
+     "min": 563.774,
+     "median": 570.288,
+     "mean": 571.975,
+     "p99": 581.921,
+     "stddev": 6.533,
+     "n": 5.0
+    },
+    "driver_ceiling_tps": {
+     "min": 576.884,
+     "median": 585.255,
+     "mean": 587.698,
+     "p99": 596.599,
+     "stddev": 7.248,
+     "n": 5.0
+    },
+    "latency_p50_ms": {
+     "min": 214.549,
+     "median": 218.708,
+     "mean": 217.832,
+     "p99": 221.881,
+     "stddev": 2.691,
+     "n": 5.0
+    },
+    "latency_p95_ms": {
+     "min": 329.278,
+     "median": 339.281,
+     "mean": 347.264,
+     "p99": 376.354,
+     "stddev": 16.596,
+     "n": 5.0
+    },
+    "latency_p99_ms": {
+     "min": 499.077,
+     "median": 524.487,
+     "mean": 522.236,
+     "p99": 538.961,
+     "stddev": 13.073,
+     "n": 5.0
+    },
+    "gen_wall_ms": {
+     "min": 27884.0,
+     "median": 27945.0,
+     "mean": 29725.8,
+     "p99": 36629.0,
+     "stddev": 3454.43,
+     "n": 5.0
+    },
+    "gen_cpu_ms": {
+     "min": 378357.0,
+     "median": 380682.0,
+     "mean": 380675.8,
+     "p99": 382572.0,
+     "stddev": 1413.656,
+     "n": 5.0
+    },
+    "proof_gen_cpu_ms": {
+     "min": 243217.0,
+     "median": 244862.0,
+     "mean": 244790.8,
+     "p99": 246017.0,
+     "stddev": 918.79,
+     "n": 5.0
+    },
+    "proof_verify_inproc_ms": {
+     "min": 25957.0,
+     "median": 26004.0,
+     "mean": 26021.6,
+     "p99": 26094.0,
+     "stddev": 51.094,
+     "n": 5.0
+    },
+    "aggregate_inproc_ms": {
+     "min": 220.0,
+     "median": 224.0,
+     "mean": 223.8,
+     "p99": 228.0,
+     "stddev": 2.713,
+     "n": 5.0
+    },
+    "combine_inproc_ms": {
+     "min": 1.0,
+     "median": 1.0,
+     "mean": 1.0,
+     "p99": 1.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "decrypt_inproc_ms": {
+     "min": 20.0,
+     "median": 20.0,
+     "mean": 20.8,
+     "p99": 24.0,
+     "stddev": 1.6,
+     "n": 5.0
+    },
+    "submit_window_ms": {
+     "min": 257766.0,
+     "median": 263025.0,
+     "mean": 262282.8,
+     "p99": 266064.0,
+     "stddev": 2986.147,
+     "n": 5.0
+    },
+    "committed": {
+     "min": 150000.0,
+     "median": 150000.0,
+     "mean": 150000.0,
+     "p99": 150000.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "dropped": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "peak_cpu_pct_peer": {
+     "min": 306.74,
+     "median": 340.84,
+     "mean": 336.534,
+     "p99": 356.14,
+     "stddev": 16.711,
+     "n": 5.0
+    },
+    "peak_cpu_pct_orderer": {
+     "min": 71.62,
+     "median": 83.5,
+     "mean": 82.554,
+     "p99": 91.16,
+     "stddev": 6.593,
+     "n": 5.0
+    },
+    "peak_cpu_pct_client": {
+     "min": 63.527,
+     "median": 69.006,
+     "mean": 67.892,
+     "p99": 69.623,
+     "stddev": 2.24,
+     "n": 5.0
+    },
+    "peak_mem_mb_peer": {
+     "min": 1372.16,
+     "median": 2439.168,
+     "mean": 2317.926,
+     "p99": 3064.832,
+     "stddev": 616.046,
+     "n": 5.0
+    },
+    "peak_mem_mb_orderer": {
+     "min": 3349.504,
+     "median": 4339.712,
+     "mean": 4169.728,
+     "p99": 4755.456,
+     "stddev": 511.063,
+     "n": 5.0
+    },
+    "peak_mem_mb_client": {
+     "min": 180.81,
+     "median": 180.81,
+     "mean": 180.81,
+     "p99": 180.81,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "verify_threads": {
+     "min": 16.0,
+     "median": 16.0,
+     "mean": 16.0,
+     "p99": 16.0,
+     "stddev": 0.0,
+     "n": 5.0
+    },
+    "runs_measured": {
+     "min": 5.0,
+     "median": 5.0,
+     "mean": 5.0,
+     "p99": 5.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "runs_failed": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "failure_rate": {
+     "min": 0.0,
+     "median": 0.0,
+     "mean": 0.0,
+     "p99": 0.0,
+     "stddev": 0.0,
+     "n": 1.0
+    },
+    "campaign": "campaign-20260929-201819-29",
+    "warmups": 2,
+    "measured": 5,
+    "contended_host": 0,
+    "contended_guest": 5,
+    "host_cpu_max": 21.1780639269424,
+    "correctness": {
+     "runs": 7,
+     "contest_rows": 168,
+     "ledger_rows": 84,
+     "E_max": 0,
+     "all_pass": true,
+     "ledger_matches_local": true,
+     "dropped_total": 0
+    },
+    "accuracy_sample": {
+     "run": "mp-50k-ch4-20260929-203416-171",
+     "rows": [
+      [
+       "president/cand0",
+       24500,
+       24500,
+       0
+      ],
+      [
+       "president/cand1",
+       9000,
+       9000,
+       0
+      ],
+      [
+       "president/cand2",
+       8500,
+       8500,
+       0
+      ],
+      [
+       "president/cand3",
+       8000,
+       8000,
+       0
+      ],
+      [
+       "vice-president/cand0",
+       24250,
+       24250,
+       0
+      ],
+      [
+       "vice-president/cand1",
+       9333,
+       9333,
+       0
+      ],
+      [
+       "vice-president/cand2",
+       8584,
+       8584,
+       0
+      ],
+      [
+       "vice-president/cand3",
+       7833,
+       7833,
+       0
+      ],
+      [
+       "senator/cand0",
+       24000,
+       24000,
+       0
+      ],
+      [
+       "senator/cand1",
+       9667,
+       9667,
+       0
+      ],
+      [
+       "senator/cand2",
+       8666,
+       8666,
+       0
+      ],
+      [
+       "senator/cand3",
+       7667,
+       7667,
+       0
+      ]
+     ]
+    },
+    "wall_h_per_run_median": 0.1338888888888889,
+    "verify_overall_pass": true,
+    "scaling_limit_counts": {
+     "inconclusive": 5
+    },
+    "arrival_voters_per_s": 1.3888888888888888,
+    "arrival_records_per_s": 4.166666666666667,
+    "arrival_margin": 136.86911999999998
+   }
+  },
+  {
+   "name": "SP-483K",
+   "row": 5,
+   "voters": 483000,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "1 + 3, then rate sweep and peak burst",
+   "source": null,
+   "pending": "[PENDING — Night 1 SP-483K]"
+  },
+  {
+   "name": "SP-1M",
+   "row": 6,
+   "voters": 1000000,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "0 + 3",
+   "source": null,
+   "pending": "[PENDING — Night 1 SP-1M]"
+  },
+  {
+   "name": "SP-1.92M",
+   "row": 7,
+   "voters": 1921917,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "0 + 1",
+   "source": null,
+   "pending": "[PENDING — Night 1 SP-1.92M]"
+  },
+  {
+   "name": "SP-3.5M",
+   "row": 7,
+   "voters": 3524078,
+   "positions": 1,
+   "mode": "onchain",
+   "planned": "1 + 1",
+   "source": null,
+   "pending": "[PENDING — Night 2 SP-3.5M]"
+  },
+  {
+   "name": "MP-483K offline",
+   "row": 8,
+   "voters": 483000,
+   "positions": 3,
+   "mode": "offline",
+   "planned": "0 + 1",
+   "source": null,
+   "pending": "[PENDING — row 8 offline]"
+  },
+  {
+   "name": "MP-1M offline",
+   "row": 8,
+   "voters": 1000000,
+   "positions": 3,
+   "mode": "offline",
+   "planned": "0 + 1",
+   "source": null,
+   "pending": "[PENDING — row 8 offline]"
+  },
+  {
+   "name": "MP-1.92M offline",
+   "row": 8,
+   "voters": 1921917,
+   "positions": 3,
+   "mode": "offline",
+   "planned": "0 + 1",
+   "source": null,
+   "pending": "[PENDING — row 8 offline]"
+  },
+  {
+   "name": "MP-3.5M offline",
+   "row": 8,
+   "voters": 3524078,
+   "positions": 3,
+   "mode": "offline",
+   "planned": "0 + 1",
+   "source": null,
+   "pending": "[PENDING — row 8 offline]"
+  },
+  {
+   "name": "MP-3.5M on-chain",
+   "row": 9,
+   "voters": 3524078,
+   "positions": 3,
+   "mode": "onchain",
+   "planned": "0 + 1",
+   "source": null,
+   "pending": "[PENDING — Night 3 MP-3.5M on-chain]"
+  }
+ ],
+ "sweep_burst": {
+  "pending": "[PENDING — Night 1 SP-483K sweep and burst]",
+  "plan": "send rate 250 /s, factor 1.6, step window 120 s (offers 250, 400, 640, 1,024, 1,638 /s); burst 144,900 voters (Zamboanga City's 483,058 voters over 10 h is 48,300 per hour; worst-case hour taken as three times that)",
+  "plan_source": ".superpowers/sdd/2026-09-14-study-grade-wizard/ch4-study-log.md, Night 1, row-5 choices"
+ },
+ "candidates": {
+  "source_note": "Night 1 candidate-count check: MP-1K at 10 and 28 candidates per position (2 warm-ups + 5 measured), against the 2026-09-30 MP-1K campaign at 4 candidates (2 + 10).",
+  "contention_note": "Both Night 1 campaigns are the standing second attempts and are flagged for host CPU above 25 % on measured repetitions (a web browser running on the host): cand10 on 3 of 5, cand28 on 2 of 5. The 4-candidate campaign ran a night earlier.",
+  "contention_source": "ch4-study-log.md, Night 1, 01:30-02:07 entries; ~/ch4/night1/state.json",
+  "points": [
+   {
+    "candidates": 4,
+    "source": {
+     "tier": "MP-1K"
+    }
+   },
+   {
+    "candidates": 10,
+    "source": {
+     "zip": "//wsl.localhost/Ubuntu/home/user/ch4/night1/exports/campaign-20260930-173157-4.zip"
+    }
+   },
+   {
+    "candidates": 28,
+    "source": {
+     "zip": "//wsl.localhost/Ubuntu/home/user/ch4/night1/exports/campaign-20260930-175515-8.zip"
+    }
+   }
+  ],
+  "auto": {
+   "points": [
+    {
+     "candidates": 4,
+     "campaign": "campaign-20260929-180218-15",
+     "gen_cpu_ms_per_record": 2.5096666666666665,
+     "proof_gen_cpu_ms_per_record": 1.6136666666666666,
+     "verify_ms_per_record": 0.17566666666666667,
+     "submit_ms_per_record": 1.0806666666666667,
+     "latency_p50_ms": 146.739,
+     "committed_tps": 924.606,
+     "contended_host": 3
+    },
+    {
+     "candidates": 10,
+     "campaign": "campaign-20260930-173157-4",
+     "gen_cpu_ms_per_record": 5.728,
+     "proof_gen_cpu_ms_per_record": 3.978666666666667,
+     "verify_ms_per_record": 0.395,
+     "submit_ms_per_record": 1.8636666666666666,
+     "latency_p50_ms": 230.943,
+     "committed_tps": 536.489,
+     "contended_host": 3
+    },
+    {
+     "candidates": 28,
+     "campaign": "campaign-20260930-175515-8",
+     "gen_cpu_ms_per_record": 15.255333333333333,
+     "proof_gen_cpu_ms_per_record": 10.991,
+     "verify_ms_per_record": 1.0843333333333334,
+     "submit_ms_per_record": 3.365,
+     "latency_p50_ms": 455.482,
+     "committed_tps": 297.175,
+     "contended_host": 2
+    }
+   ],
+   "fits": {
+    "gen_cpu_ms_per_record": {
+     "intercept": 0.40175641025640996,
+     "slope": 0.5306602564102564,
+     "r2": 0.9999928650510066
+    },
+    "proof_gen_cpu_ms_per_record": {
+     "intercept": 0.06137606837606846,
+     "slope": 0.39045726495726496,
+     "r2": 0.9999944743484485
+    },
+    "verify_ms_per_record": {
+     "intercept": 0.02020512820512821,
+     "slope": 0.03796153846153846,
+     "r2": 0.999916022841787
+    },
+    "submit_ms_per_record": {
+     "intercept": 0.8086196581196581,
+     "slope": 0.09246367521367523,
+     "r2": 0.9897457567811264
+    },
+    "latency_p50_ms": {
+     "intercept": 98.88093589743588,
+     "slope": 12.774314102564105,
+     "r2": 0.9994050012594152
+    }
+   }
+  }
+ },
+ "security_runs": [
+  {
+   "name": "SP-10K",
+   "run": "sp-10k-ch4-sec-20260929-183410-129",
+   "source": {
+    "git": "docs/ch4-study-2026-09-30",
+    "path": "docs/desktop-runs/2026-09-30-sp-10k-security"
+   },
+   "auto": {
+    "run": "sp-10k-ch4-sec-20260929-183410-129",
+    "verdicts": [
+     {
+      "scenario": "tamper-ballot-proof",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "cds",
+      "gate_observed": "cds",
+      "election_status": "open",
+      "ballots_committed": "5000"
+     },
+     {
+      "scenario": "reused-nullifier",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "nullifier",
+      "gate_observed": "nullifier",
+      "election_status": "open",
+      "ballots_committed": "5000"
+     },
+     {
+      "scenario": "dropped-ballot",
+      "stage": "close",
+      "verdict": "PASS",
+      "live": "false",
+      "gate_expected": "stream.completeness",
+      "gate_observed": "stream.completeness;decryption.cp_proof;decryption.threshold;tally.homomorphic_sum",
+      "election_status": "closed",
+      "ballots_committed": "10000"
+     },
+     {
+      "scenario": "reordered-ballots",
+      "stage": "close",
+      "verdict": "SKIPPED",
+      "live": "false",
+      "gate_expected": "",
+      "gate_observed": "",
+      "election_status": "closed",
+      "ballots_committed": "10000"
+     },
+     {
+      "scenario": "corrupted-ballot-bytes",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "decode",
+      "gate_observed": "decode",
+      "election_status": "open",
+      "ballots_committed": "5000"
+     },
+     {
+      "scenario": "tamper-partial-decryption",
+      "stage": "ceremony",
+      "verdict": "PASS",
+      "live": "false",
+      "gate_expected": "decryption.cp_proof",
+      "gate_observed": "decryption.cp_proof",
+      "election_status": "closed",
+      "ballots_committed": "10000"
+     },
+     {
+      "scenario": "tamper-dkg-transcript",
+      "stage": "dkg",
+      "verdict": "PASS",
+      "live": "false",
+      "gate_expected": "dkg.decode",
+      "gate_observed": "dkg.decode",
+      "election_status": "open",
+      "ballots_committed": "0"
+     },
+     {
+      "scenario": "self-issued-credential",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "issuer",
+      "gate_observed": "issuer",
+      "election_status": "open",
+      "ballots_committed": "5000"
+     },
+     {
+      "scenario": "overvote",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "selection",
+      "gate_observed": "selection",
+      "election_status": "open",
+      "ballots_committed": "5000"
+     }
+    ],
+    "summary": {
+     "attempted": 8,
+     "rejected": 8,
+     "rate": "1.00"
+    },
+    "contests": 4,
+    "E_max": 0,
+    "all_pass": true,
+    "ledger_matches_local": true,
+    "committed": 10000,
+    "dropped": 0,
+    "trustee_submit_ms": [
+     8241,
+     8232,
+     8208
+    ],
+    "partials_per_trustee": 4,
+    "publish_signers": 3,
+    "threshold": 3,
+    "verify": "pass",
+    "failed_checks": [],
+    "ledger_audit": "ok",
+    "verify_ballots_ms": 1640,
+    "verify_threads": 16
+   }
+  },
+  {
+   "name": "MP-1K",
+   "run": "mp-1k-ch4-sec-20260930-185139-29",
+   "source": {
+    "dir": "//wsl.localhost/Ubuntu/home/user/.saksi/campaign/runs/mp-1k-ch4-sec-20260930-185139-29"
+   },
+   "auto": {
+    "run": "mp-1k-ch4-sec-20260930-185139-29",
+    "verdicts": [
+     {
+      "scenario": "tamper-ballot-proof",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "cds",
+      "gate_observed": "cds",
+      "election_status": "open",
+      "ballots_committed": "1500"
+     },
+     {
+      "scenario": "reused-nullifier",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "nullifier",
+      "gate_observed": "nullifier",
+      "election_status": "open",
+      "ballots_committed": "1500"
+     },
+     {
+      "scenario": "dropped-ballot",
+      "stage": "close",
+      "verdict": "PASS",
+      "live": "false",
+      "gate_expected": "stream.completeness",
+      "gate_observed": "stream.completeness;decryption.cp_proof;decryption.threshold;tally.homomorphic_sum",
+      "election_status": "closed",
+      "ballots_committed": "3000"
+     },
+     {
+      "scenario": "reordered-ballots",
+      "stage": "close",
+      "verdict": "SKIPPED",
+      "live": "false",
+      "gate_expected": "",
+      "gate_observed": "",
+      "election_status": "closed",
+      "ballots_committed": "3000"
+     },
+     {
+      "scenario": "corrupted-ballot-bytes",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "decode",
+      "gate_observed": "decode",
+      "election_status": "open",
+      "ballots_committed": "1500"
+     },
+     {
+      "scenario": "tamper-partial-decryption",
+      "stage": "ceremony",
+      "verdict": "PASS",
+      "live": "false",
+      "gate_expected": "decryption.cp_proof",
+      "gate_observed": "decryption.cp_proof",
+      "election_status": "closed",
+      "ballots_committed": "3000"
+     },
+     {
+      "scenario": "tamper-dkg-transcript",
+      "stage": "dkg",
+      "verdict": "PASS",
+      "live": "false",
+      "gate_expected": "dkg.decode",
+      "gate_observed": "dkg.decode",
+      "election_status": "open",
+      "ballots_committed": "0"
+     },
+     {
+      "scenario": "self-issued-credential",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "issuer",
+      "gate_observed": "issuer",
+      "election_status": "open",
+      "ballots_committed": "1500"
+     },
+     {
+      "scenario": "overvote",
+      "stage": "ballots",
+      "verdict": "PASS",
+      "live": "true",
+      "gate_expected": "selection",
+      "gate_observed": "selection",
+      "election_status": "open",
+      "ballots_committed": "1500"
+     }
+    ],
+    "summary": {
+     "attempted": 8,
+     "rejected": 8,
+     "rate": "1.00"
+    },
+    "contests": 12,
+    "E_max": 0,
+    "all_pass": true,
+    "ledger_matches_local": true,
+    "committed": 3000,
+    "dropped": 0,
+    "trustee_submit_ms": [
+     24663,
+     24633,
+     24631
+    ],
+    "partials_per_trustee": 12,
+    "publish_signers": 3,
+    "threshold": 3,
+    "verify": "pass",
+    "failed_checks": [],
+    "ledger_audit": "ok",
+    "verify_ballots_ms": 494,
+    "verify_threads": 16
+   }
+  }
+ ],
+ "t3": {
+  "run": "sp-10k-ch4-t3-20260929-183754-130",
+  "source": "docs/desktop-runs/2026-09-30-sp-10k-t3.md sections 2-3 and the run's journal.ndjson (branch docs/ch4-study-2026-09-30)",
+  "voters": 10000,
+  "fault": "peer0.org1.example.com stopped at ballot index 4,000 of 10,000 (40 %)",
+  "down_ms": 20255,
+  "ready_after_ms": 1054,
+  "chain_at_fault": 3893,
+  "driver_committed_at_fault": 4000,
+  "on_chain_at_resume": 4045,
+  "resumed": 5955,
+  "resumed_committed": 5955,
+  "resumed_dropped": 0,
+  "replayed": 0,
+  "reconcile_chain_count": 10000,
+  "missing": 0,
+  "chain_walk_blocks": 204,
+  "chain_walk_sampled": 9958,
+  "E_max": 0,
+  "contests": 4
+ },
+ "stalls": {
+  "source": "docs/desktop-runs/2026-09-30-ch4-study.md section 2(c) (branch docs/ch4-study-2026-09-30)",
+  "rows": [
+   [
+    "MP-10K",
+    "campaign-20260929-191104-23 (standing)",
+    "m6",
+    "460.672",
+    "2,903.0",
+    "10.6",
+    "13.7 / 1.9"
+   ],
+   [
+    "MP-10K",
+    "campaign-20260929-191104-23 (standing)",
+    "m7",
+    "625.552",
+    "1,960.1",
+    "9.4",
+    "18.2 / 3.9"
+   ],
+   [
+    "SP-50K",
+    "campaign-20260929-195715-27 (standing)",
+    "m3",
+    "613.702",
+    "1,785.0",
+    "4.8",
+    "2.9 / 5.8"
+   ],
+   [
+    "SP-50K",
+    "campaign-20260929-193508-25 (superseded)",
+    "m2",
+    "642.827",
+    "698.0",
+    "6.3",
+    "2.4 / 11.0"
+   ],
+   [
+    "SP-50K",
+    "campaign-20260929-193508-25 (superseded)",
+    "m3",
+    "590.038",
+    "2,005.0",
+    "7.8",
+    "4.4 / 8.6"
+   ]
+  ],
+  "warmups": "SP-10K attempt 1 warm-up 2 (4.0 s gap) and MP-50K warm-up 2 (10.4 s gap)"
+ },
+ "contention_totals": {
+  "source": "docs/desktop-runs/2026-09-30-ch4-study.md section 2(b)",
+  "flagged_10k_up": 30,
+  "flagged_10k_up_guest_only": 30,
+  "host_samples_total": 190,
+  "host_samples_over": 12,
+  "host_over_at_1k": 7,
+  "guest_load1_range": "4.9 to 13.9",
+  "highest_host_10k_up": 25.5
+ },
+ "baseline_ef663d1": {
+  "source": "docs/desktop-runs/2026-09-12-rows2-4-parallel.md section 7 (main)",
+  "tps": {
+   "SP-1K": 1004.09,
+   "MP-1K": 1011.79,
+   "SP-10K": 968.99,
+   "MP-10K": 954.69,
+   "SP-50K": 933.32,
+   "MP-50K": 793.02
+  }
+ },
+ "claims_line": {
+  "text": "Sustained committed throughput on this desktop ≈ 920–1000 TPS",
+  "source": "docs/CLAIMS.md, RQ3 table, first row"
+ },
+ "cost_model": {
+  "source": "docs/desktop-runs/cost-model.md section 3 (fit on saksi ef663d1, rows 2-4)",
+  "predicted_h_per_run": {
+   "SP-483K": 0.3088,
+   "SP-1M": 0.6321,
+   "SP-1.92M": 1.2074,
+   "SP-3.5M": 2.1953,
+   "MP-483K offline": 0.6282,
+   "MP-1M offline": 1.2997,
+   "MP-1.92M offline": 2.4946,
+   "MP-3.5M offline": 4.5466,
+   "MP-3.5M on-chain": 6.5723
+  }
+ },
+ "references": {
+  "source": "paper, Performance section (pp. 60-61) and Experimental Design (Table 3.7)",
+  "r18": {
+   "tps": 4.66,
+   "s_per_vote": 1.07,
+   "voters": 50000
+  },
+  "r24": {
+   "tps": 3000
+  },
+  "r26": {
+   "tps": 40
+  }
+ },
+ "negative_catalog": {
+  "source": "paper, Security section (p. 55); chaincode test names from saksi packages/saksi-bulletin/chaincode/*_test.go at 4a38a54; security-run verdicts from negative-tests.csv",
+  "test_log_pending": "[PENDING — small item: test-suite and CI/SAST log at 4a38a54]",
+  "rows": [
+   [
+    "Malformed ciphertext",
+    "decode (chaincode)",
+    "corrupted-ballot-bytes: PASS, live, in both security runs",
+    "TestSubmitBallotRejectsMalformedCiphertext"
+   ],
+   [
+    "Invalid or substituted validity proof",
+    "cds (chaincode)",
+    "tamper-ballot-proof: PASS, live, in both security runs",
+    "TestSubmitBallotRejectsTamperedCDSProof"
+   ],
+   [
+    "Invalid or expired credential",
+    "credential (chaincode)",
+    "Not mounted by the console. Credentials carry no validity period, so \"expired\" is not a reachable state (manuscript amendment 4.1)",
+    "TestSubmitBallotRejectsBadCredentialSignature"
+   ],
+   [
+    "Reused nullifier",
+    "nullifier (chaincode)",
+    "reused-nullifier: PASS, live, in both security runs",
+    "TestSubmitBallotRejectsDoubleVote"
+   ],
+   [
+    "Duplicate vote for the same position",
+    "nullifier (chaincode)",
+    "reused-nullifier in the MP-1K security run: PASS, live, on a three-position election",
+    "TestSubmitBallotRejectsDoubleVote"
+   ],
+   [
+    "Altered transaction",
+    "Fabric endorsement and signature checks",
+    "Not mounted by the console; not exercised in this study",
+    "none named"
+   ],
+   [
+    "Altered manifest",
+    "verifier (election parameters and issuer binding)",
+    "Not mounted as a manifest edit; tamper-dkg-transcript (altered key-generation commitment) PASS, simulated, caught by the verifier",
+    "TestCreateElectionValidatesTheIssuerKey"
+   ],
+   [
+    "Decryption with fewer than three trustee shares",
+    "tally signature threshold (chaincode); threshold check (verifier)",
+    "Not mounted in the security runs; the security and T3 runs published with 3 of 5 signers",
+    "TestPublishTallyRejectsBelowThreshold"
+   ],
+   [
+    "Incorrect trustee decryption proof",
+    "decryption.cp_proof (verifier)",
+    "tamper-partial-decryption: PASS, simulated, in both security runs",
+    "chaincode checks presence only"
+   ],
+   [
+    "Submission from outside the channel membership",
+    "Fabric membership service",
+    "Not mounted by the console; not exercised in this study",
+    "none named"
+   ],
+   [
+    "Credential not issued under the election's issuer key",
+    "issuer (chaincode)",
+    "self-issued-credential: PASS, live, in both security runs",
+    "TestSubmitBallotIssuerBinding"
+   ],
+   [
+    "Overvote",
+    "selection (chaincode)",
+    "overvote: PASS, live, in both security runs",
+    "TestSubmitBallotSelectionProof"
+   ],
+   [
+    "Ballot record that names no position",
+    "shape (chaincode)",
+    "Not mounted by the console",
+    "TestSubmitBallotRefusesAnEmptyPositionOnAPositionedElection"
+   ],
+   [
+    "Corrupted ledger data",
+    "stream.completeness and chain walk (verifier)",
+    "dropped-ballot: PASS, simulated, in both security runs; T3 chain walk PASS over 204 linked blocks",
+    "none named"
+   ]
+  ]
+ },
+ "small_items": {
+  "verifier_separate_machine": "[PENDING — small item: verifier on a separate machine from a copied public record (RQ1e)]",
+  "ci_sast": "[PENDING — small item: test-suite and CI/SAST log at 4a38a54]",
+  "linkage_join": "[PENDING — small item: privacy linkage join over a tier export]",
+  "disk": "[PENDING — Night 1 ledger size (du of the peer volume) for SP-483K, SP-1M and SP-1.92M]"
+ },
+ "figure_tiers_source": "Figures 4.1 and 4.2 points beyond the 'tiers' block: summary.csv files named per entry (evidence on branch docs/ch4-night1-2026-10-01). One summary -> its median column; several single-run campaigns -> median_low of their medians per metric (SP-1.92M: m2 and m3 only, m1 has no perf.csv). host is 'desktop' or 'ax42'; the two are never pooled. 'separate' entries are drawn as an open marker, not joined to a series.",
+ "figure_tiers": [
+  {
+   "name": "SP-483K",
+   "host": "desktop",
+   "voters": 483000,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-01-sp-483k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 509.027,
+    "latency_p50_ms": 246.256,
+    "latency_p99_ms": 537.566,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "SP-1M",
+   "host": "desktop",
+   "voters": 1000000,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-01-sp-1m/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 574.466,
+    "latency_p50_ms": 230.351,
+    "latency_p99_ms": 482.31,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "SP-1.92M",
+   "host": "desktop",
+   "voters": 1921917,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-01-sp-1.92m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-01-sp-1.92m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 633.278,
+    "latency_p50_ms": 181.999,
+    "latency_p99_ms": 430.245,
+    "n_summaries": 2
+   }
+  },
+  {
+   "name": "SP-3.5M",
+   "host": "desktop",
+   "voters": 3524078,
+   "positions": 1,
+   "summaries": [
+    "docs/desktop-runs/2026-10-02-sp-3.5m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-02-sp-3.5m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-02-sp-3.5m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 586.447,
+    "latency_p50_ms": 225.935,
+    "latency_p99_ms": 486.86,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "SP-483K fresh",
+   "host": "desktop",
+   "voters": 483000,
+   "positions": 1,
+   "separate": true,
+   "label": "Desktop, SP-483K on a fresh network (1 run)",
+   "summaries": [
+    "docs/desktop-runs/2026-10-07-483k-optional/sp-483k-fresh/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 583.315,
+    "latency_p50_ms": 194.753,
+    "latency_p99_ms": 489.759,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-483K",
+   "host": "desktop",
+   "voters": 483000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-07-483k-optional/mp-483k-m1/summary.csv",
+    "docs/desktop-runs/2026-10-07-483k-optional/mp-483k-m2/summary.csv",
+    "docs/desktop-runs/2026-10-07-483k-optional/mp-483k-m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 635.967,
+    "latency_p50_ms": 180.677,
+    "latency_p99_ms": 421.419,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-1K",
+   "host": "ax42",
+   "voters": 1000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-1k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 830.074,
+    "latency_p50_ms": 170.033,
+    "latency_p99_ms": 208.014,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-10K",
+   "host": "ax42",
+   "voters": 10000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-10k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 835.372,
+    "latency_p50_ms": 169.761,
+    "latency_p99_ms": 209.077,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-50K",
+   "host": "ax42",
+   "voters": 50000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-50k/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 820.427,
+    "latency_p50_ms": 172.588,
+    "latency_p99_ms": 212.114,
+    "n_summaries": 1
+   }
+  },
+  {
+   "name": "MP-483K",
+   "host": "ax42",
+   "voters": 483000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-483k/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-483k/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-483k/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 553.92,
+    "latency_p50_ms": 208.33,
+    "latency_p99_ms": 327.414,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-1M",
+   "host": "ax42",
+   "voters": 1000000,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-1m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 473.534,
+    "latency_p50_ms": 292.983,
+    "latency_p99_ms": 376.199,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-1.92M",
+   "host": "ax42",
+   "voters": 1921917,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-1.92m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1.92m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-1.92m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 464.944,
+    "latency_p50_ms": 287.638,
+    "latency_p99_ms": 390.415,
+    "n_summaries": 3
+   }
+  },
+  {
+   "name": "MP-3.5M",
+   "host": "ax42",
+   "voters": 3524078,
+   "positions": 3,
+   "summaries": [
+    "docs/desktop-runs/2026-10-04-ax42-mp-3.5m/m1/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-3.5m/m2/summary.csv",
+    "docs/desktop-runs/2026-10-04-ax42-mp-3.5m/m3/summary.csv"
+   ],
+   "auto": {
+    "committed_tps": 423.904,
+    "latency_p50_ms": 319.011,
+    "latency_p99_ms": 448.935,
+    "n_summaries": 3
+   }
+  }
+ ]
+}

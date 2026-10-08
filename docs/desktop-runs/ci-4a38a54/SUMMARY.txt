@@ -1,0 +1,40 @@
+Saksi CI at the study build 4a38a54
+===================================
+
+Commit : 4a38a54fe0223b58f28c53ec54e47fbeab222837 (merge of saksi PR #56; #55 merged just before it)
+Run    : GitHub Actions workflow "CI", run id 36567167973, event push to main,
+         created 2026-09-29T12:17:49Z, conclusion success; headSha = 4a38a54
+         (gh run list --repo saksi-framework/saksi --commit 4a38a54...)
+Log    : gha-run-36567167973.log  (gh run view 36567167973 --repo saksi-framework/saksi --log,
+         fetched 2026-10-08; GitHub's literal ^[[ colour sequences kept)
+Config : .github/workflows/ci.yml at 4a38a54
+
+Test (ubuntu-latest, macos-latest): success on both
+  cargo test --workspace : 270 passed, 0 failed, 0 ignored
+                           (binaries 120+29+94+5+1+11+7+3; six doc-test binaries with 0)
+  go test -race ./...    : ok for 9 packages: saksiprotocolv1; chaincode; chaincode/cdsverify,
+                           credverify, selectionverify, sigverify; client-sdk; client-sdk/bench;
+                           saksi-campaign (145.3 s); 4 packages have no test files
+
+Lint (both OSes): success
+  cargo fmt --check; cargo clippy --workspace --all-targets -- -D warnings;
+  per Go module: gofmt -l, go vet ./..., staticcheck ./...
+
+Security (both OSes): job success
+  cargo audit : 127 crate dependencies, no vulnerability; 1 allowed warning
+                (RUSTSEC-2026-0190, anyhow 1.0.102, unsound Error::downcast_mut)
+  govulncheck : step is continue-on-error ("advisory")
+                saksi-protocol/go          : No vulnerabilities found
+                saksi-bulletin/chaincode   : "Your code is affected by 5 vulnerabilities from 2 modules"
+                  GO-2026-6443, GO-2026-6348, GO-2026-6061, GO-2026-4762  google.golang.org/grpc v1.59.0
+                  GO-2024-2687                                            golang.org/x/net v0.17.0
+                step exited 3 and the loop stopped: client-sdk and saksi-campaign not scanned in this run
+
+Build (both OSes): success
+
+Not configured: a dedicated security-focused SAST tool (gosec, Semgrep, CodeQL).
+
+Named unit tests for catalogue cases 3 and 13 exist at 4a38a54 (git grep in a saksi clone):
+  packages/saksi-bulletin/chaincode/contract_test.go:707  TestSubmitBallotRejectsBadCredentialSignature
+  packages/saksi-bulletin/chaincode/selection_test.go:192 TestSubmitBallotRefusesAnEmptyPositionOnAPositionedElection
+The chaincode package passed as a whole; go test ran without -v, so per-test lines are not in the log.

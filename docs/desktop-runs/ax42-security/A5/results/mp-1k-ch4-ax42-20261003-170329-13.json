@@ -1,0 +1,134 @@
+{
+  "overall": "pass",
+  "contests": [
+    {
+      "contest": "president/cand0",
+      "ground_truth": 490,
+      "decoded": 490,
+      "E": 0,
+      "pass": true,
+      "published_tally": 490,
+      "aggregate_ciphertext": "26654d7a55eec5808f56b0002bb4a86358036c652d32f782ad55600afc5ba00d",
+      "recovered_point": "32e63d9578e4ef4924683bab0c482106fb1cb035c3ecf44d147d70cc9a5b842c"
+    },
+    {
+      "contest": "president/cand1",
+      "ground_truth": 180,
+      "decoded": 180,
+      "E": 0,
+      "pass": true,
+      "published_tally": 180,
+      "aggregate_ciphertext": "168572ddd496a29b1b3dfc80e002aa063699b90dfc6491a315d1c030cabd8911",
+      "recovered_point": "103bcff8c6ec3ffe8d2dc5ee573ae36ac4e919fb8fa20f8adf3f73de9d81a407"
+    },
+    {
+      "contest": "president/cand2",
+      "ground_truth": 170,
+      "decoded": 170,
+      "E": 0,
+      "pass": true,
+      "published_tally": 170,
+      "aggregate_ciphertext": "18ed7f83cd612e3025e187846f037b2ba599df7ab72a2678a8a61f2d55f75031",
+      "recovered_point": "d27e86a3fef5fc796e0c83aad1a9735d32590b980133ca68e7184fe74923f803"
+    },
+    {
+      "contest": "president/cand3",
+      "ground_truth": 160,
+      "decoded": 160,
+      "E": 0,
+      "pass": true,
+      "published_tally": 160,
+      "aggregate_ciphertext": "86f954b468c00620c89a66ae91d6e5dbf6738e51a602bc126f01046bfabb0e19",
+      "recovered_point": "124f288e9cde61e6b965a69040d7c60405d94d494a0c5a35d65526cb980d9c01"
+    },
+    {
+      "contest": "vice-president/cand0",
+      "ground_truth": 485,
+      "decoded": 485,
+      "E": 0,
+      "pass": true,
+      "published_tally": 485,
+      "aggregate_ciphertext": "00c01db6e71c49402c94ced2ecd6e1f8b276757ad7c66b292c2303083e54f861",
+      "recovered_point": "48517235507c48cdf95523001ffae318e7bf417d7b9fa63e860541ae644b8408"
+    },
+    {
+      "contest": "vice-president/cand1",
+      "ground_truth": 186,
+      "decoded": 186,
+      "E": 0,
+      "pass": true,
+      "published_tally": 186,
+      "aggregate_ciphertext": "3c6e0e146898f78a4765ac071173b5a745225605a3d4c39973185db7b7faef51",
+      "recovered_point": "0a0781a73bb33b7e92746b0526ad67c322949c15c5bcaedb00a053301cce0511"
+    },
+    {
+      "contest": "vice-president/cand2",
+      "ground_truth": 172,
+      "decoded": 172,
+      "E": 0,
+      "pass": true,
+      "published_tally": 172,
+      "aggregate_ciphertext": "06956ad22c090240f054cb244d938e7aa3ca076c969d26da5180d487403cdd26",
+      "recovered_point": "3ca5fd0796c9ca60e486c53650239b521b0d8c8421893e8c467e240a3c089e6d"
+    },
+    {
+      "contest": "vice-president/cand3",
+      "ground_truth": 157,
+      "decoded": 157,
+      "E": 0,
+      "pass": true,
+      "published_tally": 157,
+      "aggregate_ciphertext": "fef32d86e1ce2fbbb56885db3c571d9ed681dba02d9018a9499b6757695a5161",
+      "recovered_point": "e8060fb2062748a78d93482e02081d4d0142f20e60dd93dadf854a14ab2a4870"
+    },
+    {
+      "contest": "senator/cand0",
+      "ground_truth": 480,
+      "decoded": 480,
+      "E": 0,
+      "pass": true,
+      "published_tally": 480,
+      "aggregate_ciphertext": "c61c847f934fd057ef7f2677b3b03d64dfc88e678c2bf04da85e563d303a6468",
+      "recovered_point": "8235ea86588938be8e1f9ac2251b0e6c8e6cd25d4e8f0bcfd6220d663f6fc33f"
+    },
+    {
+      "contest": "senator/cand1",
+      "ground_truth": 193,
+      "decoded": 193,
+      "E": 0,
+      "pass": true,
+      "published_tally": 193,
+      "aggregate_ciphertext": "7223cd1230a38af7818399fe308957b13d1d9c6877163750930020d5a9306029",
+      "recovered_point": "e2ead509ecf513e8eef93b4069eef84ff0a96e360eb3be3fa607530506f1b959"
+    },
+    {
+      "contest": "senator/cand2",
+      "ground_truth": 173,
+      "decoded": 173,
+      "E": 0,
+      "pass": true,
+      "published_tally": 173,
+      "aggregate_ciphertext": "945f103e72ffcc5b528533a7fa0515e6fba3a7a51366599a0b460556b9dec169",
+      "recovered_point": "3624296b546f2f84a7bc8d1c9fe6d465e267daa27f72128eb6cc1c4abb794337"
+    },
+    {
+      "contest": "senator/cand3",
+      "ground_truth": 154,
+      "decoded": 154,
+      "E": 0,
+      "pass": true,
+      "published_tally": 154,
+      "aggregate_ciphertext": "987f52018c8744713020680667846d0322960416983b8396f8feaf72bd8cc153",
+      "recovered_point": "4ce38534389c49a395d768f0bb0237f573531e2f04dd9b1d07e8569fc34a0073"
+    }
+  ],
+  "timings_ms": {
+    "verify_ballots": 703,
+    "aggregate": 4,
+    "combine": 1,
+    "decode": 0,
+    "verify_threads": 8
+  },
+  "failed_checks": [],
+  "ledger_order": "pass: 3000 records: the chain read-back is in nullifier order and matches the served record (ledger_digest de144bdc0dc99e3568fa846b824c62ef5c6ff4bf28d01fb2dfdda97bfa03382d)"
+}

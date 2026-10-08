@@ -1,0 +1,7 @@
+# B1 front-run CreateElection (no caller auth)  Wed Oct  7 08:07:38 AM UTC 2026
+## tamper_invoke b1 b1.json
+== b1 | election=secB1-20261007-080738 ==
+  attacker = Org2MSP/User1 front-runs CreateElection
+  [COMMIT]  CreateElection [Org2MSP attacker]
+  honest = Org1MSP/User1 now tries the same election id
+  [REFUSED] CreateElection [Org1MSP honest] -> create election: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, election "secB1-20261007-080738" already exists

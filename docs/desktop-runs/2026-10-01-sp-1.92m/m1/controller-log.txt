@@ -1,0 +1,17 @@
+2026-10-01 16:29:35 reset (warmup) network-reset-20261001-082804-1 done, chain height 6, 81329 ms
+2026-10-01 18:23:52 reset (m1) network-reset-20261001-102119-3 done, chain height 6, 149764 ms
+2026-10-01 18:23:57 preflight m1 green: host CPU 16.1 %, load1 2.16, phase_timeout {'seconds': 28800, 'longest_phase': 'ballot submission', 'estimated_s': 2383.17708}
+2026-10-01 18:23:57 SP-1.92M ch4 m1: campaign campaign-20261001-102357-4 started (C: 26.2 GB free, Q: 246.7 GB free, docker vhdx 203.2 GB, ubuntu vhdx 214.49 GB)
+2026-10-01 18:24:57 m1: run sp-1-92m-ch4-m1-20261001-102400-16
+2026-10-01 19:15:57 recovering m1 (campaign campaign-20261001-102357-4, run sp-1-92m-ch4-m1-20261001-102400-16)
+2026-10-01 19:15:57 resume #1 sp-1-92m-ch4-m1-20261001-102400-16 -> 202 {'segment': 1, 'remaining': 1040917}
+2026-10-01 19:54:17 verify-only sp-1-92m-ch4-m1-20261001-102400-16 -> 202 {'run_id': 'sp-1-92m-ch4-m1-20261001-102400-16'}
+2026-10-01 19:58:00 ceremony/submit 1 -> 202 {'run_id': 'sp-1-92m-ch4-m1-20261001-102400-16'}
+2026-10-01 19:58:20 ceremony/submit 2 -> 202 {'run_id': 'sp-1-92m-ch4-m1-20261001-102400-16'}
+2026-10-01 19:58:41 ceremony/submit 3 -> 202 {'run_id': 'sp-1-92m-ch4-m1-20261001-102400-16'}
+2026-10-01 19:59:01 ceremony/publish -> 202 {'run_id': 'sp-1-92m-ch4-m1-20261001-102400-16'}
+2026-10-01 19:59:21 verify sp-1-92m-ch4-m1-20261001-102400-16 -> 202 {'run_id': 'sp-1-92m-ch4-m1-20261001-102400-16'}
+2026-10-01 20:28:05 SP-1.92M ch4 m1: campaign campaign-20261001-102357-4 interrupted error=the console stopped while this campaign was running run sp-1-92m-ch4-m1-20261001-102400-16 tps None p99 None failed True no perf.csv resumed True
+2026-10-01 20:28:05 m1: resources: ballot window: 2026-10-01 18:38:48 to 2026-10-01 19:50:35 | host CPU samples in window: 364, max 89.1 %, over 25 %: 354 | top container CPU peaks in window: peer0.org1.example.com 1506 %, dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 460 %, peer0.org2.example.com 426 % | bottleneck: Windows available memory fell to 227 MB; win.PhysicalDisk(0 C:)\% Disk Time mean 130 % busy in the ballot window
+2026-10-01 20:28:57 m1: ledger du: peer0.org1.example.com 22845034111 /var/hyperledger/production | peer0.org2.example.com 22846292058 /var/hyperledger/production | orderer.example.com 19151726583 /var/hyperledger/production/orderer | /dev/sde       1081101176832 82402213888 943706607616   9% /var/hyperledger/production | 
+2026-10-01 20:28:57 deleted sp-1-92m-ch4-m1-20261001-102400-16/ballots.csv (7830700801 bytes)

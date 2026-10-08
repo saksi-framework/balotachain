@@ -1,0 +1,133 @@
+{
+  "overall": "pass",
+  "contests": [
+    {
+      "contest": "president/cand0",
+      "ground_truth": 24500,
+      "decoded": 24500,
+      "E": 0,
+      "pass": true,
+      "published_tally": 24500,
+      "aggregate_ciphertext": "026d93c1e5c4d14a3ff5828f6145972a98fe815a29c06758fa90e5ac4becea23",
+      "recovered_point": "92a32f162d78736a5c0a26d401b869b748d84108aba6e5bc0a6f0365637d444c"
+    },
+    {
+      "contest": "president/cand1",
+      "ground_truth": 9000,
+      "decoded": 9000,
+      "E": 0,
+      "pass": true,
+      "published_tally": 9000,
+      "aggregate_ciphertext": "14d30573523b362161006f4f41356228ade1edfa0b11eedd52b10c28f42bc551",
+      "recovered_point": "94778c5ade051c2adf49ad73a144cc853319653eef4bca19d1f6403c4cce9e07"
+    },
+    {
+      "contest": "president/cand2",
+      "ground_truth": 8500,
+      "decoded": 8500,
+      "E": 0,
+      "pass": true,
+      "published_tally": 8500,
+      "aggregate_ciphertext": "f88275ab1eebe7900d7de5a64617b7e9825185f9a12fea223c3daeb33390c660",
+      "recovered_point": "92c409575e0d93e2df2ccf9cfd11ef1459de4983ff8a73e4e6db65997b21812c"
+    },
+    {
+      "contest": "president/cand3",
+      "ground_truth": 8000,
+      "decoded": 8000,
+      "E": 0,
+      "pass": true,
+      "published_tally": 8000,
+      "aggregate_ciphertext": "a88bbca7189efc6149c932742c684b3a8a742887f09c2730e2bf5de402cbed52",
+      "recovered_point": "f859041ccf0441bb08e83a9614d38b1ec08460308004f7c81617055754792d0d"
+    },
+    {
+      "contest": "vice-president/cand0",
+      "ground_truth": 24250,
+      "decoded": 24250,
+      "E": 0,
+      "pass": true,
+      "published_tally": 24250,
+      "aggregate_ciphertext": "b6e69cf8a6f86c13bbf18bd6b9c84287b4a5285132bbe681ff1ca791af22ca1c",
+      "recovered_point": "c496053edad7af0aedaa1e48d0257703e90b83df14c220c7c0180ce396d3835c"
+    },
+    {
+      "contest": "vice-president/cand1",
+      "ground_truth": 9333,
+      "decoded": 9333,
+      "E": 0,
+      "pass": true,
+      "published_tally": 9333,
+      "aggregate_ciphertext": "96c285bde0d8ff557c61853cac09f4cf0f4dd42ce129e96583698e5f7d9e2430",
+      "recovered_point": "ead8ebf81d7486531a35e5c67c9eb956640d9578cf7eb3614f5f06d00fc15822"
+    },
+    {
+      "contest": "vice-president/cand2",
+      "ground_truth": 8584,
+      "decoded": 8584,
+      "E": 0,
+      "pass": true,
+      "published_tally": 8584,
+      "aggregate_ciphertext": "fe11adb268f12bedc418c243fc784836ae0e464667b7d736f40641bd5a844541",
+      "recovered_point": "845e2504bfa01fc2a7060db81fbf0201d89a1f6fa822e0cb7b3a79a6e512996c"
+    },
+    {
+      "contest": "vice-president/cand3",
+      "ground_truth": 7833,
+      "decoded": 7833,
+      "E": 0,
+      "pass": true,
+      "published_tally": 7833,
+      "aggregate_ciphertext": "1e41386395012c6c9c8a017daf5dfa37d0b45124358d8a3da091967f7d433a09",
+      "recovered_point": "a084307ab44a569b76dcc989ce5c9021c0225e32c3762d3aec57e963c024cb33"
+    },
+    {
+      "contest": "senator/cand0",
+      "ground_truth": 24000,
+      "decoded": 24000,
+      "E": 0,
+      "pass": true,
+      "published_tally": 24000,
+      "aggregate_ciphertext": "e42218b6864b9bd2c0a51bfc6e81f9c988d7c80df37d0e45d16ab927330ec021",
+      "recovered_point": "726b4a24c31734179a296a973dcdadff11dbf14fdfccdea6008c090fb6672440"
+    },
+    {
+      "contest": "senator/cand1",
+      "ground_truth": 9667,
+      "decoded": 9667,
+      "E": 0,
+      "pass": true,
+      "published_tally": 9667,
+      "aggregate_ciphertext": "26e571026c5fa8593a12f140f704e52649d486f0b2db3ecb69bc299f35e37444",
+      "recovered_point": "641a952a16566a705c87ea48a48e8b27ade1ade60631b70ba7e8787c216f632d"
+    },
+    {
+      "contest": "senator/cand2",
+      "ground_truth": 8666,
+      "decoded": 8666,
+      "E": 0,
+      "pass": true,
+      "published_tally": 8666,
+      "aggregate_ciphertext": "909dafdaabf8e14eb67e7b1f8faf3fe61e2b46316b05272f2cc999a73822a63e",
+      "recovered_point": "72a639d65dd1b35d1d632873484a59fcdb20fbe2d5a804b4d2ee0550446ca130"
+    },
+    {
+      "contest": "senator/cand3",
+      "ground_truth": 7667,
+      "decoded": 7667,
+      "E": 0,
+      "pass": true,
+      "published_tally": 7667,
+      "aggregate_ciphertext": "50d185fe3f52d7655369657b7f4d3ba594409160d3715835a24e8dd565981238",
+      "recovered_point": "8862a3b71a111cf1ea32d22cfc7425f645d0b3992433cae6ba751b3a52c0df4d"
+    }
+  ],
+  "timings_ms": {
+    "verify_ballots": 24494,
+    "aggregate": 230,
+    "combine": 1,
+    "decode": 16,
+    "verify_threads": 16
+  },
+  "failed_checks": []
+}

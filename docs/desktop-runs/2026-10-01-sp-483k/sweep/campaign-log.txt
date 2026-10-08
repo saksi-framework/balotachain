@@ -1,0 +1,11 @@
+rep 1 (sweep): run sp-483k-ch4-20260930-205249-34
+  sweep step 1: offered 250.000/s, committed 239.242/s, dropped 0
+rep 2 (sweep): run sp-483k-ch4-20260930-205931-35
+  sweep step 2: offered 400.000/s, committed 388.480/s, dropped 0
+rep 3 (sweep): run sp-483k-ch4-20260930-210708-36
+  sweep step 3: offered 640.000/s, committed 564.619/s, dropped 0
+rep 4 (sweep): run sp-483k-ch4-20260930-211446-37
+  sweep step 4: offered 1024.000/s, committed 610.928/s, dropped 0
+rep 5 (sweep): run sp-483k-ch4-20260930-212207-38
+  sweep step 5: offered 1638.400/s, committed 595.730/s, dropped 0
+rep 1 (burst): run sp-483k-ch4-20260930-213103-39

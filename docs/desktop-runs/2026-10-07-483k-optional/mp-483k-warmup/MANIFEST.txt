@@ -1,0 +1,9 @@
+campaign campaign-20261007-161130-2 (status interrupted)
+
+mp-483k-ch4-desktop-warmup-20261007-161133-1 (measured 1, failed)
+  included: run.json, perf.csv, perf-schema.md, correctness.csv, ground-truth-check.json, timings.json, journal.ndjson, gen-timings.json, journal-line1.json, receipts-lifecycle.csv (receipts.csv ends in a partial row, dropped)
+  missing:  negative-tests.csv
+
+campaign
+  included: campaign.json, preflight.json
+  missing:  summary.csv

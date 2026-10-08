@@ -1,0 +1,150 @@
+{
+  "overall": "fail",
+  "contests": [
+    {
+      "contest": "president/cand0",
+      "ground_truth": 490,
+      "decoded": 490,
+      "E": 0,
+      "pass": false,
+      "published_tally": 490,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "president/cand1",
+      "ground_truth": 180,
+      "decoded": 180,
+      "E": 0,
+      "pass": false,
+      "published_tally": 180,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "president/cand2",
+      "ground_truth": 170,
+      "decoded": 170,
+      "E": 0,
+      "pass": false,
+      "published_tally": 170,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "president/cand3",
+      "ground_truth": 160,
+      "decoded": 160,
+      "E": 0,
+      "pass": false,
+      "published_tally": 160,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "vice-president/cand0",
+      "ground_truth": 485,
+      "decoded": 485,
+      "E": 0,
+      "pass": false,
+      "published_tally": 485,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "vice-president/cand1",
+      "ground_truth": 186,
+      "decoded": 186,
+      "E": 0,
+      "pass": false,
+      "published_tally": 186,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "vice-president/cand2",
+      "ground_truth": 172,
+      "decoded": 172,
+      "E": 0,
+      "pass": false,
+      "published_tally": 172,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "vice-president/cand3",
+      "ground_truth": 157,
+      "decoded": 157,
+      "E": 0,
+      "pass": false,
+      "published_tally": 157,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "senator/cand0",
+      "ground_truth": 480,
+      "decoded": 480,
+      "E": 0,
+      "pass": false,
+      "published_tally": 480,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "senator/cand1",
+      "ground_truth": 193,
+      "decoded": 193,
+      "E": 0,
+      "pass": false,
+      "published_tally": 193,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "senator/cand2",
+      "ground_truth": 173,
+      "decoded": 173,
+      "E": 0,
+      "pass": false,
+      "published_tally": 173,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    },
+    {
+      "contest": "senator/cand3",
+      "ground_truth": 154,
+      "decoded": 154,
+      "E": 0,
+      "pass": false,
+      "published_tally": 154,
+      "aggregate_ciphertext": "",
+      "recovered_point": ""
+    }
+  ],
+  "timings_ms": {
+    "verify_ballots": 487,
+    "aggregate": 5,
+    "combine": 0,
+    "decode": 0,
+    "verify_threads": 16
+  },
+  "failed_checks": [
+    {
+      "check": "ballot.cds_proof",
+      "detail": "ballot[0] contest president/cand0: CDS verification failed: proof verification failed"
+    },
+    {
+      "check": "decryption.cp_proof",
+      "detail": "partial_decryptions[0] (trustee 1, contest president/cand0) Chaum-Pedersen failed: proof verification failed"
+    },
+    {
+      "check": "decryption.threshold",
+      "detail": "contest president/cand0: only 0 distinct verified trustees submitted, threshold is 3"
+    },
+    {
+      "check": "tally.homomorphic_sum",
+      "detail": "skipped homomorphic sum: threshold not satisfied across all contests"
+    }
+  ]
+}

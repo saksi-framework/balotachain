@@ -1,0 +1,68 @@
+ballot window(s): 2026-10-04 01:07:29 to 2026-10-04 01:08:05; 2026-10-04 01:08:51 to 2026-10-04 01:09:27; 2026-10-04 01:10:13 to 2026-10-04 01:10:49; 2026-10-04 01:11:35 to 2026-10-04 01:12:11; 2026-10-04 01:12:57 to 2026-10-04 01:13:33; 2026-10-04 01:14:19 to 2026-10-04 01:14:55; 2026-10-04 01:15:41 to 2026-10-04 01:16:16; 2026-10-04 01:17:02 to 2026-10-04 01:17:38; 2026-10-04 01:18:24 to 2026-10-04 01:19:00; 2026-10-04 01:19:45 to 2026-10-04 01:20:21; 2026-10-04 01:21:07 to 2026-10-04 01:21:43; 2026-10-04 01:22:29 to 2026-10-04 01:23:07
+host CPU (/proc/stat) samples in window: 45, mean 42.1 %, max 50.6 %
+non-run CPU (host minus the containers, dockerd/containerd and the console cgroups): 45 samples, max 0.7 %, over 25 % (contended): 0
+load1 in window: mean 9.01, max 15.42
+top container CPU peaks in window: dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85 383 %, peer0.org1.example.com 225 %, peer0.org2.example.com 89 %
+bottleneck: none evident from host evidence (no memory, disk-util, queue or CPU saturation flag)
+
+metric                                                             run peak    window mean    window peak
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.cpu_pct          382.7          342.8          382.7
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.mem_bytes     44522537.0     19918050.6     22544384.0
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.cpu_pct            0.0            0.0            0.0
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.mem_bytes      7532970.0      6950311.3      7532970.0
+docker.orderer.example.com.cpu_pct                                     55.0           46.7           55.0
+docker.orderer.example.com.mem_bytes                            643301376.0    392199813.3    643301376.0
+docker.peer0.org1.example.com.cpu_pct                                 224.8          189.7          224.8
+docker.peer0.org1.example.com.mem_bytes                         391852851.2    285881430.5    369937612.8
+docker.peer0.org2.example.com.cpu_pct                                  89.0           64.8           89.0
+docker.peer0.org2.example.com.mem_bytes                         352531251.2    269873170.2    352531251.2
+host.Cached_kb                                                   24858228.0     16392604.1     24680472.0
+host.Dirty_kb                                                      248264.0        74122.8       248264.0
+host.MemAvailable_kb                                             63266368.0     62778576.4     63266368.0
+host.MemTotal_kb                                                 64932116.0     64932116.0     64932116.0
+host.SwapFree_kb                                                        0.0            0.0            0.0
+host.SwapTotal_kb                                                       0.0            0.0            0.0
+host.cpu_pct                                                           89.9           42.1           50.6
+host.load1                                                             15.4            9.0           15.4
+host.load5                                                              9.9            6.9            9.9
+host.nonrun_cpu_pct                                                     0.7            0.4            0.7
+host.root_free_bytes                                         935915450368.0 926283183627.4 935649538048.0
+host.root_used_bytes                                          27349323776.0  18689653236.6  27148095488.0
+host.run_cpu_pct                                                       89.4           41.7           50.3
+io.md2.%util                                                           69.1           38.6           69.0
+io.md2.aqu-sz                                                           0.9            0.5            0.9
+io.md2.f/s                                                              0.0            0.0            0.0
+io.md2.r/s                                                              0.1            0.0            0.1
+io.md2.r_await                                                          0.0            0.0            0.0
+io.md2.rkB/s                                                            0.4            0.0            0.4
+io.md2.w/s                                                           2864.5         1444.4         2806.3
+io.md2.w_await                                                          0.5            0.3            0.4
+io.md2.wkB/s                                                       119260.4        53162.4       117225.6
+io.nvme0n1.%util                                                       47.1           25.8           47.1
+io.nvme0n1.aqu-sz                                                       0.8            0.4            0.8
+io.nvme0n1.f/s                                                        175.6           97.7          174.5
+io.nvme0n1.r/s                                                          0.0            0.0            0.0
+io.nvme0n1.r_await                                                      0.0            0.0            0.0
+io.nvme0n1.rkB/s                                                        0.0            0.0            0.0
+io.nvme0n1.w/s                                                        938.3          477.6          923.1
+io.nvme0n1.w_await                                                      0.8            0.5            0.8
+io.nvme0n1.wkB/s                                                    58917.2        26294.8        58273.6
+io.nvme1n1.%util                                                       51.5           25.5           46.2
+io.nvme1n1.aqu-sz                                                       0.9            0.4            0.8
+io.nvme1n1.f/s                                                        175.6           97.7          174.4
+io.nvme1n1.r/s                                                          0.1            0.0            0.1
+io.nvme1n1.r_await                                                      0.0            0.0            0.0
+io.nvme1n1.rkB/s                                                        0.4            0.0            0.4
+io.nvme1n1.w/s                                                        993.2          507.1          967.9
+io.nvme1n1.w_await                                                      0.8            0.5            0.8
+io.nvme1n1.wkB/s                                                    60343.2        26867.6        58952.0
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_read_bytes total 0.00 GB over the run (cumulative counter)
+docker.dev-peer0.org1.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_write_bytes total 0.00 GB over the run (cumulative counter)
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_read_bytes total 0.00 GB over the run (cumulative counter)
+docker.dev-peer0.org2.example.com-saksi-bulletin_1.0-ee3fe73bad456e43adfc5ba27d9e5a60983b69e8496140308fb21061ecb2ff85.blk_write_bytes total 0.00 GB over the run (cumulative counter)
+docker.orderer.example.com.blk_read_bytes                    total 0.00 GB over the run (cumulative counter)
+docker.orderer.example.com.blk_write_bytes                   total 13.80 GB over the run (cumulative counter)
+docker.peer0.org1.example.com.blk_read_bytes                 total 0.00 GB over the run (cumulative counter)
+docker.peer0.org1.example.com.blk_write_bytes                total 30.89 GB over the run (cumulative counter)
+docker.peer0.org2.example.com.blk_read_bytes                 total 0.00 GB over the run (cumulative counter)
+docker.peer0.org2.example.com.blk_write_bytes                total 30.79 GB over the run (cumulative counter)

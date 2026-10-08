@@ -1,0 +1,12 @@
+# B3 legacy empty-issuer  Wed Oct  7 08:07:19 AM UTC 2026
+## on-chain: tamper_invoke b3 b3.json
+== b3 | election=secB3-20261007-080719 ==
+  params issuer_public_key cleared (legacy election; issuer gate skipped)
+  [COMMIT]  CreateElection(empty issuer)
+  [COMMIT]  PublishDKGTranscript
+  [COMMIT]  SubmitBallot(self-issued, legacy)
+
+## offline control (unmutated):
+overall=pass failed=
+## offline legacy mutation: tamper_invoke stream-legacy + audit-stream
+overall=fail failed=parameters.issuer_binding:election parameters carry no issuer key, so the chain's issu

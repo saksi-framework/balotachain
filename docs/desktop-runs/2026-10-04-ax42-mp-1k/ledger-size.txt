@@ -1,0 +1,9 @@
+2026-10-04T01:05:54+0800
+peer0.org1.example.com 435404774 /var/hyperledger/production
+peer0.org2.example.com 435404789 /var/hyperledger/production
+orderer.example.com 791886419 /var/hyperledger/production/orderer
+volume compose_orderer.example.com 791837267
+volume compose_peer0.org1.example.com 435310566
+volume compose_peer0.org2.example.com 435310581
+docker-root 2546135593	/var/lib/docker
+/dev/md2       995623145472 10906165248 934066671616   2% /
