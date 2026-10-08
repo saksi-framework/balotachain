@@ -23,9 +23,9 @@ from pathlib import Path
 _BALOTACHAIN = Path(__file__).resolve().parents[3]
 REPOS = {
     "saksi": (os.environ.get("SAKSI_REPO", str(_BALOTACHAIN.parent / "saksi")),
-              os.environ.get("SAKSI_COMMIT", "1812139")),
+              os.environ.get("SAKSI_COMMIT", "dca7776")),
     "balotachain": (os.environ.get("BALOTACHAIN_REPO", str(_BALOTACHAIN)),
-                    os.environ.get("BALOTACHAIN_COMMIT", "a79918d")),
+                    os.environ.get("BALOTACHAIN_COMMIT", "b03d4ba")),
 }
 _cache = {}
 
