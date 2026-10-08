@@ -645,9 +645,12 @@ function CheckList({ checks }: { checks: Board["checks"] }) {
 
 function VerifyVoteCard({
   runId,
+  onChain,
   announce,
 }: {
   runId: string;
+  /** The election was run in on-chain mode, so it is never called offline. */
+  onChain: boolean;
   /** The app's one aria-live region: the outcome is read out when it lands. */
   announce: (text: string) => void;
 }) {
@@ -681,15 +684,27 @@ function VerifyVoteCard({
   const notice = (() => {
     switch (state.kind) {
       case "found": {
-        const { tracking_code: code, recorded_at: at } = state.record;
+        const {
+          tracking_code: code,
+          recorded_at: at,
+          block_number: block,
+          committed_on_chain: committed,
+        } = state.record;
         const position = state.record.position_label ?? "this election";
-        return {
-          ok: true,
-          said: "Ballot found",
-          text: at
-            ? `Found — ballot ${code} for ${position} was committed on ${formatStamp(at)} and is included in the count.`
-            : `Found — ballot ${code} for ${position} is in this election's record and included in the count. (Offline run: there is no ledger timestamp to show.)`,
-        };
+        const where = block ? ` in block ${block}` : "";
+        let text: string;
+        if (committed && at) {
+          text = `Found — ballot ${code} for ${position} was committed on-chain${where} on ${formatStamp(at)} and is included in the count.`;
+        } else if (committed) {
+          text = `Found — ballot ${code} for ${position} is committed on-chain${where} and included in the count. No per-ballot ledger timestamp was recorded for it.`;
+        } else if (onChain) {
+          // Never call an on-chain election offline: the ballot is in the
+          // record, the ledger just could not confirm this one record.
+          text = `Found — ballot ${code} for ${position} is in this election's record and included in the count. This election is recorded on-chain, but no commit receipt for this ballot could be read.`;
+        } else {
+          text = `Found — ballot ${code} for ${position} is in this election's record and included in the count. (Offline run: there is no ledger timestamp to show.)`;
+        }
+        return { ok: true, said: "Ballot found", text };
       }
       case "missing":
         return {
@@ -1338,6 +1353,7 @@ function App() {
             <div style={{ marginBottom: 38 }}>
               <VerifyVoteCard
                 runId={board.election_id}
+                onChain={board.mode === "onchain"}
                 announce={setAnnounce}
               />
             </div>
