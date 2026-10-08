@@ -8,6 +8,12 @@ script, and the `/ban-init` skill.
 
 ## Latest update
 
+- **2026-10-08:** [Study complete](docs/updates/2026-10-08-study-complete.md): start here. Every
+  Chapter IV run is done at saksi `4a38a54` (desktop SP 1K-3.5M on-chain, MP 1K-50K on-chain, MP
+  offline; AX42 MP on-chain 1K-3.5M), the security pass is written up (`docs/desktop-runs/ax42-security/`),
+  and Chapter IV plus the Chapter III amendments are merged (#66, #67). saksi #57/#58 merged. Open:
+  copy the AX42 raw files then cancel the server, Appendix B screenshots, two manuscript values.
+
 - **2026-09-15:** [State and next steps](docs/updates/2026-09-15-state-and-next-steps.md) —
   start here on a new machine. The study runs from saksi's `/wizard` (campaigns, preflight,
   attack timeline, network reset, T3 fault, resume, export); the admin, trustee and board apps
