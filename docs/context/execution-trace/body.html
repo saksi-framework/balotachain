@@ -308,7 +308,10 @@ saksi-credentials · saksi-protocol           contract.go + cdsverify · credver
       place. It checks the issuer's signature on the credential
       (<button class="fn" data-fn="VerifyIssuerSignature" type="button">VerifyIssuerSignature</button>) and verifies the
       CDS proofs <em>on-chain, at endorsement</em>
-      (<button class="fn" data-fn="VerifyBinaryCDS" type="button">VerifyBinaryCDS</button>). Every refusal names the gate
+      (<button class="fn" data-fn="VerifyBinaryCDS" type="button">VerifyBinaryCDS</button>). Since saksi&nbsp;#55 (after the pin) it also
+      refuses a credential from any issuer but the election's (gate <code>issuer</code>,
+      before <code>credential</code>) and a position whose selections do not sum to
+      one (gate <code>selection</code>, after <code>cds</code>). Every refusal names the gate
       that produced it, through <button class="fn" data-fn="rejectAt" type="button">rejectAt</button>, which is what step 7 reads:
     </p>
 
@@ -387,7 +390,8 @@ saksi-credentials · saksi-protocol           contract.go + cdsverify · credver
 
     <div class="note">
       <strong>Where the threshold is enforced.</strong> In three places now. The
-      console refuses to publish below <em>t</em> (409). The chaincode's
+      console refuses to publish below <em>t</em> (409; since saksi&nbsp;#57 the
+      wizard's trustee ceremony shows that refusal and its reason). The chaincode's
       <button class="fn" data-fn="PublishTally" type="button">PublishTally</button> refuses a tally unless every signature verifies and at
       least <em>t</em> distinct trustees signed. The auditor re-proves it at step 6
       (<code>decryption.threshold</code>, <code>tally.signatures</code>). What the
@@ -433,6 +437,7 @@ saksi-credentials · saksi-protocol           contract.go + cdsverify · credver
           <tr><td><code>parameters.shape</code></td><td>version, threshold in range, contests and trustees present</td><td><code>lib.rs</code> check_parameters</td></tr>
           <tr><td><code>dkg.decode</code> · <code>dkg.shape</code> · <code>dkg.joint_public_key</code> · <code>dkg.trustee_share_publics</code></td><td>transcript decodes, commitments are valid points, the joint key rebuilds</td><td><code>dkg.rs</code> verify_dkg_transcript</td></tr>
           <tr><td><code>ballot.decode</code> · <code>ballot.shape</code> · <code>ballot.cds_proof</code> · <code>ballot.credential</code> · <code>ballot.issuer_binding</code></td><td>every CDS proof and credential presentation</td><td><code>ballot.rs</code> <button class="fn" data-fn="verify_ballot" type="button">verify_ballot</button></td></tr>
+          <tr><td><code>parameters.issuer_binding</code> · <code>ballot.selection_sum</code> · <code>ledger.order</code></td><td>added after the pin: issuer key present in the parameters (saksi&nbsp;#55), one selection per position (#55), the chain's read-back in canonical nullifier order (#58, on-chain runs with a ledger dump)</td><td>not in the pinned source</td></tr>
           <tr><td><code>nullifier.unique</code></td><td>no nullifier used twice — double voting</td><td><code>lib.rs</code> <button class="fn" data-fn="NullifierTracker" type="button">NullifierTracker</button></td></tr>
           <tr><td><code>stream.completeness</code></td><td>as many ballots audited as the header declares</td><td><code>lib.rs</code> <button class="fn" data-fn="audit_streaming_chunked" type="button">audit_streaming_chunked</button></td></tr>
           <tr><td><code>decryption.*</code> — shape, share_decode, cp_decode, cp_proof, duplicate, threshold</td><td>each partial decryption's Chaum-Pedersen proof, distinct trustees ≥ <em>t</em></td><td><code>decryption.rs</code> <button class="fn" data-fn="verify_partial_decryptions" type="button">verify_partial_decryptions</button></td></tr>
@@ -501,6 +506,8 @@ saksi-credentials · saksi-protocol           contract.go + cdsverify · credver
           <tr><td><code>dkg</code></td><td>tamper-dkg-transcript</td><td>—</td><td><code>dkg.decode</code></td></tr>
           <tr><td><code>ballots</code></td><td>tamper-ballot-proof</td><td><code>cds</code></td><td><code>ballot.cds_proof</code></td></tr>
           <tr><td><code>ballots</code></td><td>reused-nullifier</td><td><code>nullifier</code></td><td><code>nullifier.unique</code></td></tr>
+          <tr><td><code>ballots</code></td><td>self-issued-credential <span class="muted">(saksi #55)</span></td><td><code>issuer</code></td><td><code>ballot.issuer_binding</code></td></tr>
+          <tr><td><code>ballots</code></td><td>overvote <span class="muted">(saksi #55)</span></td><td><code>selection</code></td><td><code>ballot.selection_sum</code></td></tr>
           <tr><td><code>ballots</code></td><td>corrupted-ballot-bytes</td><td><code>decode</code></td><td><code>ballot.decode</code></td></tr>
           <tr><td><code>close</code></td><td>dropped-ballot</td><td>—</td><td><code>stream.completeness</code></td></tr>
           <tr><td><code>close</code></td><td>reordered-ballots</td><td>—</td><td>— <span class="verdict v-skip">no gate</span></td></tr>
@@ -513,7 +520,8 @@ saksi-credentials · saksi-protocol           contract.go + cdsverify · credver
       Simulated, an attack mutates a copy of the run and re-audits it, after first
       auditing the <em>unmutated</em> copy as a positive control;
       <button class="fn" data-fn="classifyAudit" type="button">classifyAudit</button> then reads the auditor's failed checks. Live, only the
-      three ballot attacks have a chaincode gate to test: they are submitted to the
+      ballot attacks have a chaincode gate to test (three at the pin, five since
+      saksi&nbsp;#55; the two marked rows run the pinned run below did not): they are submitted to the
       open election at the ballots pause, and <button class="fn" data-fn="classifyLive" type="button">classifyLive</button> reads the
       <code>gate=&lt;id&gt;:</code> prefix of the peer's refusal.
     </p>
@@ -995,9 +1003,14 @@ saksi-credentials · saksi-protocol           contract.go + cdsverify · credver
   <strong>Not on the chain.</strong> The election <em>name</em> and the trustee
   names; <code>binding_context</code> (<code>saksi-auditor-v1</code>) — it
   domain-separates every NIZK in the run, but the chaincode never stores or
-  checks it; the header's <code>issuer_pk</code> field, though the per-ballot
+  checks it; the header's <code>issuer_pk</code> field — the per-ballot
   <code>issuer_public_key</code> <em>is</em> stored inside every ballot record,
-  so eligibility stays checkable from the chain alone; <code>n</code>;
+  but at the pinned commit nothing on the chain says which issuer the election
+  trusts, so a ballot under a self-issued credential was accepted and only the
+  auditor's <code>ballot.issuer_binding</code>, reading the header, could catch
+  it (since saksi&nbsp;#55 the election parameters carry the issuer key and
+  <code>SubmitBallot</code> refuses any other at gate <code>issuer</code>);
+  <code>n</code>;
   <code>ground_truth[]</code>; <code>voter_ids[]</code>; the <strong>order</strong>
   of the ballots — records are keyed by nullifier, so world state holds a set and
   not a sequence; and every digest —
@@ -1406,8 +1419,8 @@ recovered_point       16bef8528482ba4a16cab9af6b0875f3e6e5f1c4834ed5916ee413dec9
 <div class="tw"><table>
   <thead><tr><th>Guarantee</th><th>Enforced by</th><th>Seen at</th></tr></thead>
   <tbody>
-    <tr><td>Ballot well-formedness</td><td>CDS proof — chaincode gate <code>cds</code> at endorsement, and auditor <code>ballot.cds_proof</code></td><td>4, 6, 7</td></tr>
-    <tr><td>Eligibility</td><td>issuer signature on the credential — chaincode <code>credential</code>, auditor <code>ballot.credential</code></td><td>4, 6</td></tr>
+    <tr><td>Ballot well-formedness</td><td>CDS proof — chaincode gate <code>cds</code> at endorsement, and auditor <code>ballot.cds_proof</code>; one selection per position only since saksi&nbsp;#55 (gate <code>selection</code>, auditor <code>ballot.selection_sum</code>)</td><td>4, 6, 7</td></tr>
+    <tr><td>Eligibility</td><td>issuer signature on the credential — chaincode <code>credential</code>, auditor <code>ballot.credential</code> and <code>ballot.issuer_binding</code>; the election's issuer key is enforced on-chain only since saksi&nbsp;#55 (gate <code>issuer</code>)</td><td>4, 6</td></tr>
     <tr><td>No double voting</td><td>per-position nullifier — chaincode <code>nullifier</code>, auditor <code>nullifier.unique</code></td><td>4, 6, 7</td></tr>
     <tr><td>Data completeness</td><td>the console's validation gate, and auditor <code>stream.completeness</code></td><td>3, 6, 7</td></tr>
     <tr><td>DKG transcript</td><td>chaincode checks shape, threshold and trustee count, one per election; only the auditor checks the commitments are valid points (<code>dkg.decode</code>)</td><td>4, 6, 7</td></tr>
@@ -1415,7 +1428,7 @@ recovered_point       16bef8528482ba4a16cab9af6b0875f3e6e5f1c4834ed5916ee413dec9
     <tr><td>Partial-decryption correctness</td><td>auditor <code>decryption.cp_proof</code> only; the chaincode checks the proof is present</td><td>5, 6, 7</td></tr>
     <tr><td>Tally correctness</td><td><code>E = T − G = 0</code> per contest, <code>tally.homomorphic_sum</code></td><td>6</td></tr>
     <tr><td>Chain matches console</td><td>ledger dump and <code>ledger_matches_local</code>, on-chain runs</td><td>6</td></tr>
-    <tr><td>Ledger ordering</td><td><strong>nothing</strong> — reordering is not detected on-chain or by the auditor</td><td>7</td></tr>
+    <tr><td>Ledger ordering</td><td><strong>nothing</strong> at the pin; since saksi&nbsp;#58 the auditor's <code>ledger.order</code> checks the chain's read-back on on-chain runs. A reorder of the console's own file is still not detected</td><td>7</td></tr>
   </tbody>
 </table></div>
 
@@ -1443,7 +1456,10 @@ recovered_point       16bef8528482ba4a16cab9af6b0875f3e6e5f1c4834ed5916ee413dec9
 </div>
 <div class="note">
   <strong>Ordering is not detected.</strong> Swapping ballot lines changes nothing
-  any verifier checks, so <code>reordered-ballots</code> is always SKIPPED.
+  any verifier checks, so <code>reordered-ballots</code> is always SKIPPED. Since
+  saksi&nbsp;#58 the auditor checks the chain's read-back is in canonical
+  nullifier order (<code>ledger.order</code>); that scenario mutates the
+  console's file, which still has no gate.
 </div>
 <div class="note">
   <strong>Chaum-Pedersen proofs are checked for presence on-chain.</strong> A share
