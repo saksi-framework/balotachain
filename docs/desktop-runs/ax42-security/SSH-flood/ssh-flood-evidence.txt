@@ -1,0 +1,33 @@
+# SSH connection flood on the AX42 (observed 2026-10-07)
+Thu Oct  8 11:33:52 AM PST 2026
+## connections closed before auth, last 3 days
+2059936
+## per-minute rate, 23:10-23:20 on 2026-10-07
+3381
+## top sources in that window
+    117 by 49.13.102.254
+    117 by 135.181.34.30
+    116 by 162.55.127.33
+    115 by 91.99.212.47
+    115 by 37.27.116.228
+## same 10 min after the mitigation (now)
+2864
+## sshd settings
+passwordauthentication no
+maxstartups 100:30:300
+persourcemaxstartups 10
+## iptables INPUT ssh rules
+-A INPUT -s 49.149.102.72/32 -i enp6s0 -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -i enp6s0 -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW -m hashlimit --hashlimit-above 10/min --hashlimit-burst 20 --hashlimit-mode srcip --hashlimit-name ssh -j DROP
+## hashlimit drops (packets, bytes)
+
+## Reading (written by the orchestrator, 2026-10-08)
+- The flood is constant background traffic from many hosting-provider IPs, each opening about one
+  connection every 5 s and closing it before authentication (~340/min in total, ~2.06M from Oct 4 to Oct 7).
+- It overflowed sshd's default MaxStartups 10:30:100, so our own sessions were dropped at random
+  (scp resets, "kex_exchange_identification: connection abort") during the A6 upload on 2026-10-07.
+- What fixed our access: MaxStartups 100:30:300 + PerSourceMaxStartups 10, and the thesis group's
+  home IP exempted ahead of the per-source rate limit. After that the A6 upload completed.
+- What it did NOT do: the per-source limit (10/min, burst 20) sits just above each bot's rate, so the
+  flood itself continues at a similar volume (2,864 closes in the 10 min before this file). It is an
+  availability nuisance, not an intrusion: password login is off (X3), so these connections cannot log in.

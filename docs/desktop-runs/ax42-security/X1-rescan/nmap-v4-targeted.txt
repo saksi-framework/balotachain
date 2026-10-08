@@ -1,0 +1,16 @@
+# Nmap 7.80 scan initiated Thu Oct 08 11:33:25 2026 as: "C:\\Program Files (x86)\\Nmap\\nmap.exe" -sT -Pn -p 22,7050,7051,7053,9051,9443,9444,9445,8090 -oN "Q:/Code - LAPTOP/Code/projects/balotachain-n2/docs/desktop-runs/ax42-security/X1-rescan/nmap-v4-targeted.txt" 157.180.56.166
+Nmap scan report for static.166.56.180.157.clients.your-server.de (157.180.56.166)
+Host is up (0.30s latency).
+
+PORT     STATE    SERVICE
+22/tcp   open     ssh
+7050/tcp filtered unknown
+7051/tcp filtered unknown
+7053/tcp filtered unknown
+8090/tcp filtered opsmessaging
+9051/tcp filtered tor-control
+9443/tcp filtered tungsten-https
+9444/tcp filtered wso2esb-console
+9445/tcp filtered mindarray-ca
+
+# Nmap done at Thu Oct 08 11:33:38 2026 -- 1 IP address (1 host up) scanned in 12.89 seconds

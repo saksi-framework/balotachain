@@ -110,3 +110,15 @@ summaries (true medians) read 830.4 and 835.6; the chapter says so.
   every one `overall=pass`, `ledger.order=pass`, sum E 0. The chapter uses 47.
 - X1 rescan: `X1-rescan/nmap-v4-allports.txt` is empty and `nmap-v6.txt` shows every probed port, including 22,
   filtered. "Only 22 open" after the fix rests on the `STATUS.md` orchestrator line.
+
+## Evidence added after the refresh (orchestrator, 2026-10-08)
+- **SSH bot flood:** `docs/desktop-runs/ax42-security/SSH-flood/ssh-flood-evidence.txt` (counts, sources, sshd and
+  iptables settings, and a reading). Honest wording: access restored by MaxStartups + home-IP exemption; the flood
+  itself continues (per-source limit sits just above each bot's rate); password login is off, so it cannot log in.
+- **X1 IPv4 rescan:** `X1-rescan/nmap-v4-targeted.txt` (nmap -sT, all 8 formerly open ports filtered, 22 open).
+  The empty `nmap-v4-allports.txt` is the full-range scan that was stopped (it was saturating the link during the
+  A6 upload); the targeted scan plus the laptop IPv6 connect test are the after-fix evidence.
+- **2026-10-08 power loss:** `power/kernel-power-2026-10-07-08.txt`: unexpected shutdown at 00:35:44, Kernel-Power 41
+  on reboot at 01:34:15 (cooperative brownout). Also a Kernel-Power 41 at 2026-10-07 02:16:20.
+- **A5 count:** 47 is current (`A5/verdicts.tsv`, batch 1 = 33 runs, batch 2 = 14 runs, finished 05:51:42); the
+  A5 report's "33" predates batch 2.
