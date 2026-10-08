@@ -10,6 +10,8 @@ export default [
       "**/dist-web/**",
       "**/target/**",
       "**/coverage/**",
+      // Thesis document build scripts (docx assembly), not application code.
+      "docs/**",
       "**/.dart_tool/**",
       "**/build/**",
     ],
