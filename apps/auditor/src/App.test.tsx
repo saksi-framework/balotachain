@@ -458,6 +458,70 @@ describe("verify your vote", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the block and commit time from the ballot's receipt", async () => {
+    loadBoardMock.mockResolvedValue(board({ mode: "onchain" }));
+    verifyTrackingCodeMock.mockResolvedValue({
+      kind: "found",
+      record: {
+        found: true,
+        tracking_code: "BC-CAFE-0001",
+        ballot_index: 0,
+        position_label: "President",
+        recorded_at: "2026-10-08T13:04:26Z",
+        block_number: 423,
+        tx_id: "61572659",
+        committed_on_chain: true,
+      },
+    } satisfies VerifyOutcome);
+    await typeCode("BC-CAFE-0001");
+    expect(
+      await screen.findByText(/was committed on-chain in block 423 on/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Offline run/)).toBeNull();
+  });
+
+  // The record can be committed with no per-ballot timestamp to show; that is
+  // still an on-chain ballot, never an offline one.
+  it("never calls a committed ballot offline when it has no timestamp", async () => {
+    loadBoardMock.mockResolvedValue(board({ mode: "onchain" }));
+    verifyTrackingCodeMock.mockResolvedValue({
+      kind: "found",
+      record: {
+        found: true,
+        tracking_code: "BC-CAFE-0001",
+        ballot_index: 0,
+        position_label: "President",
+        committed_on_chain: true,
+      },
+    } satisfies VerifyOutcome);
+    await typeCode("BC-CAFE-0001");
+    expect(
+      await screen.findByText(
+        /is committed on-chain and included in the count/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Offline run/)).toBeNull();
+  });
+
+  it("never calls an on-chain election offline, even unconfirmed", async () => {
+    loadBoardMock.mockResolvedValue(board({ mode: "onchain" }));
+    verifyTrackingCodeMock.mockResolvedValue({
+      kind: "found",
+      record: {
+        found: true,
+        tracking_code: "BC-CAFE-0001",
+        ballot_index: 0,
+        position_label: "President",
+        committed_on_chain: false,
+      },
+    } satisfies VerifyOutcome);
+    await typeCode("BC-CAFE-0001");
+    expect(
+      await screen.findByText(/This election is recorded on-chain/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Offline run/)).toBeNull();
+  });
+
   it("explains an ambiguous prefix rather than showing someone else's record", async () => {
     verifyTrackingCodeMock.mockResolvedValue({
       kind: "ambiguous",

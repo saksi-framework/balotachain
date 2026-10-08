@@ -128,8 +128,12 @@ export type BallotRecord = {
   position_label?: string;
   nullifier?: string;
   ballot_sha256?: string;
-  /** Ledger commit time. Null offline — there is no receipt to read one from. */
+  /** Ledger commit time, from the ballot's commit receipt. Absent offline, and
+   * absent on-chain when no per-ballot receipt was recorded. */
   recorded_at?: string;
+  /** Block and transaction from the ballot's commit receipt, when one exists. */
+  block_number?: number;
+  tx_id?: string;
   committed_on_chain: boolean;
 };
 

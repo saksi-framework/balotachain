@@ -27,6 +27,7 @@ class BcTextButton extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: BcSpace.xs),
         textStyle: const TextStyle(
+          fontFamily: BcType.sans,
           fontSize: BcType.body,
           fontWeight: FontWeight.w600,
         ),
