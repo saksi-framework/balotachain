@@ -1,0 +1,14 @@
+[PASS] president/cand0          gt=490 decoded=490 E=0
+[PASS] president/cand1          gt=180 decoded=180 E=0
+[PASS] president/cand2          gt=170 decoded=170 E=0
+[PASS] president/cand3          gt=160 decoded=160 E=0
+[PASS] vice-president/cand0     gt=485 decoded=485 E=0
+[PASS] vice-president/cand1     gt=186 decoded=186 E=0
+[PASS] vice-president/cand2     gt=172 decoded=172 E=0
+[PASS] vice-president/cand3     gt=157 decoded=157 E=0
+[PASS] senator/cand0            gt=480 decoded=480 E=0
+[PASS] senator/cand1            gt=193 decoded=193 E=0
+[PASS] senator/cand2            gt=173 decoded=173 E=0
+[PASS] senator/cand3            gt=154 decoded=154 E=0
+------------------------------------------------------------
+AUDIT-STREAM: PASS

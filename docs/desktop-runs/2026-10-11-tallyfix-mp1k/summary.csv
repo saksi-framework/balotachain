@@ -1,0 +1,13 @@
+contest,ground_truth,published_tally_ledger,decoded_threshold,E,pass
+president/cand0,490,490,490,0,true
+president/cand1,180,180,180,0,true
+president/cand2,170,170,170,0,true
+president/cand3,160,160,160,0,true
+vice-president/cand0,485,485,485,0,true
+vice-president/cand1,186,186,186,0,true
+vice-president/cand2,172,172,172,0,true
+vice-president/cand3,157,157,157,0,true
+senator/cand0,480,480,480,0,true
+senator/cand1,193,193,193,0,true
+senator/cand2,173,173,173,0,true
+senator/cand3,154,154,154,0,true
