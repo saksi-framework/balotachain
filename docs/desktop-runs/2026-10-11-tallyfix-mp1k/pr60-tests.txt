@@ -1,0 +1,12 @@
+   Compiling saksi-auditor v0.0.0 (/home/user/Code/saksi/packages/saksi-auditor)
+    Finished `release` profile [optimized] target(s) in 2.11s
+     Running unittests src/lib.rs (target/release/deps/saksi_auditor-e7715928995948a1)
+
+running 4 tests
+test fixtures::decrypted_tally_timing::time_decrypted_tally ... ignored
+test fixtures::decrypted_tally_tests::a_tampered_partial_decryption_fails_generation ... ok
+test fixtures::decrypted_tally_tests::decrypted_totals_that_differ_from_ground_truth_fail_generation ... ok
+test fixtures::decrypted_tally_tests::published_totals_are_the_decrypted_totals_and_equal_ground_truth ... ok
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 77 filtered out; finished in 0.05s
+

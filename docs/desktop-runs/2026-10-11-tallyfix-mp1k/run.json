@@ -1,0 +1,39 @@
+{
+  "run_id": "mp-1k-tallyfix-demo-20261009-174309-1",
+  "config": {
+    "name": "mp-1k-tallyfix-demo",
+    "trustees": [
+      {
+        "name": "COMELEC"
+      },
+      {
+        "name": "Civil Society Watch"
+      },
+      {
+        "name": "University IT"
+      },
+      {
+        "name": "Academe Observer"
+      },
+      {
+        "name": "Bar Association"
+      }
+    ],
+    "threshold": 3,
+    "positions": 3,
+    "candidates": 4,
+    "voters": 1000,
+    "distribution": "realistic",
+    "mode": "onchain",
+    "senate_seats": 0,
+    "concurrency": 128,
+    "send_rate": 0,
+    "window_s": 0,
+    "skip_attacks": false
+  },
+  "created_at": "2026-10-09T17:43:09.019867678Z",
+  "commit": {
+    "git_head_console": "624afcef35e1ce9ee76de150eb070f91766a8842",
+    "git_head_saksi": "624afcef35e1ce9ee76de150eb070f91766a8842"
+  }
+}
