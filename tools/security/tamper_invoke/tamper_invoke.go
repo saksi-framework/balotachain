@@ -15,12 +15,13 @@
 // running `saksi-demo audit-stream` on the matching stream dir (see runners).
 //
 // Subcommands (bundle = `saksi-demo gen ... <bundle.json>`):
-//   b4   <bundle>            CreateElection + PublishDKGTranscript(tampered DKG) — expect COMMIT (shape-only)
-//   a1   <bundle>            lifecycle→close, SubmitPartialDecryption(tampered CP proof) — expect COMMIT
-//   a2   <bundle>            lifecycle→partials, PublishTally(<threshold signatures) — expect REFUSED
-//   a3   <bundle>            lifecycle→partials, PublishTally(one total flipped) — expect REFUSED
-//   b3   <bundle>            CreateElection(empty issuer key)+DKG+ballot — expect COMMIT (legacy, issuer gate skipped)
-//   b1   <bundle>            CreateElection as org2 then as org1 (same id) — expect 2nd REFUSED (already exists)
+//
+//	b4   <bundle>            CreateElection + PublishDKGTranscript(tampered DKG) — expect COMMIT (shape-only)
+//	a1   <bundle>            lifecycle→close, SubmitPartialDecryption(tampered CP proof) — expect COMMIT
+//	a2   <bundle>            lifecycle→partials, PublishTally(<threshold signatures) — expect REFUSED
+//	a3   <bundle>            lifecycle→partials, PublishTally(one total flipped) — expect REFUSED
+//	b3   <bundle>            CreateElection(empty issuer key)+DKG+ballot — expect COMMIT (legacy, issuer gate skipped)
+//	b1   <bundle>            CreateElection as org2 then as org1 (same id) — expect 2nd REFUSED (already exists)
 //
 // Flags: --org1-msp, --org2-msp, --peer-endpoint, --gateway-peer, --tls-cert,
 // --channel, --chaincode (sane test-network defaults).
@@ -58,6 +59,33 @@ var (
 	channel      = "saksi"
 	chaincode    = "saksi-bulletin"
 )
+
+// loadEnv overrides the AX42 defaults from the environment so the tool runs on
+// any host without recompiling. SAKSI_FABRIC_SAMPLES points at a fabric-samples
+// checkout and derives the TLS cert and both org MSP dirs under its
+// test-network; the individual paths can still be set directly. The channel,
+// chaincode, peer and gateway are plain overrides.
+func loadEnv() {
+	if v := os.Getenv("SAKSI_FABRIC_SAMPLES"); v != "" {
+		tn := filepath.Join(v, "test-network", "organizations", "peerOrganizations")
+		tlsCert = filepath.Join(tn, "org1.example.com", "peers", "peer0.org1.example.com", "tls", "ca.crt")
+		org1MSPdir = filepath.Join(tn, "org1.example.com", "users", "User1@org1.example.com", "msp")
+		org2MSPdir = filepath.Join(tn, "org2.example.com", "users", "User1@org2.example.com", "msp")
+	}
+	envSet(&peerEndpoint, "SAKSI_PEER_ENDPOINT")
+	envSet(&gatewayPeer, "SAKSI_GATEWAY_PEER")
+	envSet(&tlsCert, "SAKSI_TLS_CERT")
+	envSet(&org1MSPdir, "SAKSI_ORG1_MSP")
+	envSet(&org2MSPdir, "SAKSI_ORG2_MSP")
+	envSet(&channel, "SAKSI_CHANNEL")
+	envSet(&chaincode, "SAKSI_CHAINCODE")
+}
+
+func envSet(p *string, key string) {
+	if v := os.Getenv(key); v != "" {
+		*p = v
+	}
+}
 
 func mspConn(mspdir, mspid string) clientsdk.ConnectionConfig {
 	cert := firstFile(filepath.Join(mspdir, "signcerts"))
@@ -240,15 +268,25 @@ func setupToClose(c *clientsdk.Connection, b bundle) {
 }
 
 func main() {
+	loadEnv()
+	if len(os.Args) < 2 {
+		fatal("usage: tamper_invoke <b1|b3|b4|a1|a2|a3|submit-raw|publish-tally|stream-*> ...\n" +
+			"  channel/chaincode/fabric-samples come from flags (submit-raw, publish-tally)\n" +
+			"  or SAKSI_CHANNEL, SAKSI_CHAINCODE, SAKSI_FABRIC_SAMPLES, SAKSI_PEER_ENDPOINT, SAKSI_TLS_CERT")
+	}
+	if os.Args[1] == "submit-raw" {
+		runSubmitRaw(os.Args[2:])
+		return
+	}
+	if os.Args[1] == "publish-tally" {
+		runPublishTally(os.Args[2:])
+		return
+	}
 	if len(os.Args) < 3 {
 		fatal("usage: tamper_invoke <b1|b3|b4|a1|a2|a3> <bundle.json>")
 	}
 	cmd, bundlePath := os.Args[1], os.Args[2]
 	if handleStream(cmd, bundlePath) {
-		return
-	}
-	if cmd == "submit-raw" {
-		runSubmitRaw(os.Args[2:])
 		return
 	}
 	b := loadBundle(bundlePath)
