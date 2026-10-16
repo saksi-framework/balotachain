@@ -17,8 +17,9 @@ line `[MOUNTED] <id> <what>` when it acts, and `[skip] <id> <why>` otherwise.
 Mutations are on files only; no network. stdlib only (Python 3.12).
 
 The target precinct defaults to the one the plan names (p03, p05, ...), and is
-overridden with CANVASS_TARGET (precinct number) and CANVASS_SIBLING for the
-3-precinct selftest. `saksi-demo` is found via SAKSI_DEMO (default on PATH).
+overridable with CANVASS_TARGET (precinct number) and CANVASS_SIBLING; the
+selftest uses the defaults. `saksi-demo` is found via SAKSI_DEMO (default on
+PATH).
 """
 import argparse
 import json
@@ -34,10 +35,12 @@ DEMO = os.environ.get("SAKSI_DEMO", "saksi-demo")
 # Default target precinct number per scenario, as the plan names them. The
 # sibling is the second precinct a scenario needs (relabel target / key donor).
 TARGET = {
-    "T9": 3, "T10": 3, "T11": 3, "T12": 3, "T13": 5,
+    "T9": 3, "T10": 3, "T11": 3, "T12": 4, "T13": 5,
     "T14": 3, "T15": 6, "T16": 7, "T21": 3,
 }
-SIBLING = {"T12": 4, "T21": 4}
+# T12: the victim slot is p04 and the donor is p03, already built because the
+# driver runs precincts in ascending order. T21 borrows p04's key from gen.
+SIBLING = {"T12": 3, "T21": 4}
 
 
 def pid(n):

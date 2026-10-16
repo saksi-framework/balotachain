@@ -11,6 +11,10 @@ For the file scenarios (T9-T16, T21, T24) the verdict is PASS when the set of
 failed checks equals the expected set exactly. For the chain scenarios (T19,
 T20) the expected verdict is a pair: the recorded on-chain outcome plus the
 canvass check, and --onchain carries the `[COMMIT]`/`[REFUSED] gate=...` line.
+The chain verdict is strict set equality too: refused on chain -> no check may
+fail; committed -> the failed set must equal the scenario's full expected set.
+A missing canvass-checks.csv (the driver stopped before the canvass) writes a
+row with verdict ERROR and exits 1.
 """
 import argparse
 import csv
@@ -31,9 +35,9 @@ EXPECTED = {
     "T16": ["canvass.precinct_recompute", "canvass.national_sum"],
     "T21": ["canvass.signature", "canvass.completeness", "canvass.national_sum"],
     "T24": ["canvass.signature", "canvass.completeness", "canvass.precinct_recompute", "canvass.national_sum"],
-    # Chain scenarios: the canvass backstop check. The on-chain outcome is the
-    # other half of the pair and is recorded, not asserted here.
-    "T19": ["canvass.nullifier_unique"],
+    # Chain scenarios: the full canvass set IF the chain committed the mount.
+    # If the chain refused it, the expected set is empty (see main).
+    "T19": ["canvass.nullifier_unique", "canvass.accuracy"],
     "T20": ["canvass.accuracy"],
 }
 
@@ -76,21 +80,22 @@ def main(argv=None):
         print(f"unknown scenario {scen}", file=sys.stderr)
         return 2
     expected = EXPECTED[scen]
-    failed = failed_checks(a.checks_csv)
-
     chain = scen in ("T19", "T20")
     if chain:
-        # The canvass is the backstop. If the chain refused the mount, no
-        # canvass check needs to fire (refused on chain); if it committed, the
-        # backstop check must fire. We PASS when the recorded outcome and the
-        # canvass agree on one of those two stories.
         refused = "REFUSED" in a.onchain.upper()
-        backstop = set(expected) & set(failed)
-        verdict = "PASS" if (refused and not backstop) or (not refused and backstop) else "FAIL"
-        expected_str = f"on-chain refused -> none; on-chain committed -> {','.join(expected)}"
+        if refused:
+            expected = []
+        expected_str = ("refused on chain: none" if refused
+                        else "committed on chain: " + ",".join(expected))
+    else:
+        expected_str = ",".join(expected)
+
+    try:
+        failed = failed_checks(a.checks_csv)
+    except FileNotFoundError:
+        failed, verdict = None, "ERROR"
     else:
         verdict = "PASS" if set(failed) == set(expected) else "FAIL"
-        expected_str = ",".join(expected)
 
     out = Path(a.out)
     new = not out.exists()
@@ -98,9 +103,10 @@ def main(argv=None):
         w = csv.writer(f)
         if new:
             w.writerow(["scenario", "mount", "expected_checks", "failed_checks", "onchain", "verdict"])
-        w.writerow([scen, MOUNT.get(scen, ""), expected_str, ",".join(failed), a.onchain, verdict])
+        got = "no canvass-checks.csv" if failed is None else ",".join(failed)
+        w.writerow([scen, MOUNT.get(scen, ""), expected_str, got, a.onchain, verdict])
 
-    print(f"{verdict} {scen}: expected [{expected_str}] got [{','.join(failed)}]"
+    print(f"{verdict} {scen}: expected [{expected_str}] got [{got}]"
           + (f" on-chain [{a.onchain}]" if a.onchain else ""))
     return 0 if verdict == "PASS" else 1
 

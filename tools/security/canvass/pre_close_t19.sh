@@ -5,12 +5,13 @@
 #
 # When the precinct is the T19 target (default p04), it takes a ballot already
 # committed on the previous precinct's election (p03) and resubmits it to the
-# current channel with `tamper_invoke submit-raw --channel`. The ballot's
-# nullifier, presentation and CDS context bind p03's election id, so the
-# chaincode is expected to REFUSE it (gate=nullifier / election). Either way the
-# actual response is recorded to <run dir>/t19-onchain.txt, so the paper can
-# state the on-chain outcome; the canvass's canvass.nullifier_unique is the
-# backstop if the chain had committed it.
+# current channel with `tamper_invoke submit-raw --channel`. The ballot proto
+# carries p03's election id, so the call addresses p03's (already closed)
+# election, not p04's: the expected response is a refusal whose gate text names
+# p03's election (e.g. election closed / nullifier). The line is recorded
+# verbatim to <run dir>/t19-onchain.txt; the paper words it as "refused by the
+# election binding of the target precinct" and cites the gate text as recorded.
+# canvass.nullifier_unique (+ accuracy) is the backstop if it had committed.
 #
 # Must exit 0 even on an on-chain refusal (a non-zero exit would stop the run).
 # Needs a live Fabric network and the built tamper_invoke binary (desktop only).

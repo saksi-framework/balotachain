@@ -32,7 +32,9 @@ export TAMPER="${TAMPER:-$here/../tamper_invoke/tamper_invoke}"
 
 ALL=(T9 T10 T11 T12 T13 T14a T14b T15 T16 T19 T20 T21 T24)
 only=""
-[ "${1:-}" = "--only" ] && { only="$2"; shift 2; }
+if [ "${1:-}" = "--only" ]; then
+  only="${2:?--only needs a scenario id, e.g. --only T9}"; shift 2
+fi
 
 cat <<'REMINDER'
 ================= HOST HYGIENE (ask the user; none pre-approved) =================
@@ -63,19 +65,27 @@ run_one() {
     T14b) export CANVASS_T14=close ;;
     *)    unset CANVASS_T14 || true ;;
   esac
+  # Each script flag's value is ONE argv element here (arrays, quoted), but the
+  # driver splits it on whitespace, so the checkout path must be space-free
+  # (run from C:\wt\... or WSL, not "Q:\Code - LAPTOP\...").
   case "$scen" in
     T19) hook+=(--attack-pre-close-script "$here/pre_close_t19.sh") ;;
-    T20) hook+=(--attack-pre-tally-script "$here/pre_tally_t20.sh") ;;  # hook: see README / task5 report
+    # saksi 4b9284d: pre-tally hook; tolerate keeps the run going if the
+    # replay ever commits and the genuine PublishTally is then refused.
+    T20) hook+=(--attack-pre-tally-script "$here/pre_tally_t20.sh" --attack-pre-tally-tolerate) ;;
     *)   hook+=(--attack-script "python3 $mut --scenario $id") ;;
   esac
+  case "$here" in *" "*) echo "ERROR: $here contains a space; the driver splits hook commands on whitespace" >&2; exit 2 ;; esac
 
   "$driver" --dir "$dir" --demo "$demo" --out "$dir/run" "${fabric_flags[@]}" "${hook[@]}" || true
 
   local onchain=""
   [ "$scen" = "T19" ] && onchain="$(cat "$dir/t19-onchain.txt" 2>/dev/null || true)"
   [ "$scen" = "T20" ] && onchain="$(cat "$dir/t20-onchain.txt" 2>/dev/null || true)"
+  local oc=()
+  [ -n "$onchain" ] && oc=(--onchain "$onchain")
   python3 "$here/assert_outcome.py" "$scen" "$dir/run/canvass-checks.csv" \
-    --out "$report" ${onchain:+--onchain "$onchain"} || true
+    --out "$report" "${oc[@]}" || true
 }
 
 if [ -n "$only" ]; then
