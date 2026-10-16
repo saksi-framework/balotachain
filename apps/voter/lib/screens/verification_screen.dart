@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voter/design/design.dart';
+import 'package:voter/screens/receipt_verify_screen.dart';
 
 final RegExp _trackingRegex = RegExp(r'^BC-[0-9A-F]{4}-[0-9A-F]{4}$');
 
@@ -86,6 +87,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
             const SizedBox(height: 26),
             const BcRise(key: ValueKey('unverified'), child: _NotFoundCard()),
           ],
+          const SizedBox(height: 14),
+          BcSecondaryButton(
+            label: 'Verify on the public board',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ReceiptVerifyScreen(initialCode: _controller.text.trim()),
+              ),
+            ),
+          ),
           const SizedBox(height: 30),
         ],
       ),
