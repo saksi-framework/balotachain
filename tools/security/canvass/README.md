@@ -75,7 +75,7 @@ the Task 2 report.
 Self-test here (no network), with a release `saksi-demo`:
 
 ```
-SAKSI_DEMO=/path/to/saksi-demo ./selftest.sh
+SAKSI_DEMO=/path/to/saksi-demo bash ./selftest.sh
 ```
 
 It builds a `gen --precincts 7` fixture, fakes the ledger read-backs and
@@ -92,7 +92,7 @@ pointing at `SAKSI_REPO` (default: the `saksi` checkout next to balotachain)
 and builds with `-modfile`:
 
 ```
-SAKSI_REPO=/path/to/saksi ../tamper_invoke/build.sh     # VET=1 also runs go vet
+SAKSI_REPO=/path/to/saksi bash ../tamper_invoke/build.sh     # VET=1 also runs go vet
 ```
 
 Full runs (desktop), one scenario per network reset. Run from a **space-free
@@ -100,10 +100,10 @@ checkout path** (`C:\wt\...` or WSL): the driver splits each hook command on
 whitespace, and `run_all.sh` refuses a path with a space.
 
 ```
-tools/tier.sh <voters> <positions>          # reset + deploy (not done by run_all)
+<saksi>/tools/tier.sh <voters> <positions>          # reset + deploy (not done by run_all)
 DRIVER=.../saksi-canvass-demo DEMO=.../saksi-demo \
 FABRIC_TLS_CERT=... FABRIC_CERT=... FABRIC_KEY=... \
-  ./run_all.sh --only T9
+  bash ./run_all.sh --only T9
 ```
 
 ## What needs the desktop

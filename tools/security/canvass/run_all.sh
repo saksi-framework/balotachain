@@ -39,7 +39,7 @@ fi
 cat <<'REMINDER'
 ================= HOST HYGIENE (ask the user; none pre-approved) =================
   * Docker virtual-disk compaction; `wsl --shutdown` is NEVER pre-approved.
-  * Host free space on Q: and C:. PC on the AVR or wall.
+  * Host free space on the data and system drives. PC on the AVR or wall.
   * No measured run in progress. ONE network reset (tools/tier.sh) per scenario.
   * This script does NOT reset the network. Reset + gen a fresh dir per scenario.
 =================================================================================
@@ -67,12 +67,12 @@ run_one() {
   esac
   # Each script flag's value is ONE argv element here (arrays, quoted), but the
   # driver splits it on whitespace, so the checkout path must be space-free
-  # (run from C:\wt\... or WSL, not "Q:\Code - LAPTOP\...").
+  # (run from a space-free path, e.g. C:\wt\... or a WSL clone).
   case "$scen" in
-    T19) hook+=(--attack-pre-close-script "$here/pre_close_t19.sh") ;;
+    T19) hook+=(--attack-pre-close-script "bash $here/pre_close_t19.sh") ;;
     # saksi 4b9284d: pre-tally hook; tolerate keeps the run going if the
     # replay ever commits and the genuine PublishTally is then refused.
-    T20) hook+=(--attack-pre-tally-script "$here/pre_tally_t20.sh" --attack-pre-tally-tolerate) ;;
+    T20) hook+=(--attack-pre-tally-script "bash $here/pre_tally_t20.sh" --attack-pre-tally-tolerate) ;;
     *)   hook+=(--attack-script "python3 $mut --scenario $id") ;;
   esac
   case "$here" in *" "*) echo "ERROR: $here contains a space; the driver splits hook commands on whitespace" >&2; exit 2 ;; esac

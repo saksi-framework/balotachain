@@ -36,6 +36,7 @@ class _ReceiptVerifyScreenState extends State<ReceiptVerifyScreen> {
   late final TextEditingController _code;
   VerifyCodeResult? _result;
   bool _busy = false;
+  String _checkedRun = '';
 
   @override
   void initState() {
@@ -85,13 +86,14 @@ class _ReceiptVerifyScreenState extends State<ReceiptVerifyScreen> {
     setState(() {
       _busy = false;
       _result = result;
+      _checkedRun = run;
     });
   }
 
   String _noticeText(VerifyCodeResult r) => switch (r.kind) {
     VerifyCodeKind.missing =>
       'No ballot record with this tracking code in run '
-          '${_run.text.trim()}.',
+          '$_checkedRun.',
     VerifyCodeKind.ambiguous =>
       'This tracking code matches more than one ballot record. Ask the '
           'election officer for the full nullifier.',
