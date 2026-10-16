@@ -15,7 +15,7 @@
 #   --port N            console port (default 8090)
 #
 # Runs under WSL Ubuntu on the desktop. Safe to re-run: a console started by an
-# earlier run is stopped first, binaries are built only when missing, and --seed
+# earlier run is stopped first, and --seed
 # does nothing if a "MP-1K demo" election already exists, except after --reset,
 # which always generates a fresh one (the old run folder outlives the ledger).
 #
@@ -94,17 +94,8 @@ fi
 say "resolving the Fabric identity"
 resolve_identity
 
-# 2. Binaries, only if missing.
-DEMO_BIN="$SAKSI_DIR/target/release/saksi-demo"
-CONSOLE_BIN="$SAKSI_DIR/target/saksi-campaign"
-if [ -x "$DEMO_BIN" ]; then say "saksi-demo present"; else
-	say "building saksi-demo (release)"
-	(cd "$SAKSI_DIR" && cargo build --release -p saksi-demo -q)
-fi
-if [ -x "$CONSOLE_BIN" ]; then say "saksi-campaign present"; else
-	say "building saksi-campaign"
-	(cd "$SAKSI_DIR/packages/saksi-campaign" && go build -o "$CONSOLE_BIN" ./cmd/saksi-campaign)
-fi
+# 2. Binaries (incremental; seconds when up to date).
+build_binaries
 
 # 3. Web apps.
 if [ "$BUILD_WEB" = 1 ]; then
