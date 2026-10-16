@@ -16,7 +16,8 @@
 #
 # Runs under WSL Ubuntu on the desktop. Safe to re-run: a console started by an
 # earlier run is stopped first, binaries are built only when missing, and --seed
-# does nothing if a "MP-1K demo" election already exists.
+# does nothing if a "MP-1K demo" election already exists, except after --reset,
+# which always generates a fresh one (the old run folder outlives the ledger).
 #
 # If the console runs with auth (SAKSI_AUTH_FILE exported), --seed needs an admin
 # login: export DEMO_ADMIN_USER and DEMO_ADMIN_PASS first.
@@ -49,7 +50,22 @@ STATE="$HOME/.saksi/demo"
 LOG="$STATE/serve.log"
 PIDFILE="$STATE/serve.pid"
 BASE="http://127.0.0.1:$PORT"
+umask 077
 mkdir -p "$STATE"
+
+# Stop a console from an earlier run, only if the pid really is saksi-campaign
+# (a recycled pid must not be killed), and wait for the port to free.
+stop_console() {
+	local pid
+	[ -f "$PIDFILE" ] || return 0
+	pid="$(cat "$PIDFILE")"
+	if kill -0 "$pid" 2>/dev/null && tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -q saksi-campaign; then
+		say "stopping the console from an earlier run (pid $pid)"
+		kill "$pid" || true
+		for _ in $(seq 1 20); do curl -fsS "$BASE/api/capabilities" >/dev/null 2>&1 || break; sleep 1; done
+	fi
+	rm -f "$PIDFILE"
+}
 
 # up.sh reads SAKSI_ADDR; sourcing it defines preflight/install_fabric/cmd_down/
 # bring_up_network/resolve_identity (and overwrites ROOT, so ours are not named ROOT).
@@ -63,7 +79,7 @@ preflight
 # 1. Network: reset, or make sure it is up.
 if [ "$RESET" = 1 ]; then
 	say "stopping the console before the reset"
-	if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then kill "$(cat "$PIDFILE")" || true; sleep 1; fi
+	stop_console
 	say "resetting the network (install_fabric, network down, network all) as tier.sh does"
 	install_fabric
 	cmd_down
@@ -92,17 +108,14 @@ fi
 
 # 3. Web apps.
 if [ "$BUILD_WEB" = 1 ]; then
+	command -v pnpm >/dev/null || fail "pnpm missing; run pnpm install first"
 	say "building the web apps (tools/build-web.sh)"
 	(cd "$BC_DIR" && sh tools/build-web.sh)
 fi
 [ -d "$BC_DIR/dist-web/board" ] || fail "$BC_DIR/dist-web is missing: rerun with --build-web"
 
 # 4. Console, in the background. Stop the previous one first (idempotent).
-if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
-	say "stopping the console from an earlier run (pid $(cat "$PIDFILE"))"
-	kill "$(cat "$PIDFILE")" || true
-	sleep 1
-fi
+stop_console
 say "starting the console on $BASE, log $LOG"
 nohup "$CONSOLE_BIN" serve \
 	--addr "127.0.0.1:$PORT" \
@@ -130,20 +143,24 @@ RUN_ID=""
 if [ "$SEED" = 1 ]; then
 	if [ -n "${DEMO_ADMIN_USER:-}" ]; then
 		say "signing in as $DEMO_ADMIN_USER"
-		curl_c -H 'Content-Type: application/json' \
-			-d "{\"username\":\"$DEMO_ADMIN_USER\",\"password\":\"${DEMO_ADMIN_PASS:?set DEMO_ADMIN_PASS}\"}" \
-			"$BASE/api/login" >/dev/null
+		command -v jq >/dev/null || fail "jq missing (needed to build the login body)"
+		jq -n --arg u "$DEMO_ADMIN_USER" --arg p "${DEMO_ADMIN_PASS:?set DEMO_ADMIN_PASS}" '{username:$u,password:$p}' |
+			curl_c -H 'Content-Type: application/json' -d @- "$BASE/api/login" >/dev/null \
+			|| fail "login failed for $DEMO_ADMIN_USER"
 	fi
-	RUN_ID="$(curl_c "$BASE/runs" | grep -o '"run_id":"mp-1k-demo[^"]*"' | head -n1 | cut -d'"' -f4 || true)"
+	# After --reset the old run folder outlives the ledger: always generate fresh.
+	if [ "$RESET" = 0 ]; then
+		RUN_ID="$(curl_c "$BASE/runs" | grep -o '"run_id":"mp-1k-demo[^"]*"' | head -n1 | cut -d'"' -f4 || true)"
+	fi
 	if [ -n "$RUN_ID" ]; then
 		say "MP-1K demo election already exists: $RUN_ID"
 	else
 		say "generating the MP-1K election (1,000 voters x 3 positions x 4 candidates, realistic)"
 		RESP="$(curl_c -H 'Content-Type: application/json' -d '{
 			"name":"MP-1K demo",
-			"trustees":[{"name":"COMELEC"},{"name":"Civil Society Watch"},{"name":"University IT"},{"name":"Election Observer"},{"name":"Auditor Office"}],
+			"trustees":[{"name":"COMELEC"},{"name":"Civil Society Watch"},{"name":"University IT"},{"name":"Academe Observer"},{"name":"Bar Association"}],
 			"threshold":3,"positions":3,"candidates":4,"senate_seats":2,
-			"voters":1000,"distribution":"realistic","mode":"onchain"}' "$BASE/generate")"
+			"voters":1000,"distribution":"realistic","mode":"onchain"}' "$BASE/generate")" || fail "generate refused: $RESP"
 		RUN_ID="$(printf '%s' "$RESP" | grep -o '"run_id":"[^"]*"' | cut -d'"' -f4)"
 		[ -n "$RUN_ID" ] || fail "generate gave no run_id: $RESP"
 		say "waiting for $RUN_ID to finish generating"
@@ -153,10 +170,15 @@ if [ "$SEED" = 1 ]; then
 			sleep 2
 		done
 		curl_c "$BASE/api/runs/$RUN_ID/status" | grep -q '"busy":false' || fail "$RUN_ID still busy after 20 minutes; see $LOG"
+		if curl_c "$BASE/runs" | tr '{' '\n' | grep "\"run_id\":\"$RUN_ID\"" | grep -q '"status":"failed"'; then
+			fail "$RUN_ID failed to generate; see $LOG"
+		fi
 	fi
 	say "election ready: $RUN_ID"
 else
-	RUN_ID="$(curl -fsS "$BASE/runs" 2>/dev/null | grep -o '"run_id":"mp-1k-demo[^"]*"' | head -n1 | cut -d'"' -f4 || true)"
+	if [ "$RESET" = 0 ]; then
+		RUN_ID="$(curl -fsS "$BASE/runs" 2>/dev/null | grep -o '"run_id":"mp-1k-demo[^"]*"' | head -n1 | cut -d'"' -f4 || true)"
+	fi
 fi
 
 # 6. URLs.
@@ -170,6 +192,6 @@ Demo ready (console log: $LOG, pid file: $PIDFILE)
   trustee 3 $BASE/trustee/?run=$R&trustee=3
   board     $BASE/board/?run=$R
   wizard    $BASE/wizard
-  receipts  $RUNS_DIR/$R/receipts.csv
+  ballots   $RUNS_DIR/$R/ballots.csv  (column nullifier = tracking codes)
 URLS
 [ -n "$RUN_ID" ] || echo "  (no election yet: rerun with --seed, or create one in /admin/)"

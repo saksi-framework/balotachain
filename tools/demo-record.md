@@ -12,16 +12,16 @@ Source of truth for the flow: `docs/paper/review/DEFENSE-DEMO-SCOPE.md` section 
 
 ## Steps
 
-1. **Admin, 2 min.** Open `/admin/`. Sign in as `admin`. Click Elections, then the MP-1K demo election (seeded: 1,000 voters, 3 positions, 4 candidates, realistic). Click the population check; it passes. Click Start ceremony. (To show creation live instead, click New election, enter the same numbers, Create; generation takes a short wait.)
+1. **Admin, 2 min.** Open `/admin/`. Sign in as `admin`. The Elections list is the landing page: click Open on the MP-1K demo row (seeded: 1,000 voters, 3 positions, 4 candidates, realistic). The population check runs on its own and passes. Click "Next: run the election", then "Encrypt and record" (the button shows "Recording on-chain..."; wait for the progress bar to finish), then "Next: trustee ceremony". (To show creation live instead: "New election", enter the same numbers, "Create election".)
 2. **Board, 1 min.** Open `/board/?run=<id>`. Tally reads "pending", record count shown, nothing decrypted. Say: the chain holds ciphertexts only.
-3. **Trustees, 3 min.** Window A: open `/trustee/?run=<id>&trustee=1`, sign in as `trustee1`, click Submit share. Window B: `/trustee/?run=<id>&trustee=2`, sign in as `trustee2`, click Submit share. Back in `/admin/`, click Publish: refused, 2 of 5 is below the threshold. Open `/trustee/?run=<id>&trustee=3`, sign in as `trustee3`, click Submit share. Click Publish in the admin: succeeds.
-4. **Board again, 2 min.** Reload `/board/?run=<id>`. Results flip to verified; show the integrity summary (records, verified, rejected, turnout, fingerprints) and the verifier check list, every row green. In the tracking-code box paste a real code: the first 8 hex characters of a ballot's nullifier, taken from the run's `receipts.csv` (below). Click Verify: found. Then type a wrong code (for example `00000000`): not found.
-5. **Wizard, 3 min.** Open `/wizard`. Select the attack-timeline campaign, mount a replay or tamper at the ballots stage, click Run. Watch the gate refuse it and the verdict land in the negative-tests table. Optional: trigger the T3 fault, then Resume.
+3. **Trustees, 3 min.** Window A: open `/trustee/?run=<id>&trustee=1`, sign in as `trustee1`, click "Submit Partial Decryption", then "Confirm submission". Window B: `/trustee/?run=<id>&trustee=2`, sign in as `trustee2`, same two clicks. Back in `/admin/`: "Publish the tally" is greyed out and the chip reads "Awaiting shares" (2 of 5 is below the threshold of 3; nothing is refused on screen). Open `/trustee/?run=<id>&trustee=3`, sign in as `trustee3`, same two clicks. In the admin the chip reads "Threshold reached" and "Publish the tally" enables; click it.
+4. **Board again, 2 min.** Reload `/board/?run=<id>`. Results flip to verified; show the integrity summary (records, verified, rejected, turnout, fingerprints) and the verifier check list, every row green. In the tracking-code box paste a real code in the form `BC-XXXX-XXXX` (from `ballots.csv`, below) and look it up: found. Then enter `BC-0000-0000`: not found (confirm once that it is absent from the run before recording). Anything not in `BC-XXXX-XXXX` form is rejected as "Not a tracking code" before the lookup.
+5. **Wizard, 3 min.** Open `/wizard`. In the attack timeline stop at the `ballots` stage, click "Run all attacks at this stage" (rehearse once and note which attack rows you want to show), and watch the gate refuse them and the verdicts land in the negative-tests table. Optional: trigger the T3 fault, then Resume.
 6. **Voter app, 1 min, labelled a prototype.** Phone or emulator: onboarding, sign-in, ballot steps, review, submit, tracking code. Say plainly that this client is the design prototype and the live election's ballots came from the study generator (Chapter III says the same).
 
-## Where the tracking codes are
+## Where the tracking codes are (ballots.csv)
 
-`~/.saksi/campaign/runs/<id>/receipts.csv` (one row per SubmitBallot; `demo-up.sh` prints the path). Use the first 8 hex characters of a ballot's nullifier as the code; check the exact column against the header row of that file, and test one code on the board before recording.
+`~/.saksi/campaign/runs/<id>/ballots.csv`, column `nullifier` (`demo-up.sh` prints the path). The tracking code is `BC-` plus the first 8 hex characters of the nullifier, upper-cased and split 4-4 (for example `BC-1A2B-3C4D`). `receipts.csv` holds transaction receipts, not codes. Test one code on the board before recording.
 
 ## After
 
