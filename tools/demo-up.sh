@@ -170,9 +170,7 @@ if [ "$SEED" = 1 ]; then
 			sleep 2
 		done
 		curl_c "$BASE/api/runs/$RUN_ID/status" | grep -q '"busy":false' || fail "$RUN_ID still busy after 20 minutes; see $LOG"
-		if curl_c "$BASE/runs" | tr '{' '\n' | grep "\"run_id\":\"$RUN_ID\"" | grep -q '"status":"failed"'; then
-			fail "$RUN_ID failed to generate; see $LOG"
-		fi
+		[ -s "$RUNS_DIR/$RUN_ID/ballots.csv" ] && [ -s "$RUNS_DIR/$RUN_ID/election.csv" ] || fail "generate did not produce the run files"
 	fi
 	say "election ready: $RUN_ID"
 else
