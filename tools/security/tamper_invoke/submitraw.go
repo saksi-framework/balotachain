@@ -19,6 +19,9 @@ func runSubmitRaw(args []string) {
 	key := fs.String("key", "", "identity private key PEM (default: org1 User1)")
 	msp := fs.String("msp", "Org1MSP", "MSP id to claim")
 	label := fs.String("label", "SubmitBallot", "label for the report line")
+	chanF := fs.String("channel", "", "channel to target (default: SAKSI_CHANNEL or saksi)")
+	ccF := fs.String("chaincode", "", "chaincode name (default: SAKSI_CHAINCODE or saksi-bulletin)")
+	_ = fs.String("election", "", "election id the ballot belongs to (recorded only; the id is inside the ballot)")
 	_ = fs.Parse(args)
 	if *ballot == "" {
 		fatal("submit-raw: --ballot is required")
@@ -35,6 +38,12 @@ func runSubmitRaw(args []string) {
 		cfg.KeyPath = *key
 	}
 	cfg.MSPID = *msp
+	if *chanF != "" {
+		cfg.Channel = *chanF
+	}
+	if *ccF != "" {
+		cfg.Chaincode = *ccF
+	}
 
 	c, err := clientsdk.Connect(cfg)
 	if err != nil {
