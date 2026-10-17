@@ -10,3 +10,5 @@ Contents accumulate as the project develops. Likely future occupants:
 - Codegen scripts if `saksi-protocol` ends up Protocol-Buffers-defined.
 
 Anything that runs at build, test, or release time and is not a package in its own right belongs here.
+
+- `demo-up.sh` — one command to bring the defense demo up from a clean network (reset, web build, serve, seed an MP-1K election); `demo-record.md` — the screen-recording checklist and fallback order.
