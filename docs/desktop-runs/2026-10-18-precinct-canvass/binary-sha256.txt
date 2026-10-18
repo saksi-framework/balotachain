@@ -1,0 +1,4 @@
+9cdab7917819030e27ebb464efeacc5a772dba956637a78a71e2ace04b98bd19  /home/user/Code/saksi/target/release/saksi-demo
+77a046ce5fd490709ff36077e0ed92144f30fb87a794f319ff823e08d12fb1f1  /home/user/Code/saksi/target/saksi-campaign
+6ce375e14590261b88c9130144174eca952b1682cdd155f6fa75d24ce9717b6e  /home/user/Code/saksi/target/saksi-canvass-demo
+655a76ca825e993e3e0adc8dd16e14196dcaba1e4960d9a37ea01c02c7cb0aac  /home/user/balotachain/tools/security/tamper_invoke/tamper_invoke

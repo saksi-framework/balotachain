@@ -1,0 +1,30 @@
+{
+  "window_ms": 77205,
+  "submitted": 300,
+  "committed": 300,
+  "dropped": 0,
+  "expected": 300,
+  "committed_tps": 3.885735382438959,
+  "driver_ceiling_tps": 3.939453291585207,
+  "concurrency": 8,
+  "send_rate": 0,
+  "stopped": false,
+  "bounded": false,
+  "latency_min_ms": 2026.83,
+  "latency_p50_ms": 2030.738,
+  "latency_mean_ms": 2031.621,
+  "latency_p95_ms": 2042.067,
+  "latency_p99_ms": 2043.327,
+  "latency_stddev_ms": 3.343,
+  "peak_cpu_pct": {
+    "client": 0.6326873674651675,
+    "orderer": 1.63,
+    "peer": 4.65
+  },
+  "peak_mem_mb": {
+    "client": 45.45997619628906,
+    "orderer": 63.29999923706055,
+    "peer": 132.89999961853027
+  },
+  "ledger_bytes_delta": null
+}
