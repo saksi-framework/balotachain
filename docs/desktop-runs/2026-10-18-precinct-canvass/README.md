@@ -27,7 +27,61 @@ Later build (Appendix E), desktop only, never pooled with AX42. Every Chapter IV
 
 ## Clean canvass runs
 
-0 of 4 clean runs (warm-up + m1-m3) are in this commit; the rest were still running.
+2 of 4 clean runs (warm-up + m1-m3) are in this commit; m2 and m3 are pending (the user starts them separately).
+
+### warmup (warm-up, not measured)
+
+Started 2026-10-18T00:28:39Z (UTC); driver total 7832.5 s; national canvass 12683 ms; exit 0; canvass pass: True.
+
+| precinct | records / verified | window s | committed TPS | p50 ms | p95 ms | p99 ms | precinct window s | close to return s | audit | close block |
+|---|---|---|---|---|---|---|---|---|---|---|
+| p01 | 3000 / 3000 | 761.4 | 3.940 | 2029.8 | 2035.0 | 2041.6 | 782.1 | 15.5 | pass | 389 |
+| p02 | 3000 / 3000 | 761.0 | 3.942 | 2029.0 | 2034.0 | 2039.9 | 781.8 | 15.6 | pass | 772 |
+| p03 | 3000 / 3000 | 761.1 | 3.942 | 2029.4 | 2034.1 | 2040.5 | 782.1 | 15.7 | pass | 1155 |
+| p04 | 3000 / 3000 | 761.1 | 3.942 | 2029.0 | 2035.3 | 2041.1 | 782.1 | 15.8 | pass | 1538 |
+| p05 | 3000 / 3000 | 761.1 | 3.941 | 2029.3 | 2035.2 | 2050.0 | 782.0 | 15.6 | pass | 1921 |
+| p06 | 3000 / 3000 | 761.1 | 3.942 | 2028.8 | 2034.7 | 2045.8 | 781.9 | 15.6 | pass | 2304 |
+| p07 | 3000 / 3000 | 761.1 | 3.942 | 2028.9 | 2034.8 | 2047.3 | 781.9 | 15.5 | pass | 2687 |
+| p08 | 3000 / 3000 | 761.2 | 3.941 | 2029.2 | 2033.9 | 2051.7 | 782.0 | 15.5 | pass | 3070 |
+| p09 | 3000 / 3000 | 761.1 | 3.942 | 2029.1 | 2033.6 | 2046.9 | 781.9 | 15.5 | pass | 3453 |
+| p10 | 3000 / 3000 | 761.1 | 3.942 | 2029.1 | 2033.6 | 2053.5 | 782.0 | 15.7 | pass | 3836 |
+
+| check | verdict | reason |
+|---|---|---|
+| canvass.registry | pass | 10 returns, each for a distinct registered precinct of cv-warmup |
+| canvass.completeness | pass | all 10 registered precincts have an accepted return |
+| canvass.signature | pass | every return verifies under its registered authority key |
+| canvass.precinct_recompute | pass | every return equals the recompute from its ledger read-back and close reference |
+| canvass.national_sum | pass | product of 10 accepted aggregates equals the national aggregate |
+| canvass.accuracy | pass | 10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0 |
+| canvass.nullifier_unique | pass | 30000 nullifiers, none in two precinct ledgers |
+
+### m1 (measured)
+
+Started 2026-10-18T08:43:00Z (UTC); driver total 7835.1 s; national canvass 12960 ms; exit 0; canvass pass: True.
+
+| precinct | records / verified | window s | committed TPS | p50 ms | p95 ms | p99 ms | precinct window s | close to return s | audit | close block |
+|---|---|---|---|---|---|---|---|---|---|---|
+| p01 | 3000 / 3000 | 761.1 | 3.942 | 2028.9 | 2034.8 | 2056.0 | 782.4 | 15.9 | pass | 389 |
+| p02 | 3000 / 3000 | 761.0 | 3.942 | 2028.6 | 2033.9 | 2047.9 | 782.5 | 15.5 | pass | 772 |
+| p03 | 3000 / 3000 | 761.0 | 3.942 | 2028.9 | 2034.9 | 2044.0 | 781.7 | 15.5 | pass | 1155 |
+| p04 | 3000 / 3000 | 761.1 | 3.942 | 2028.6 | 2034.2 | 2048.2 | 781.8 | 15.5 | pass | 1538 |
+| p05 | 3000 / 3000 | 761.1 | 3.942 | 2028.7 | 2035.2 | 2049.7 | 782.1 | 15.7 | pass | 1921 |
+| p06 | 3000 / 3000 | 761.4 | 3.940 | 2029.6 | 2034.8 | 2049.0 | 782.5 | 15.9 | pass | 2304 |
+| p07 | 3000 / 3000 | 761.3 | 3.940 | 2029.5 | 2035.3 | 2053.8 | 782.1 | 15.6 | pass | 2687 |
+| p08 | 3000 / 3000 | 761.4 | 3.940 | 2029.7 | 2035.8 | 2054.8 | 782.4 | 15.5 | pass | 3070 |
+| p09 | 3000 / 3000 | 761.5 | 3.940 | 2029.6 | 2035.1 | 2058.7 | 782.3 | 15.6 | pass | 3453 |
+| p10 | 3000 / 3000 | 761.2 | 3.941 | 2029.4 | 2034.6 | 2057.0 | 782.1 | 15.5 | pass | 3836 |
+
+| check | verdict | reason |
+|---|---|---|
+| canvass.registry | pass | 10 returns, each for a distinct registered precinct of cv-m1 |
+| canvass.completeness | pass | all 10 registered precincts have an accepted return |
+| canvass.signature | pass | every return verifies under its registered authority key |
+| canvass.precinct_recompute | pass | every return equals the recompute from its ledger read-back and close reference |
+| canvass.national_sum | pass | product of 10 accepted aggregates equals the national aggregate |
+| canvass.accuracy | pass | 10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0 |
+| canvass.nullifier_unique | pass | 30000 nullifiers, none in two precinct ledgers |
 
 ## Attack runs
 
@@ -106,3 +160,4 @@ For every contest, four checks pass. `combine.product`: the sum of the 3,525 pre
 - **Aborted warm-ups (not evidence).** Warm-up attempt 1 started early because the wait guard missed the sha256 phase of the A-additive job; it was stopped at precinct-01 (the driver died with its WSL session when the orchestrating shell was killed). Attempt 2 was stopped at precinct-02 on purpose, to run the attack table first. Each was followed by a fresh reset; neither is in this folder.
 - **T19 timing.** T19 ran while the A-additive job was running (allowed: attack runs are not measured), so its driver total (about 33 min) is roughly twice the other attack runs.
 - No Docker compaction, no `wsl --shutdown`, no prune beyond what `tier.sh` does. `~/.saksi/campaign/runs` was not touched; the A-additive inputs were the Q: archive copies.
+- **Power cut and user stop.** A power cut at about 11:28 (+08:00) killed measured run m1 (attempt 1) at precinct-04. Docker Desktop was restarted, every Fabric container had exited (255), and the network was fully reset. A second m1 attempt started at 14:07 and was stopped by the user at 14:11 (precinct-01) to free the machine. Both partial runs are kept outside this folder (`clean/m1-aborted-powercut`, `clean/m1-aborted-userstop`; not evidence). The m1 in this folder is attempt 3, run from 16:42 after a full reset at the same build and plan size with nothing else running. The warm-up (completed 10:39, before the cut) stands as the warm-up. m2 and m3 are pending; the user will start them separately.
