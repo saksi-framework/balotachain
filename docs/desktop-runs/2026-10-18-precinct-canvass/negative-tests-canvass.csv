@@ -1,6 +1,6 @@
 scenario,mount,expected_checks,failed_checks,onchain,verdict
-T19,ballot resubmitted across precincts (submit-raw --channel),refused on chain: none,,"  [REFUSED] T19 -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=election-open: election ""cv-T19-p03"" is not open for ballots",PASS
-T20,a precinct's tally published on another precinct,refused on chain: none,,"  [REFUSED] T20 -> publish tally: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, a tally is already published for election ""cv-T20-p03""",PASS
+T19,ballot resubmitted across precincts (submit-raw --channel),refused on chain: none,,"[REFUSED] T19 -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=election-open: election ""cv-T19-p03"" is not open for ballots",PASS
+T20,a precinct's tally published on another precinct,refused on chain: none,,"[REFUSED] T20 -> publish tally: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, a tally is already published for election ""cv-T20-p03""",PASS
 T9,one aggregate byte flipped after signing,"canvass.signature,canvass.completeness,canvass.precinct_recompute,canvass.national_sum","canvass.completeness,canvass.signature,canvass.precinct_recompute,canvass.national_sum",,PASS
 T10,return delivered twice,canvass.registry,canvass.registry,,PASS
 T11,"unregistered precinct, fresh-key signature",canvass.registry,canvass.registry,,PASS

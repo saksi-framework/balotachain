@@ -16,6 +16,16 @@ Later build (Appendix E), desktop only, never pooled with AX42. Every Chapter IV
 
 - `tools/security/canvass/selftest.sh` against this `saksi-demo`: 11/11 file scenarios PASS.
 
+### How to verify the build
+
+`build-verification.txt` records what was checked on the desktop after the runs (fix round 1, 2026-10-18):
+
+- `git -C ~/Code/saksi rev-parse HEAD` = `0cdc3350f4275936c8be560b67e04049257e16f9` ("Merge pull request #61 from saksi-framework/feat/precinct-canvass"), with a clean working tree;
+- `git -C ~/balotachain rev-parse 20d9860` = `20d9860bc4e890ef4486890a4bf8c8cdc5c28341`, the parent of the first evidence commit on this branch;
+- the four binaries re-hashed with `sha256sum` and diffed against `binary-sha256.txt`: identical. They were built at 03:14 (+08:00), before the first run, and not rebuilt.
+
+To check independently: clone saksi, `git checkout 0cdc335` and build as in `scripts/build.sh` (go1.23.4 linux/amd64, rustup stable). Rust and Go builds are not bit-reproducible across toolchains, so the digests identify the binaries that produced this folder; they do not promise a rebuild matches.
+
 ## Procedure
 
 - One `tools/tier.sh 10000 3` reset (network down, fresh channel, chaincode redeployed) before every run: the smoke run, each probe, each attack and each clean run. The reset log is `logs/resets.txt` (local times, +08:00; `started` fields in the JSON are UTC).
@@ -26,6 +36,8 @@ Later build (Appendix E), desktop only, never pooled with AX42. Every Chapter IV
 - Ledger dumps (`ledger/ballots.ndjson`) are not committed; their sha256 is in each run's `ledger-sha256.txt`. `authority.key` is never copied.
 
 ## Clean canvass runs
+
+> **Batch-timeout note.** The TPS and latency figures in these tables come from the driver's fixed concurrency 8 over blocks cut by the 2 s BatchTimeout (MaxMessageCount 50 is never reached): 8 / 2.029 s = 3.943, against `driver_ceiling_tps` 3.943 and committed 3.942. They measure the batch timeout, not the protocol, and must not be compared with the Chapter IV ladder.
 
 2 of 4 clean runs (warm-up + m1-m3) are in this commit; m2 and m3 are pending (the user starts them separately).
 
@@ -45,6 +57,8 @@ Started 2026-10-18T00:28:39Z (UTC); driver total 7832.5 s; national canvass 1268
 | p08 | 3000 / 3000 | 761.2 | 3.941 | 2029.2 | 2033.9 | 2051.7 | 782.0 | 15.5 | pass | 3070 |
 | p09 | 3000 / 3000 | 761.1 | 3.942 | 2029.1 | 2033.6 | 2046.9 | 781.9 | 15.5 | pass | 3453 |
 | p10 | 3000 / 3000 | 761.1 | 3.942 | 2029.1 | 2033.6 | 2053.5 | 782.0 | 15.7 | pass | 3836 |
+
+Note: the window, TPS and latency columns are batch-timeout bound (concurrency 8, 2 s BatchTimeout; see the note above).
 
 | check | verdict | reason |
 |---|---|---|
@@ -73,6 +87,8 @@ Started 2026-10-18T08:43:00Z (UTC); driver total 7835.1 s; national canvass 1296
 | p09 | 3000 / 3000 | 761.5 | 3.940 | 2029.6 | 2035.1 | 2058.7 | 782.3 | 15.6 | pass | 3453 |
 | p10 | 3000 / 3000 | 761.2 | 3.941 | 2029.4 | 2034.6 | 2057.0 | 782.1 | 15.5 | pass | 3836 |
 
+Note: the window, TPS and latency columns are batch-timeout bound (concurrency 8, 2 s BatchTimeout; see the note above).
+
 | check | verdict | reason |
 |---|---|---|
 | canvass.registry | pass | 10 returns, each for a distinct registered precinct of cv-m1 |
@@ -85,7 +101,7 @@ Started 2026-10-18T08:43:00Z (UTC); driver total 7835.1 s; national canvass 1296
 
 ## Attack runs
 
-Verdict = strict set equality against the corrected Task 2 table (`docs/plans/precinct-m-reports/task2-review.md`). T15, T16 and T24 are committed, then detected: the precinct ledger is untouched, so `canvass.accuracy` stays green.
+Verdict = strict set equality against the corrected Task 2 table (`docs/plans/precinct-m-reports/task2-review.md`). T24 here is the T24b mount (an accepted `national/returns/*.json` replaced after acceptance; the tool names it T24). T15, T16 and T24b are committed, then detected: the precinct ledger is untouched, so `canvass.accuracy` stays green.
 
 | scenario | mount | expected failing checks | failed checks | on chain | verdict |
 |---|---|---|---|---|---|
@@ -101,7 +117,7 @@ Verdict = strict set equality against the corrected Task 2 table (`docs/plans/pr
 | T15 | real key over a ledger missing one ballot | canvass.precinct_recompute,canvass.national_sum | canvass.precinct_recompute,canvass.national_sum | n/a | PASS |
 | T16 | doctored aggregate re-signed with the stolen real key | canvass.precinct_recompute,canvass.national_sum | canvass.precinct_recompute,canvass.national_sum | n/a | PASS |
 | T21 | signed with another registered precinct's key | canvass.signature,canvass.completeness,canvass.national_sum | canvass.completeness,canvass.signature,canvass.national_sum | n/a | PASS |
-| T24 | accepted national/returns file replaced after acceptance | canvass.signature,canvass.completeness,canvass.precinct_recompute,canvass.national_sum | canvass.completeness,canvass.signature,canvass.precinct_recompute,canvass.national_sum | n/a | PASS |
+| T24b (run as T24) | accepted national/returns file replaced after acceptance | canvass.signature,canvass.completeness,canvass.precinct_recompute,canvass.national_sum | canvass.completeness,canvass.signature,canvass.precinct_recompute,canvass.national_sum | n/a | PASS |
 
 ### Chain responses (verbatim)
 
@@ -122,7 +138,7 @@ T19 resubmits a committed precinct-03 ballot while precinct-04 is open. The ball
 - **T15**: `canvass.precinct_recompute`: p06: record count 299 vs ledger 300, ledger digest differs, aggregates differ (senator/cand0, senator/cand1, senator/cand2, senator/cand3); `canvass.national_sum`: product of returned aggregates differs from the national aggregate in senator/cand0, senator/cand1, senator/cand2, senator/cand3
 - **T16**: `canvass.precinct_recompute`: p07: ledger digest differs, aggregates differ (senator/cand0, senator/cand1, senator/cand2, senator/cand3); `canvass.national_sum`: product of returned aggregates differs from the national aggregate in senator/cand0, senator/cand1, senator/cand2, senator/cand3
 - **T21**: `canvass.completeness`: no accepted return from p03 (received but rejected: p03.json); `canvass.signature`: p03.json (p03): signature does not verify under this public key; `canvass.national_sum`: product of returned aggregates differs from the national aggregate in president/cand0, president/cand1, president/cand2, president/cand3, vice-president/cand0, vice-president/cand1, vice-president/cand2, vice-president/cand3, senator/cand0, senator/cand1, senator/cand2, senator/cand3
-- **T24**: `canvass.completeness`: no accepted return from p01 (received but rejected: p01.json); `canvass.signature`: p01.json (p01): signature does not verify under this public key; `canvass.precinct_recompute`: p01: aggregates differ (president/cand0); `canvass.national_sum`: product of returned aggregates differs from the national aggregate in president/cand0, president/cand1, president/cand2, president/cand3, vice-president/cand0, vice-president/cand1, vice-president/cand2, vice-president/cand3, senator/cand0, senator/cand1, senator/cand2, senator/cand3
+- **T24b (run as T24)**: `canvass.completeness`: no accepted return from p01 (received but rejected: p01.json); `canvass.signature`: p01.json (p01): signature does not verify under this public key; `canvass.precinct_recompute`: p01: aggregates differ (president/cand0); `canvass.national_sum`: product of returned aggregates differs from the national aggregate in president/cand0, president/cand1, president/cand2, president/cand3, vice-president/cand0, vice-president/cand1, vice-president/cand2, vice-president/cand3, senator/cand0, senator/cand1, senator/cand2, senator/cand3
 
 | scenario | started (UTC) | driver total s | canvass ms |
 |---|---|---|---|
@@ -138,26 +154,52 @@ T19 resubmits a committed precinct-03 ballot while precinct-04 is open. The ball
 | T15 | 2026-10-17T23:19:51Z | 945.9 | 1392 |
 | T16 | 2026-10-17T23:37:00Z | 945.9 | 1380 |
 | T21 | 2026-10-17T23:54:09Z | 952.5 | 1388 |
-| T24 | 2026-10-18T00:11:25Z | 945.7 | 1386 |
+| T24b (run as T24) | 2026-10-18T00:11:25Z | 945.7 | 1386 |
 
 ## A-additive re-analysis of the archived record
 
 `saksi-demo precinct-aggregate <scratch copy> --precinct-size 1000 --ground-truth <run>/ground-truth-ballots.csv --correctness <run>/correctness.csv`, with `SAKSI_AUDIT_THREADS=16`, on a decompressed scratch copy under `~/scratch-precinct/` (deleted afterwards). Inputs are the Q: archive copies in `Q:\thesis-archive\runs\<run>\`. The decompressed `ballots.ndjson` sha256 matched the archived `ballots.ndjson.sha256` for both runs before the fold.
 
-| archived run | precincts | voters | records | contests | checks yes / total | overall | per-precinct E | decompress s | precinct-aggregate wall s |
+| archived run | precincts | voters | records | contests | checks yes / total | overall | per-precinct E | decompress s | precinct-aggregate wall s (upper bound) |
 |---|---|---|---|---|---|---|---|---|---|
 | mp-3-5m-ch4-offline-20261003-150909-2 | 3525 | 3,524,078 | 10,572,234 | 12 | 49 / 49 | pass | n/a (no key) | 1399 | 2062 |
 | sp-3-5m-ch4-m3-20261003-040010-1 | 3525 | 3,524,078 | 3,524,078 | 4 | 17 / 17 | pass | n/a (no key) | 385 | 732 |
 
-For every contest, four checks pass. `combine.product`: the sum of the 3,525 precinct aggregates equals the region aggregate. `combine.audit_fold`: it equals the auditor's own fold. `combine.correctness_csv`: it equals the committed `aggregate_ciphertext` in the archived `correctness.csv`. `combine.ground_truth`: the sum of per-precinct ground truths equals the region's. Per-precinct E is unavailable by design, because the key and trustee shares no longer exist. The MP-3.5M fold partly overlapped a network reset attempt and an aborted, unmeasured warm-up, so its wall time is an upper bound.
+For every contest, four checks pass. `combine.product`: the sum of the 3,525 precinct aggregates equals the region aggregate. `combine.audit_fold`: it equals the auditor's own fold. `combine.correctness_csv`: it equals the committed `aggregate_ciphertext` in the archived `correctness.csv`. `combine.ground_truth`: the sum of per-precinct ground truths equals the region's. Per-precinct E is unavailable by design, because the key and trustee shares no longer exist. Both wall times are upper bounds: the SP-3.5M fold overlapped the T19 attack run, and the MP-3.5M fold partly overlapped a network reset attempt and an aborted, unmeasured warm-up.
+
+## Scripts
+
+The scripts that drove these runs, copied as run into `scripts/` (paths are the desktop's). m1 was run by `clean.sh m1` after `chain3.sh` stopped:
+
+- `scripts/DEVIATIONS.md`: source of the deviations section
+- `scripts/aadd.sh`: A-additive: decompress, sha256 check, precinct-aggregate, delete scratch
+- `scripts/attacks.sh`: reset, then run_all.sh --only, per scenario
+- `scripts/build.sh`: step 1: build, selftest, binary digests
+- `scripts/chain.sh`: first orchestration (T20 reset failed; superseded)
+- `scripts/chain2.sh`: second orchestration (stopped to reorder)
+- `scripts/chain3.sh`: T20 and the 11 file attacks, then the clean warm-up
+- `scripts/clean.sh`: reset, gen, clean canvass, per run
+- `scripts/collect.sh`: copies the evidence into this folder
+- `scripts/env.sh`: PATH for the WSL toolchain
+- `scripts/gen_readme.py`: builds this README
+- `scripts/patch_readme.py`: fix round 1 edits to gen_readme.py
+- `scripts/q3.sh`: clean-run summary printer
+- `scripts/q4.sh`: clean-run table printer
+- `scripts/reset.sh`: one tier.sh reset, retried up to 3 times
+- `scripts/runenv.sh`: driver, demo, identity and Fabric paths
+- `scripts/smoke.sh`: 2-precinct smoke canvass
+- `scripts/waitfor.sh`: wait helper
 
 ## Deviations and environment fixes
 
 - **saksi checkout.** The brief named `~/saksi`; the runs used `~/Code/saksi` (the study checkout beside `~/Code/fabric-samples`, where the adopted configtx and every Chapter IV run live), moved to `0cdc335`. `~/saksi` was left untouched.
-- **Driver concurrency.** `saksi-canvass-demo` at 0cdc335 runs each precinct window at the console default concurrency 8 and has no flag for it. Under the adopted MaxMessageCount 50 every block waits the 2 s BatchTimeout, so a 3,000-record precinct takes about 13 min and a clean 10-precinct run about 2.6 h. No code was changed (the build must stay 0cdc335). Precinct TPS and latency in this folder are therefore batch-timeout bound and must not be compared with the Chapter IV ladder.
-- **Attack size.** To fit the night, attack runs used `VOTERS=1000` (100 voters per precinct) instead of `run_all.sh`'s default 10,000. Detection does not depend on size; the clean runs use the plan size.
+- **Driver concurrency.** `saksi-canvass-demo` at 0cdc335 runs each precinct window at the console default concurrency 8 and has no flag for it. Under the adopted MaxMessageCount 50 every block waits the 2 s BatchTimeout, so a 3,000-record precinct takes about 13 min (782 s precinct window) and a clean 10-precinct run 2.18 h (measured driver totals 7,832 s for the warm-up and 7,835 s for m1). No code was changed (the build must stay 0cdc335). Precinct TPS and latency in this folder are therefore batch-timeout bound and must not be compared with the Chapter IV ladder.
+- **Attack size.** To fit the night, attack runs used `VOTERS=1000` (100 voters per precinct) instead of `run_all.sh`'s default `VOTERS=10000` (1,000 per precinct). Detection does not depend on size; the clean runs use the plan size.
 - **Reset failure.** The first T20 reset failed inside `network.sh` ("Anchor peer update failed") while the MP-3.5M decompression and hash were running. `reset.sh` now retries `tier.sh` up to three times; every later reset succeeded on the first try.
 - **Aborted warm-ups (not evidence).** Warm-up attempt 1 started early because the wait guard missed the sha256 phase of the A-additive job; it was stopped at precinct-01 (the driver died with its WSL session when the orchestrating shell was killed). Attempt 2 was stopped at precinct-02 on purpose, to run the attack table first. Each was followed by a fresh reset; neither is in this folder.
-- **T19 timing.** T19 ran while the A-additive job was running (allowed: attack runs are not measured), so its driver total (about 33 min) is roughly twice the other attack runs.
+- **T19 timing.** T19 ran while the A-additive SP-3.5M fold was running (allowed: attack runs are not measured), so its driver total (about 33 min) is roughly twice the other attack runs, and the SP fold's 732 s is an upper bound.
 - No Docker compaction, no `wsl --shutdown`, no prune beyond what `tier.sh` does. `~/.saksi/campaign/runs` was not touched; the A-additive inputs were the Q: archive copies.
 - **Power cut and user stop.** A power cut at about 11:28 (+08:00) killed measured run m1 (attempt 1) at precinct-04. Docker Desktop was restarted, every Fabric container had exited (255), and the network was fully reset. A second m1 attempt started at 14:07 and was stopped by the user at 14:11 (precinct-01) to free the machine. Both partial runs are kept outside this folder (`clean/m1-aborted-powercut`, `clean/m1-aborted-userstop`; not evidence). The m1 in this folder is attempt 3, run from 16:42 after a full reset at the same build and plan size with nothing else running. The warm-up (completed 10:39, before the cut) stands as the warm-up. m2 and m3 are pending; the user will start them separately.
+- **T24 label.** The T24 run is the T24b mount of `task2-review.md` (an accepted `national/returns/*.json` replaced after acceptance), not the aggregate-record variant that fails `canvass.national_sum` alone. The tool wrote the scenario id as `T24` in `negative-tests-canvass.csv` and the folder `attacks/T24/`; the README tables label it T24b.
+- **CSV whitespace.** The leading two spaces inside the T19 and T20 `onchain` fields of `negative-tests-canvass.csv` were stripped (the tool echoed the raw line); `attacks/T19/t19-onchain.txt` and `attacks/T20/t20-onchain.txt` keep the raw bytes.
+- **Stray file.** A `saksi-demo gen --help` probe at 03:15, after the build, wrote a 25 KB file named `--help` into `~/Code/saksi`; it was untracked, not used by any build, and was deleted during fix round 1. The checkout is otherwise clean.
