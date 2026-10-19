@@ -1,0 +1,8 @@
+check,verdict,reason
+canvass.registry,pass,"10 returns, each for a distinct registered precinct of cv-T16"
+canvass.completeness,pass,"all 10 registered precincts have an accepted return"
+canvass.signature,pass,"every return verifies under its registered authority key"
+canvass.precinct_recompute,fail,"p07: ledger digest differs, aggregates differ (senator/cand0, senator/cand1, senator/cand2, senator/cand3)"
+canvass.national_sum,fail,"product of returned aggregates differs from the national aggregate in senator/cand0, senator/cand1, senator/cand2, senator/cand3"
+canvass.accuracy,pass,"10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0"
+canvass.nullifier_unique,pass,"3000 nullifiers, none in two precinct ledgers"

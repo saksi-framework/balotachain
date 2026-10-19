@@ -1,0 +1,71 @@
+{
+  "election_id": "cv-T13-p01",
+  "precinct_id": "p01",
+  "close_block": 52,
+  "close_tip_hash": "257c5618218a448f692aa34e83d12ca6e71aba63f44213b4801aa5ace353cb7c",
+  "record_count": 300,
+  "ledger_digest": "59cebac251175791946cd7adb2b90b7ee939278f262fb9a67fdce955b5491170",
+  "contests": [
+    {
+      "contest_id": "president/cand0",
+      "sum_c1": "3ee34487d14fc49b78d3ec9563848a02e6afff0fb7be38d27f90ae162caa1f72",
+      "sum_c2": "8226b1a31e00e56ba3810f6e64b4cbe59b4fc1bb3e0c159bee03d0ecaff1c911"
+    },
+    {
+      "contest_id": "president/cand1",
+      "sum_c1": "b21ed2ff0d350afb656912ff27012a8348edf9a0bea00d75a12b38a89ef4ca55",
+      "sum_c2": "c8105e463b25c50ecc953d57428529b78451d97e746d7a96e508611dffc5377d"
+    },
+    {
+      "contest_id": "president/cand2",
+      "sum_c1": "f66b4781237923fb8faa2636868d916d282d2d8ed50c6b4078c5cc66aed6720c",
+      "sum_c2": "da5f11aa756e27802ac0502be0d3a326d04163a7874b500c7e77b31d81605e11"
+    },
+    {
+      "contest_id": "president/cand3",
+      "sum_c1": "28bc1e79a6732b06e7d37c7fec26a35cb973bbc777456d3405045cba1fceaa0b",
+      "sum_c2": "e879f5664c5e3b6e84305297f5e3d7c845c0e144a587859bee926e8ce608af13"
+    },
+    {
+      "contest_id": "vice-president/cand0",
+      "sum_c1": "aa106e3138762d6dd40dfe7bee768080b4d2adb8bfd49c09fe56974fc7e2633e",
+      "sum_c2": "6a0a2f25b02453d74f9b04f748e16c2a6e82273abe5d8c09781aec370a6f657a"
+    },
+    {
+      "contest_id": "vice-president/cand1",
+      "sum_c1": "7eba7e3a52b37f1be599a9cf5609ae7146c7c593511af446e4ffcc8a26b31a23",
+      "sum_c2": "022d494638f23f8113fbbaadcc8bb2a8cef0cb7452083fec192063059a71d123"
+    },
+    {
+      "contest_id": "vice-president/cand2",
+      "sum_c1": "562cf035c9e8266cfb78d1aa30304ff5d2f35c63666d5da8710db17bafd3b55e",
+      "sum_c2": "86d852ff87781afb46a4030dade7b019a63cb980e94e7bff5789f75377d67814"
+    },
+    {
+      "contest_id": "vice-president/cand3",
+      "sum_c1": "1a40d058b81115ccfb22c888fd8f32ef7e0107f1c64cadff190c13565ac1e101",
+      "sum_c2": "14b991a2af6c950cea2e46a82d0764d15cbcfc9d69edb1f7f0b2010f26081766"
+    },
+    {
+      "contest_id": "senator/cand0",
+      "sum_c1": "48bffab09c7708644500796b7dcb98c5fc137ee0b2507943cc2896bce16a5869",
+      "sum_c2": "02edbb70daa01e64d080c79352626cb4aa793a6bf4eca77739d50a64d6c93b7e"
+    },
+    {
+      "contest_id": "senator/cand1",
+      "sum_c1": "e4d308ddb183f6a578d42c7d27e3c771922e78d49d6e4c617a22366f83760b7c",
+      "sum_c2": "2852facf18b12898cac74a215a588d2337c2a14bad64ea9e7d2da0e2165e1b05"
+    },
+    {
+      "contest_id": "senator/cand2",
+      "sum_c1": "ca255e4055d59d05104946f54518c2f67a5bc4ac5682300794026bea57095c51",
+      "sum_c2": "b074badcbf051e175842b89603ac7134a3813a9263ddd6bfeb248c943def4b71"
+    },
+    {
+      "contest_id": "senator/cand3",
+      "sum_c1": "7681934ca66c5c5e8c673075c3a5a872bc22fd6f3ac841cf3073fb2ca950f715",
+      "sum_c2": "9830aa3f368c6ba891916b440f5d1b6ef38ccaf6b48ee08fb5dbb42526b00b11"
+    }
+  ],
+  "signature": "8863f51e47153398bb929210dd7e4d19a92c20e1ea085b4b1631829c9224b12d673f44cf01b0d319130efaed77e9efb22978e97e6e5802876c95cfe50cdc5a01"
+}

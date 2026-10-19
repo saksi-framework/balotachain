@@ -1,0 +1,42 @@
+[
+  {
+    "precinct_id": "p01",
+    "authority_pubkey_hex": "8632ee154602a1cd2cb08c048165c99d5652e590878c74cae32883a0be1ddb51"
+  },
+  {
+    "precinct_id": "p02",
+    "authority_pubkey_hex": "5c6239a03bff4a6b3c7e0c4c7d67d5cc09436e3efed09c1ec08855abc1a7433b"
+  },
+  {
+    "precinct_id": "p03",
+    "authority_pubkey_hex": "340f0ad5352f688ded288ccb0c651492039e6e699891571c0af3f19cb44c681e"
+  },
+  {
+    "precinct_id": "p04",
+    "authority_pubkey_hex": "22e42f9437df1fcabf35511558c2e41e89749713a9888e39370e157f1c05473b"
+  },
+  {
+    "precinct_id": "p05",
+    "authority_pubkey_hex": "f01fc767127e5bbdb3bbcab5a04b61c7ae751572f4167bbf6ca8fb81e3e13974"
+  },
+  {
+    "precinct_id": "p06",
+    "authority_pubkey_hex": "f41c670b2989179e273c56b4655308f9e982e368886e42f73b0107ecfbb98a42"
+  },
+  {
+    "precinct_id": "p07",
+    "authority_pubkey_hex": "d297653c047322b257a084c38a080a735b8cf685b52d50a63a36bd747e225971"
+  },
+  {
+    "precinct_id": "p08",
+    "authority_pubkey_hex": "30f04d7d5f98e62ccf835c13191ee99049fceafde6c00f1e0b42791b05350564"
+  },
+  {
+    "precinct_id": "p09",
+    "authority_pubkey_hex": "1eef71b17b3918b222d1e7907c4d7110a97e4fa32c1ad192e49cb68b70329e56"
+  },
+  {
+    "precinct_id": "p10",
+    "authority_pubkey_hex": "bc0497304206fef60c4f91fbdcdc42a716d7c240c0bc18a92a0cfc896ed78f1d"
+  }
+]
