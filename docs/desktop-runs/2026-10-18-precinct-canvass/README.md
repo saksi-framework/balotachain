@@ -39,8 +39,6 @@ To check independently: clone saksi, `git checkout 0cdc335` and build as in `scr
 
 > **Batch-timeout note.** The TPS and latency figures in these tables come from the driver's fixed concurrency 8 over blocks cut by the 2 s BatchTimeout (MaxMessageCount 50 is never reached): 8 / 2.029 s = 3.943, against `driver_ceiling_tps` 3.943 and committed 3.942. They measure the batch timeout, not the protocol, and must not be compared with the Chapter IV ladder.
 
-2 of 4 clean runs (warm-up + m1-m3) are in this commit; m2 and m3 are pending (the user starts them separately).
-
 ### warmup (warm-up, not measured)
 
 Started 2026-10-18T00:28:39Z (UTC); driver total 7832.5 s; national canvass 12683 ms; exit 0; canvass pass: True.
@@ -98,6 +96,79 @@ Note: the window, TPS and latency columns are batch-timeout bound (concurrency 8
 | canvass.national_sum | pass | product of 10 accepted aggregates equals the national aggregate |
 | canvass.accuracy | pass | 10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0 |
 | canvass.nullifier_unique | pass | 30000 nullifiers, none in two precinct ledgers |
+
+### m2 (measured)
+
+Started 2026-10-19T00:32:15Z (UTC); driver total 7837.0 s; national canvass 12939 ms; exit 0; canvass pass: True.
+
+| precinct | records / verified | window s | committed TPS | p50 ms | p95 ms | p99 ms | precinct window s | close to return s | audit | close block |
+|---|---|---|---|---|---|---|---|---|---|---|
+| p01 | 3000 / 3000 | 761.0 | 3.942 | 2028.5 | 2035.2 | 2043.5 | 785.7 | 15.6 | pass | 389 |
+| p02 | 3000 / 3000 | 761.0 | 3.942 | 2029.0 | 2035.7 | 2042.0 | 781.9 | 15.6 | pass | 772 |
+| p03 | 3000 / 3000 | 761.1 | 3.942 | 2028.7 | 2035.0 | 2047.5 | 781.9 | 15.5 | pass | 1155 |
+| p04 | 3000 / 3000 | 761.1 | 3.942 | 2028.9 | 2034.8 | 2043.8 | 781.9 | 15.6 | pass | 1538 |
+| p05 | 3000 / 3000 | 761.5 | 3.939 | 2028.9 | 2036.0 | 2057.7 | 782.5 | 15.7 | pass | 1921 |
+| p06 | 3000 / 3000 | 761.2 | 3.941 | 2029.3 | 2034.7 | 2045.5 | 782.2 | 15.7 | pass | 2304 |
+| p07 | 3000 / 3000 | 761.1 | 3.941 | 2029.1 | 2034.3 | 2050.1 | 782.1 | 15.6 | pass | 2687 |
+| p08 | 3000 / 3000 | 761.2 | 3.941 | 2029.1 | 2035.8 | 2047.0 | 782.0 | 15.5 | pass | 3070 |
+| p09 | 3000 / 3000 | 761.0 | 3.942 | 2028.7 | 2034.0 | 2050.1 | 781.9 | 15.6 | pass | 3453 |
+| p10 | 3000 / 3000 | 761.3 | 3.940 | 2029.5 | 2037.6 | 2047.3 | 782.0 | 15.5 | pass | 3836 |
+
+Note: the window, TPS and latency columns are batch-timeout bound (concurrency 8, 2 s BatchTimeout; see the note above).
+
+| check | verdict | reason |
+|---|---|---|
+| canvass.registry | pass | 10 returns, each for a distinct registered precinct of cv-m2 |
+| canvass.completeness | pass | all 10 registered precincts have an accepted return |
+| canvass.signature | pass | every return verifies under its registered authority key |
+| canvass.precinct_recompute | pass | every return equals the recompute from its ledger read-back and close reference |
+| canvass.national_sum | pass | product of 10 accepted aggregates equals the national aggregate |
+| canvass.accuracy | pass | 10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0 |
+| canvass.nullifier_unique | pass | 30000 nullifiers, none in two precinct ledgers |
+
+### m3 (measured)
+
+Started 2026-10-19T02:44:20Z (UTC); driver total 7832.2 s; national canvass 12960 ms; exit 0; canvass pass: True.
+
+| precinct | records / verified | window s | committed TPS | p50 ms | p95 ms | p99 ms | precinct window s | close to return s | audit | close block |
+|---|---|---|---|---|---|---|---|---|---|---|
+| p01 | 3000 / 3000 | 761.1 | 3.942 | 2028.9 | 2035.1 | 2043.3 | 781.9 | 15.5 | pass | 389 |
+| p02 | 3000 / 3000 | 760.9 | 3.943 | 2028.8 | 2033.9 | 2038.4 | 781.7 | 15.5 | pass | 772 |
+| p03 | 3000 / 3000 | 761.0 | 3.942 | 2028.8 | 2034.0 | 2044.4 | 781.7 | 15.5 | pass | 1155 |
+| p04 | 3000 / 3000 | 761.2 | 3.941 | 2029.3 | 2034.5 | 2040.1 | 782.0 | 15.6 | pass | 1538 |
+| p05 | 3000 / 3000 | 761.2 | 3.941 | 2029.2 | 2035.1 | 2043.0 | 782.2 | 15.7 | pass | 1921 |
+| p06 | 3000 / 3000 | 761.1 | 3.941 | 2029.5 | 2035.0 | 2043.7 | 782.1 | 15.7 | pass | 2304 |
+| p07 | 3000 / 3000 | 760.9 | 3.943 | 2028.6 | 2034.0 | 2042.9 | 781.6 | 15.5 | pass | 2687 |
+| p08 | 3000 / 3000 | 761.0 | 3.942 | 2029.0 | 2035.4 | 2041.3 | 781.9 | 15.6 | pass | 3070 |
+| p09 | 3000 / 3000 | 761.2 | 3.941 | 2029.0 | 2039.5 | 2049.6 | 782.0 | 15.5 | pass | 3453 |
+| p10 | 3000 / 3000 | 761.4 | 3.940 | 2029.7 | 2039.0 | 2045.4 | 782.2 | 15.5 | pass | 3836 |
+
+Note: the window, TPS and latency columns are batch-timeout bound (concurrency 8, 2 s BatchTimeout; see the note above).
+
+| check | verdict | reason |
+|---|---|---|
+| canvass.registry | pass | 10 returns, each for a distinct registered precinct of cv-m3 |
+| canvass.completeness | pass | all 10 registered precincts have an accepted return |
+| canvass.signature | pass | every return verifies under its registered authority key |
+| canvass.precinct_recompute | pass | every return equals the recompute from its ledger read-back and close reference |
+| canvass.national_sum | pass | product of 10 accepted aggregates equals the national aggregate |
+| canvass.accuracy | pass | 10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0 |
+| canvass.nullifier_unique | pass | 30000 nullifiers, none in two precinct ledgers |
+
+### Measured-run summary
+
+Over the 3 measured runs (m1, m2, m3), each a full 10-precinct canvass. Per-run values are means over the 10 precincts; the last row is the mean and sample standard deviation across runs.
+
+| run | canvass pass | driver total s | national canvass ms | window s | TPS | p50 ms | p95 ms | p99 ms (max) | precinct window s | close to return s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| m1 | True | 7835.1 | 12960 | 761.2 | 3.941 | 2029.1 | 2034.9 | 2058.7 | 782.2 | 15.6 |
+| m2 | True | 7837.0 | 12939 | 761.2 | 3.941 | 2029.0 | 2035.3 | 2057.7 | 782.4 | 15.6 |
+| m3 | True | 7832.2 | 12960 | 761.1 | 3.942 | 2029.1 | 2035.5 | 2049.6 | 781.9 | 15.6 |
+| mean ± sd | | 7834.8 ± 2.4 | 12953 ± 12 | 761.2 ± 0.0 | 3.941 ± 0.000 | 2029.1 ± 0.1 | 2035.2 ± 0.3 | 2055.3 ± 5.0 | 782.2 ± 0.2 | 15.6 ± 0.0 |
+
+Note: the window, TPS and latency columns are batch-timeout bound (concurrency 8, 2 s BatchTimeout); they measure the timeout, not the protocol, and must not be compared with the Chapter IV ladder.
+
+National E = 0 in every measured run (canvass.accuracy: 10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0).
 
 ## Attack runs
 
@@ -183,6 +254,7 @@ The scripts that drove these runs, copied as run into `scripts/` (paths are the 
 - `scripts/env.sh`: PATH for the WSL toolchain
 - `scripts/gen_readme.py`: builds this README
 - `scripts/patch_readme.py`: fix round 1 edits to gen_readme.py
+- `scripts/patch_readme2.py`: helper
 - `scripts/q3.sh`: clean-run summary printer
 - `scripts/q4.sh`: clean-run table printer
 - `scripts/reset.sh`: one tier.sh reset, retried up to 3 times
@@ -199,7 +271,7 @@ The scripts that drove these runs, copied as run into `scripts/` (paths are the 
 - **Aborted warm-ups (not evidence).** Warm-up attempt 1 started early because the wait guard missed the sha256 phase of the A-additive job; it was stopped at precinct-01 (the driver died with its WSL session when the orchestrating shell was killed). Attempt 2 was stopped at precinct-02 on purpose, to run the attack table first. Each was followed by a fresh reset; neither is in this folder.
 - **T19 timing.** T19 ran while the A-additive SP-3.5M fold was running (allowed: attack runs are not measured), so its driver total (about 33 min) is roughly twice the other attack runs, and the SP fold's 732 s is an upper bound.
 - No Docker compaction, no `wsl --shutdown`, no prune beyond what `tier.sh` does. `~/.saksi/campaign/runs` was not touched; the A-additive inputs were the Q: archive copies.
-- **Power cut and user stop.** A power cut at about 11:28 (+08:00) killed measured run m1 (attempt 1) at precinct-04. Docker Desktop was restarted, every Fabric container had exited (255), and the network was fully reset. A second m1 attempt started at 14:07 and was stopped by the user at 14:11 (precinct-01) to free the machine. Both partial runs are kept outside this folder (`clean/m1-aborted-powercut`, `clean/m1-aborted-userstop`; not evidence). The m1 in this folder is attempt 3, run from 16:42 after a full reset at the same build and plan size with nothing else running. The warm-up (completed 10:39, before the cut) stands as the warm-up. m2 and m3 are pending; the user will start them separately.
+- **Power cut and user stop.** A power cut at about 11:28 (+08:00) killed measured run m1 (attempt 1) at precinct-04. Docker Desktop was restarted, every Fabric container had exited (255), and the network was fully reset. A second m1 attempt started at 14:07 and was stopped by the user at 14:11 (precinct-01) to free the machine. Both partial runs are kept outside this folder (`clean/m1-aborted-powercut`, `clean/m1-aborted-userstop`; not evidence). The m1 in this folder is attempt 3, run from 16:42 after a full reset at the same build and plan size with nothing else running. The warm-up (completed 10:39, before the cut) stands as the warm-up. m2 and m3 ran on 2026-10-19 from 08:28, after the user's go, each after its own reset, with nothing else running.
 - **T24 label.** The T24 run is the T24b mount of `task2-review.md` (an accepted `national/returns/*.json` replaced after acceptance), not the aggregate-record variant that fails `canvass.national_sum` alone. The tool wrote the scenario id as `T24` in `negative-tests-canvass.csv` and the folder `attacks/T24/`; the README tables label it T24b.
 - **CSV whitespace.** The leading two spaces inside the T19 and T20 `onchain` fields of `negative-tests-canvass.csv` were stripped (the tool echoed the raw line); `attacks/T19/t19-onchain.txt` and `attacks/T20/t20-onchain.txt` keep the raw bytes.
 - **Stray file.** A `saksi-demo gen --help` probe at 03:15, after the build, wrote a 25 KB file named `--help` into `~/Code/saksi`; it was untracked, not used by any build, and was deleted during fix round 1. The checkout is otherwise clean.
