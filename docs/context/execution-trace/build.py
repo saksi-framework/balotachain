@@ -1,6 +1,10 @@
 """Assemble saksi-trace.html from head.html (the published page's CSS), body.html
 and fn-data.json. SNIP markers are filled with verbatim lines from fn-data, so
-every code figure on the page is the extracted source, not a retyping."""
+every code figure on the page is the extracted source, not a retyping.
+
+A figure with in-code cross-reference buttons cannot be regenerated, so it is
+written out in body.html inside <!--CODE key|start|end--> ... <!--/CODE-->, and
+the build fails unless its text still equals that slice of the extracted source."""
 import html
 import json
 import re
@@ -25,6 +29,33 @@ EXTRA_CSS = """
   .elide { color: var(--ink-faint); font-size: 13px; padding-left: 14px; }
   .wrapcode { font-size: 12px; word-break: break-all; }
   .note figure { margin: 12px 0 0; }
+  /* Per-field hex. Wraps and is capped in height, so one 620-byte elided span
+     cannot stretch a row past the rest of the table. */
+  .hexcell { max-width: 320px; }
+  .hexcell code {
+    display: block; max-height: 88px; overflow: auto;
+    font: 400 11.5px/1.7 "IBM Plex Mono", monospace;
+    word-break: break-all; background: none; padding: 0;
+  }
+  /* The complete blob. Capped in height so a 22 KB tally scrolls inside its own
+     box instead of pushing the decomposition table off the screen. */
+  .fullhex {
+    max-height: 190px; overflow: auto; margin: 12px 0 4px;
+    border: 1px solid var(--rule); border-radius: 4px;
+    background: var(--code-bg); padding: 12px 14px;
+  }
+  .fullhex code {
+    font: 400 11.5px/1.75 "IBM Plex Mono", monospace; color: var(--code-ink);
+    word-break: break-all; background: none; padding: 0;
+  }
+  /* In-code cross-references: a pill per call site would fight the monospace
+     grid, so these carry only the underline accent. Compound selector so it
+     beats the base .fn / .fn:hover rules in head.html. */
+  .fn.fn-inline {
+    background: none; border: 0; border-bottom: 1px solid var(--seal);
+    padding: 0; border-radius: 0; font: inherit; color: var(--seal-ink);
+  }
+  .fn.fn-inline:hover { background: none; color: var(--seal); border-bottom-color: var(--seal); }
   .v-inc  { background: var(--amber-weak); color: var(--amber); }
   .v-fail { background: var(--reject-weak); color: var(--reject); }
   .role { font: 500 10.5px/1 "IBM Plex Mono", monospace; letter-spacing: .04em; padding: 4px 7px;
@@ -35,42 +66,92 @@ EXTRA_CSS = """
   .r-admin   { background: var(--reject-weak); color: var(--reject); }
   .r-legacy  { background: var(--code-bg); color: var(--ink-faint); border-style: dashed; border-color: var(--rule); }
   .routes td:first-child { min-width: 14em; }
+  /* Long inline identifiers (paths, composite keys) wrap instead of pushing
+     the page sideways on a phone. */
+  p code, li code, td code, .note code { overflow-wrap: anywhere; }
+  /* Grid items default to min-width: auto, so one wide <pre> or table used to
+     stretch its whole step past a phone screen; let them scroll in place. */
+  .step > .body, .step > .num { min-width: 0; }
+  /* A table inside a figure (step 8's measured runs): the figure draws the
+     border, and the caveat sits in the same box as the numbers. */
+  figure .tw { margin: 0; border: 0; border-radius: 0; background: var(--card); }
+  .fignote { margin: 0; padding: 10px 14px; border-top: 1px solid var(--rule);
+             background: var(--card); font-size: 13.5px; color: var(--ink-soft); }
 </style>
 """
 
 
-def snip(m):
-    key, start, end = m.group(1), m.group(2), m.group(3)
+def snip_text(key, start, end):
+    """The dedented source slice a SNIP or CODE marker names, or None."""
     if key not in fn:
         errors.append(f"SNIP {key}: no such function")
-        return ""
+        return None
     lines = fn[key]["code"].split("\n")
     i = next((n for n, l in enumerate(lines) if start in l), None)
     if i is None:
         errors.append(f"SNIP {key}: start {start!r} not found")
-        return ""
+        return None
     if end.startswith("^"):
         j = next((n for n in range(i, len(lines)) if lines[n].rstrip() == end[1:]), None)
     else:
         j = next((n for n in range(i, len(lines)) if end in lines[n]), None)
     if j is None:
         errors.append(f"SNIP {key}: end {end!r} not found after {start!r}")
-        return ""
-    code = textwrap.dedent("\n".join(lines[i:j + 1]).expandtabs(4))
-    return "<pre><code>" + html.escape(code, quote=False) + "</code></pre>"
+        return None
+    return textwrap.dedent("\n".join(lines[i:j + 1]).expandtabs(4))
+
+
+def snip(m):
+    code = snip_text(m.group(1), m.group(2), m.group(3))
+    return "" if code is None else "<pre><code>" + html.escape(code, quote=False) + "</code></pre>"
+
+
+def checked(m):
+    """A written-out figure (it carries in-code cross-reference buttons): keep the
+    markup, but fail unless its text equals the extracted slice."""
+    code = snip_text(m.group(1), m.group(2), m.group(3))
+    if code is not None and html.unescape(re.sub(r"<[^>]+>", "", m.group(4))) != code:
+        errors.append(f"CODE {m.group(1)}: the written figure no longer equals the extracted source")
+    return m.group(4)
 
 
 body = re.sub(r"<!--SNIP ([^|]+)\|([^|]+)\|(.+?)-->", snip, body)
+body = re.sub(r"<!--CODE ([^|]+)\|([^|]+)\|(.+?)-->(.*?)<!--/CODE-->", checked, body, flags=re.S)
 
 used = set(re.findall(r'data-fn="([^"]+)"', body))
 for k in sorted(used - fn.keys()):
     errors.append(f"data-fn {k} has no extracted source")
 
+
+
+def span(cell, attr):
+    m = re.search(attr + r'="(\d+)"', cell)
+    return int(m.group(1)) if m else 1
+
+
+# Every table row must have as many cells as its header, counting colspan and
+# the cells a rowspan above carries down, so no value can sit under the wrong
+# column.
+for t in re.findall(r"<table[^>]*>(.*?)</table>", body, re.S):
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", t, re.S)
+    if not rows or "<th" not in rows[0]:
+        continue
+    width = sum(span(c, "colspan") for c in re.findall(r"<t[hd][^>]*>", rows[0]))
+    carried = []
+    for r in rows[1:]:
+        cells = re.findall(r"<t[hd][^>]*>", r)
+        n = sum(span(c, "colspan") for c in cells) + len(carried)
+        if n != width:
+            first = re.sub(r"<[^>]+>", "", r).strip()[:60]
+            errors.append(f"table row has {n} cells, header has {width}: {first!r}")
+        carried = [k - 1 for k in carried if k > 1] + [span(c, "rowspan") - 1 for c in cells if span(c, "rowspan") > 1]
+
 text = re.sub(r"<[^>]+>", " ", body)
 for stale in ["appendReceipt", "OfflineVoterCeiling", "check_nullifier_uniqueness", "six checks",
               "audit_with_evidence", "trail.json ", "multi_position_fixture", "halalan-e2e-20260830",
               "halalan-e2e-20260914-174438", "25d523f", "fixed in the generator", "the dealers are fixed",
-              "1812139", "a79918d", "halalan-e2e-20260914-183507", "Version 8"]:
+              "1812139", "a79918d", "halalan-e2e-20260914-183507", "Version 8", "Version 9", "Version 10",
+              "seven steps", "exportUrl", "not connected to the console"]:
     if stale in text:
         errors.append(f"stale name still on the page: {stale}")
 
@@ -84,23 +165,25 @@ scripts = """
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/rust.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
 <script>
 (function () {
   "use strict";
   var FN = JSON.parse(document.getElementById("fn-data").textContent);
-  var LANG = { go: "Go", rust: "Rust", typescript: "TypeScript" };
+  var LANG = { go: "Go", rust: "Rust", typescript: "TypeScript", python: "Python" };
   var side = document.getElementById("side"),
       scrim = document.getElementById("scrim"),
       last = null;
 
   function group(f) {
     if (f.file.indexOf("balotachain/services/") === 0) return "legacy";
+    if (f.file.indexOf("balotachain/tools/") === 0) return "tools";
     if (f.file.indexOf("balotachain/") === 0) return "apps";
     if (f.file.indexOf("saksi-bulletin") > -1) return "chain";
     if (f.lang === "rust") return "rust";
     return "console";
   }
-  var groups = { console: [], rust: [], chain: [], apps: [], legacy: [] };
+  var groups = { console: [], rust: [], chain: [], apps: [], tools: [], legacy: [] };
   Object.keys(FN).forEach(function (k) { groups[group(FN[k])].push(k); });
   Object.keys(groups).forEach(function (g) {
     var box = document.getElementById("idx-" + g);

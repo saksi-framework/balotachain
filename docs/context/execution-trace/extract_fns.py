@@ -6,6 +6,7 @@ symbol forms:
          var:Name | const:Name | type:Name
   rust   name | Type::name | struct:Name | const:NAME
   ts     name                       (function or const arrow)
+  python name                       (a top-level or nested `def`, ended by indentation)
 Writes fn-data.json {key: {file, line, code, why, lang}}. Exits 1 on any miss or
 ambiguity, so the page can never name a function the commit does not have.
 """
@@ -23,9 +24,9 @@ from pathlib import Path
 _BALOTACHAIN = Path(__file__).resolve().parents[3]
 REPOS = {
     "saksi": (os.environ.get("SAKSI_REPO", str(_BALOTACHAIN.parent / "saksi")),
-              os.environ.get("SAKSI_COMMIT", "dca7776")),
+              os.environ.get("SAKSI_COMMIT", "0cdc335")),
     "balotachain": (os.environ.get("BALOTACHAIN_REPO", str(_BALOTACHAIN)),
-                    os.environ.get("BALOTACHAIN_COMMIT", "b03d4ba")),
+                    os.environ.get("BALOTACHAIN_COMMIT", "20d9860")),
 }
 _cache = {}
 
@@ -58,6 +59,8 @@ def def_patterns(lang, symbol):
     if lang in ("ts", "typescript"):
         return [rf"^\s*(export )?(async )?function {re.escape(name)}\b",
                 rf"^\s*(export )?const {re.escape(name)}\b"]
+    if lang == "python":
+        return [rf"^\s*(async )?def {re.escape(name)}\("]
     raise ValueError(lang)
 
 
@@ -76,11 +79,28 @@ def find_def(lines, lang, symbol):
     return hits
 
 
+def python_end(lines, start):
+    """Last line of the `def` at `start`: the block ends before the first
+    non-blank line indented no deeper than the `def` itself."""
+    indent = len(lines[start]) - len(lines[start].lstrip())
+    end = start
+    for n in range(start + 1, len(lines)):
+        line = lines[n]
+        if not line.strip():
+            continue
+        if len(line) - len(line.lstrip()) <= indent and not line.lstrip().startswith(")"):
+            break
+        end = n
+    return end
+
+
 def block_end(lines, start, lang):
     """Line index where the item starting at `start` ends (brace matched)."""
+    if lang == "python":
+        return python_end(lines, start)
     text = "\n".join(lines[start:])
     depth, i, n, opened = 0, 0, len(text), False
-    parens = angles = 0
+    parens = angles = brackets = 0
     while i < n:
         c = text[i]
         two = text[i:i + 2]
@@ -123,6 +143,10 @@ def block_end(lines, start, lang):
                 parens += 1
             elif c == ")":
                 parens -= 1
+            elif c == "[":
+                brackets += 1
+            elif c == "]":
+                brackets -= 1
             elif lang == "ts" and c == "<":
                 angles += 1
             elif lang == "ts" and c == ">" and text[i - 1] != "=":
@@ -142,7 +166,7 @@ def block_end(lines, start, lang):
             depth -= 1
             if opened and depth == 0:
                 return start + text.count("\n", 0, i)
-        elif c == ";" and not opened and depth == 0:
+        elif c == ";" and not opened and depth == 0 and brackets == 0:
             return start + text.count("\n", 0, i)
         i += 1
     raise ValueError(f"unbalanced block from line {start + 1}")
@@ -150,7 +174,7 @@ def block_end(lines, start, lang):
 
 def leading_comments(lines, i, lang):
     j = i
-    marks = ("//", "///", "#[", "#!") if lang == "rust" else ("//",)
+    marks = {"rust": ("//", "///", "#[", "#!"), "python": ("#", "@")}.get(lang, ("//",))
     while j > 0 and lines[j - 1].strip().startswith(marks):
         j -= 1
     return j
