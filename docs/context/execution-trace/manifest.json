@@ -1413,15 +1413,6 @@
   "name": "listRuns"
  },
  {
-  "key": "ts_auditor_exportUrl",
-  "repo": "balotachain",
-  "path": "apps/auditor/src/lib/bulletin.ts",
-  "lang": "ts",
-  "symbol": "exportUrl",
-  "why": "Builds the download link for a run's artifacts. The auditor takes the same files the console published — the app is a viewer over the evidence, not a second source of it.",
-  "name": "exportUrl"
- },
- {
   "key": "BuildBulletin",
   "repo": "balotachain",
   "path": "services/fabric-adapter/mapping.go",
@@ -1429,5 +1420,482 @@
   "symbol": "BuildBulletin",
   "why": "The original read-path bridge: it turns the chaincode's hex ElectionParameters and TallyResult into BalotaChain's bulletin shape, which is how the auditor view was first pointed at a real on-chain election. Superseded by the console's direct chain reads, and kept here as the record of that link.",
   "name": "BuildBulletin"
+ },
+ {
+  "key": "ts_auditor_fileUrl",
+  "repo": "balotachain",
+  "path": "apps/auditor/src/lib/bulletin.ts",
+  "lang": "ts",
+  "symbol": "fileUrl",
+  "why": "Builds the download link for one of a run's published files. The auditor takes the same artifacts the console published, by URL — the app is a viewer over the evidence, not a second source of it. A name may carry a folder, so each segment is encoded and the slash kept.",
+  "name": "fileUrl"
+ },
+ {
+  "key": "linear_decode",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/tally.rs",
+  "lang": "rust",
+  "symbol": "linear_decode",
+  "why": "The small-tier discrete log: walk k times G from zero and stop when the point matches, so k is the count. O(max) but trivially correct, and decode_tally picks it below fifty thousand voters because at that size the table bsgs_decode builds costs more than the walk saves.",
+  "name": "linear_decode"
+ },
+ {
+  "key": "binding_context",
+  "repo": "saksi",
+  "path": "packages/saksi-crypto/src/nizk/cds.rs",
+  "lang": "rust",
+  "symbol": "binding_context",
+  "why": "Length-prefixed election_id, contest_id and nullifier concatenated. It is not a hash on its own; it becomes cryptographic only when absorbed into the CDS transcript, which is what stops a proof made for one contest being replayed into another.",
+  "name": "binding_context"
+ },
+ {
+  "key": "nullifier_h",
+  "repo": "saksi",
+  "path": "packages/saksi-credentials/src/nullifier.rs",
+  "lang": "rust",
+  "symbol": "nullifier_h",
+  "why": "Hashes the domain, election_id and position_id to a ristretto point H_e, with explicit length prefixes so the election and position boundary cannot be shifted. Because H_e changes per position, one voter's nullifiers for president and vice-president are unlinkable to each other by value.",
+  "name": "nullifier_h"
+ },
+ {
+  "key": "derive_nullifier",
+  "repo": "saksi",
+  "path": "packages/saksi-credentials/src/nullifier.rs",
+  "lang": "rust",
+  "symbol": "derive_nullifier",
+  "why": "The nullifier itself: the credential secret multiplied into H_e, in constant time. Deterministic for a given voter, election and position, which is what makes a second ballot for the same race detectable without anyone learning whose it is.",
+  "name": "derive_nullifier"
+ },
+ {
+  "key": "tally_sig_context",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/tally.rs",
+  "lang": "rust",
+  "symbol": "tally_sig_context",
+  "why": "The exact bytes each trustee signs: a domain tag, the election id, then every total little-endian. Unlike every other context builder here it does not length-prefix the id, and the comment above it says so and explains why the deployment-fixed id is what carries the safety.",
+  "name": "tally_sig_context"
+ },
+ {
+  "key": "cp_context",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/decryption.rs",
+  "lang": "rust",
+  "symbol": "cp_context",
+  "why": "Binds a partial decryption's Chaum-Pedersen proof to the binding context, the trustee and the contest, all length-prefixed. Without the trustee and contest in here one trustee's share could be replayed as another's, or moved between contests.",
+  "name": "cp_context"
+ },
+ {
+  "key": "verify_dkg_transcript",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/dkg.rs",
+  "lang": "rust",
+  "symbol": "verify_dkg_transcript",
+  "why": "Rebuilds the joint election key by summing every dealer's constant-term commitment, and each trustee's verification key by evaluating the committed polynomials at that trustee's index. It cannot re-run the DKG — the dealers' secrets were never published — so what it proves is that the published commitments are internally consistent with the key the ballots were encrypted under.",
+  "name": "verify_dkg_transcript"
+ },
+ {
+  "key": "cds_BindingContext",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/cdsverify/cdsverify.go",
+  "lang": "go",
+  "symbol": "BindingContext",
+  "why": "Length-prefixed election id, contest id and nullifier concatenated — not a hash on its own. It becomes cryptographic only when absorbed into the CDS transcript, and it is what welds a proof to this ballot, this contest and this election so none of them can be swapped afterwards. Mirrors the Rust binding_context byte for byte.",
+  "name": "BindingContext"
+ },
+ {
+  "key": "fiatShamirTotalChallenge",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/cdsverify/cdsverify.go",
+  "lang": "go",
+  "symbol": "fiatShamirTotalChallenge",
+  "why": "Rebuilds the total challenge from the election key, the ciphertext, the choice set, the binding context and every branch commitment. The published challenges must sum to this, which is what makes at most one branch fakeable: the prover cannot control a hash of commitments it has already fixed.",
+  "name": "fiatShamirTotalChallenge"
+ },
+ {
+  "key": "issuanceChallenge",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/credverify/credverify.go",
+  "lang": "go",
+  "symbol": "issuanceChallenge",
+  "why": "Recomputes the issuer signature's Fiat-Shamir challenge from the issuer key, the credential commitment and R'. Because the commitment is hashed in, a signature cannot be lifted onto a different credential — a different commitment yields a different challenge and the verification equation breaks.",
+  "name": "issuanceChallenge"
+ },
+ {
+  "key": "cds_decodePoint",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/cdsverify/cdsverify.go",
+  "lang": "go",
+  "symbol": "decodePoint",
+  "why": "Rejects any byte string that is not a canonical ristretto255 encoding, before any algebra runs. This is where corrupted-ballot-bytes and tamper-dkg-transcript actually die: garbage never becomes a point, so the equations are never reached.",
+  "name": "decodePoint"
+ },
+ {
+  "key": "prove_selection",
+  "repo": "saksi",
+  "path": "packages/saksi-crypto/src/nizk/selection.rs",
+  "lang": "rust",
+  "symbol": "prove_selection",
+  "why": "Proves a ballot record's ciphertexts encrypt exactly one selection in total: with A = sum of the pads and B = the summed data minus G, a Chaum-Pedersen proof of log_G(A) = log_Y(B) holds only when the plaintexts sum to one. The CDS proofs already force each slot to 0 or 1, so this is the constraint that rules out an overvote or an abstention disguised as a vote. It does not re-check the record it is given, which is why a dishonest caller gets a proof that simply fails verification.",
+  "name": "prove_selection"
+ },
+ {
+  "key": "verify_selection",
+  "repo": "saksi",
+  "path": "packages/saksi-crypto/src/nizk/selection.rs",
+  "lang": "rust",
+  "symbol": "verify_selection",
+  "why": "The off-chain side of the sum-to-one check, called per ballot by the auditor as ballot.selection_sum. It rebuilds the statement from the ciphertexts rather than trusting any field on the wire, so a record whose ciphertexts were swapped after the proof was made fails here. The auditor runs it only when the election parameters carry an issuer key, mirroring the chaincode's own condition.",
+  "name": "verify_selection"
+ },
+ {
+  "key": "selection_context",
+  "repo": "saksi",
+  "path": "packages/saksi-crypto/src/nizk/selection.rs",
+  "lang": "rust",
+  "symbol": "selection_context",
+  "why": "The label \"saksi.ballot.selection.v1\" followed by length-prefixed election_id, position_id and nullifier. It fills the CDS binding-context slot with the position rather than a contest, so one proof covers the whole position while each CDS proof covers one candidate. Absorbed into the Chaum-Pedersen transcript, it is what stops a selection proof made for one position being replayed into another.",
+  "name": "selection_context"
+ },
+ {
+  "key": "selectionverify_Verify",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/selectionverify/selectionverify.go",
+  "lang": "go",
+  "symbol": "Verify",
+  "why": "The on-chain verifier for the sum-to-one proof, reached through gate `selection` at endorsement. It mirrors the Rust transcript byte for byte, down to the Merlin label and the order of appended messages, and a golden vector shared with saksi-crypto pins that agreement. Decoding is canonical-only and every failure is an error, so endorsement stays deterministic across peers.",
+  "name": "Verify"
+ },
+ {
+  "key": "verifySelection",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/contract.go",
+  "lang": "go",
+  "symbol": "verifySelection",
+  "why": "Unpacks the ballot's selection_proof and ciphertexts and hands them to selectionverify. It refuses a record that carries no proof at all, which matters because the gate that calls it runs only on an issuer-bound election: without that condition an absent proof would be indistinguishable from a legacy record. Its caller is the one line that decides whether the sum-to-one guarantee applies to a given election.",
+  "name": "verifySelection"
+ },
+ {
+  "key": "check_parameters_issuer",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/lib.rs",
+  "lang": "rust",
+  "symbol": "check_parameters_issuer",
+  "why": "Compares the election parameters' issuer key against the trust-anchor key supplied separately at the artifacts boundary, as the parameters.issuer_binding check. Because the anchor comes from outside the parameters, the comparison is not self-referential the way an on-chain byte check would be. It also fails parameters that carry no issuer key at all, which is the only place in the system that reports the resulting loss of the chain's issuer and selection gates rather than passing silently.",
+  "name": "check_parameters_issuer"
+ },
+ {
+  "key": "ledger_digest",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/ledger.rs",
+  "lang": "rust",
+  "symbol": "ledger_digest",
+  "why": "An order-dependent SHA-256 hash chain over per-ballot leaves covering position id, nullifier, credential commitment and every ciphertext, under three separate domain tags. Because each leaf is folded into a running digest, the result depends on the set and on its order, so dropping, adding, altering or permuting a ballot changes it. It carries no weight on its own; it becomes a claim only when check_ledger_order compares two digests.",
+  "name": "ledger_digest"
+ },
+ {
+  "key": "check_ledger_order",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/ledger.rs",
+  "lang": "rust",
+  "symbol": "check_ledger_order",
+  "why": "The ledger.order check: the chain's read-back must be in ascending nullifier order, the only order the chaincode's nullifier index serves, and its ledger_digest must equal the digest of the console's own record sorted into that same order. It detects a serving node that permutes, drops, duplicates or rewrites what it returns. It needs the ledger dump to run at all, and it says nothing about the chain's block order, which this read path does not expose.",
+  "name": "check_ledger_order"
+ },
+ {
+  "key": "forge_self_issued_ballot",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/demo.rs",
+  "lang": "rust",
+  "symbol": "forge_self_issued_ballot",
+  "why": "Builds the self-issued-credential attack ballot: a real blind-signature issuance under an issuer key generated on the spot, a real presentation and nullifier, real CDS proofs and a real selection proof under the election's joint key. Every proof in it verifies, including the credential signature, which verifies under the key the ballot itself carries. That is what isolates the test: the only checks that can refuse it are the chaincode's issuer gate and the auditor's ballot.issuer_binding.",
+  "name": "forge_self_issued_ballot"
+ },
+ {
+  "key": "overvote_ballot",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/demo.rs",
+  "lang": "rust",
+  "symbol": "overvote_ballot",
+  "why": "Builds the overvote attack from a run's own ballot line: the same credential, presentation and nullifier, with the first two candidate slots re-encrypted to 1 under fresh randomness and fresh valid CDS proofs, and the original selection proof left in place. The credential is legitimate and each slot is still a valid encryption of 0 or 1, so every per-slot and per-voter gate passes. Only the sum-to-one check sees the record now selects two candidates.",
+  "name": "overvote_ballot"
+ },
+ {
+  "key": "legacyChainSkips",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/scenarios.go",
+  "lang": "go",
+  "symbol": "legacyChainSkips",
+  "why": "Decides that a scenario whose chain gate is issuer or selection must not be mounted live on an election whose parameters carry no issuer key. On such an election the chaincode skips that gate, so the forged or overvoted ballot would be accepted and committed to the real ledger instead of refused. The scenario runs simulated against a copy instead, and the verdict is annotated so a simulated rejection is never read as the ledger's.",
+  "name": "legacyChainSkips"
+ },
+ {
+  "key": "canvass_demo_main",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/cmd/saksi-canvass-demo/main.go",
+  "lang": "go",
+  "symbol": "main",
+  "why": "The precinct demonstration's entry point, a standalone binary beside the console: it builds an ordinary Executor rooted at the generator output, refuses to start without a live Fabric identity, and hands every precinct folder to canvass.Run.",
+  "name": "main"
+ },
+ {
+  "key": "canvass_Run",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/canvass/canvass.go",
+  "lang": "go",
+  "symbol": "Run",
+  "why": "Drives the whole canvass: each precinct-NN folder in name order on the one channel, then the national hook, then audit-canvass. It writes canvass-run.json in every case, errors included, and maps the outcome to the exit code.",
+  "name": "canvass.Run"
+ },
+ {
+  "key": "canvass_precinct",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/canvass/canvass.go",
+  "lang": "go",
+  "symbol": "Options.precinct",
+  "why": "One precinct end to end: the console lifecycle, the ledger dump and audits, ChainInfo into close.json, sign-return over the read-back, the attack hooks, and the byte copy of return.json into national/returns/.",
+  "name": "Options.precinct"
+ },
+ {
+  "key": "PrecinctLifecycle",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/precinct.go",
+  "lang": "go",
+  "symbol": "Executor.PrecinctLifecycle",
+  "why": "The console's own on-chain lifecycle reused for one precinct folder, with run.start marked precinct: true. It returns the precinct's tally outcome, so a replayed tally (T20) can be told apart from the genuine one.",
+  "name": "Executor.PrecinctLifecycle"
+ },
+ {
+  "key": "precinctLifecycle",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/precinct.go",
+  "lang": "go",
+  "symbol": "Executor.precinctLifecycle",
+  "why": "The composition itself: CreateElection, PublishDKGTranscript, the measured ballot window, the pre-close hook, CloseElection, the partial decryptions, the pre-tally hook and PublishTally, the same unexported steps the console runs.",
+  "name": "Executor.precinctLifecycle"
+ },
+ {
+  "key": "PrecinctVerify",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/precinct.go",
+  "lang": "go",
+  "symbol": "Executor.PrecinctVerify",
+  "why": "The console's verify for one precinct: it dumps the precinct's election from the chain into ledger/, audits both copies, and writes correctness.csv and the perf.csv row, the same artifacts a console run gets.",
+  "name": "Executor.PrecinctVerify"
+ },
+ {
+  "key": "PrecinctChainInfo",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/precinct.go",
+  "lang": "go",
+  "symbol": "Executor.PrecinctChainInfo",
+  "why": "Reads the channel height and the current block hash after the tally and the ledger dump. Those two values become close.json and are signed into the precinct return, binding it to the chain state at close.",
+  "name": "Executor.PrecinctChainInfo"
+ },
+ {
+  "key": "electionID",
+  "repo": "saksi",
+  "path": "packages/saksi-campaign/precinct.go",
+  "lang": "go",
+  "symbol": "Executor.electionID",
+  "why": "The one change the console's audit path needed: folder precinct-01 holds election cv-m1-p01, so the ledger dump asks for the mapped id. Console runs never register a mapping and keep using the run id.",
+  "name": "Executor.electionID"
+ },
+ {
+  "key": "ReturnSigMessage",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/sigverify/returnsig.go",
+  "lang": "go",
+  "symbol": "ReturnSigMessage",
+  "why": "The Go mirror of the bytes a precinct authority signs, pinned to the Rust encoder by a golden vector. No chaincode function calls it in this build; it marks where an on-chain return gate would hook in.",
+  "name": "ReturnSigMessage"
+ },
+ {
+  "key": "VerifyReturnSig",
+  "repo": "saksi",
+  "path": "packages/saksi-bulletin/chaincode/sigverify/returnsig.go",
+  "lang": "go",
+  "symbol": "VerifyReturnSig",
+  "why": "Checks a return's 64-byte Schnorr signature with the verifier the chaincode uses for tally signatures. It is unit-tested only, because the canvass verifies returns from files, not on chain.",
+  "name": "VerifyReturnSig"
+ },
+ {
+  "key": "sign_return",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/precinct_return.rs",
+  "lang": "rust",
+  "symbol": "sign_return",
+  "why": "Builds a precinct return from the ledger read-back, not from the console's own record: the record count, ledger digest and per-contest aggregates are recomputed from the chain's copy and signed under the precinct authority key.",
+  "name": "sign_return"
+ },
+ {
+  "key": "PrecinctReturn",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/precinct_return.rs",
+  "lang": "rust",
+  "symbol": "struct:PrecinctReturn",
+  "why": "The precinct return itself: election id, precinct id, close block, tip hash, record count, ledger digest, per-contest sums of c1 and c2, and the signature. It carries ciphertexts only, never a decrypted count.",
+  "name": "PrecinctReturn"
+ },
+ {
+  "key": "PrecinctReturn_message",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/precinct_return.rs",
+  "lang": "rust",
+  "symbol": "PrecinctReturn::message",
+  "why": "The exact signed bytes: the domain saksi.er.sig.v1, then every field but the signature in declaration order, length-prefixed where variable. Changing any field, the election id included, breaks the signature.",
+  "name": "PrecinctReturn::message"
+ },
+ {
+  "key": "cmd_sign_return",
+  "repo": "saksi",
+  "path": "packages/saksi-demo/src/precinct.rs",
+  "lang": "rust",
+  "symbol": "cmd_sign_return",
+  "why": "The sign-return subcommand the driver shells out to. It prints the 'N records (V verified)' line the driver parses into canvass-run.json, so a gap between records and verified ballots is recorded per precinct.",
+  "name": "cmd_sign_return"
+ },
+ {
+  "key": "canvass",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/canvass.rs",
+  "lang": "rust",
+  "symbol": "canvass",
+  "why": "The national canvass: it reads every received return, recomputes each precinct from its ledger read-back, decrypts the product of the aggregates with the national partials, and reports all seven checks whatever the others say.",
+  "name": "canvass"
+ },
+ {
+  "key": "canvass_cli",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/canvass.rs",
+  "lang": "rust",
+  "symbol": "cli",
+  "why": "The audit-canvass subcommand: exit 0 when every check passes, 1 when any fails, 2 on a missing national input. A return a precinct got wrong is a failed check, never an input error.",
+  "name": "canvass::cli"
+ },
+ {
+  "key": "canvass_write_outputs",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/canvass.rs",
+  "lang": "rust",
+  "symbol": "write_outputs",
+  "why": "Writes canvass.json (the full result, per precinct and national) and canvass-checks.csv (one row per check), the two files the verdict is read from.",
+  "name": "canvass::write_outputs"
+ },
+ {
+  "key": "CanvassCheck",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/canvass.rs",
+  "lang": "rust",
+  "symbol": "struct:CanvassCheck",
+  "why": "One check's verdict: the check id, pass or fail, and the reason, which names the precinct and the field that differed.",
+  "name": "CanvassCheck"
+ },
+ {
+  "key": "CANVASS_CHECKS",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/canvass.rs",
+  "lang": "rust",
+  "symbol": "const:CHECKS",
+  "why": "The seven check ids, in evaluation order. Every one runs on every canvass, so an attack's failing set is reported whole.",
+  "name": "canvass::CHECKS"
+ },
+ {
+  "key": "CloseRef",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/canvass.rs",
+  "lang": "rust",
+  "symbol": "struct:CloseRef",
+  "why": "close.json, the driver's record of ChainInfo at close. The canvass compares each return's close block and tip hash with it exactly and does not re-read the chain.",
+  "name": "CloseRef"
+ },
+ {
+  "key": "pa_fold",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/precinct_aggregate.rs",
+  "lang": "rust",
+  "symbol": "fold",
+  "why": "Splits an archived single-election record into fixed-size precincts and folds each precinct's ciphertexts: the A-additive re-analysis of the archived capstone records.",
+  "name": "precinct_aggregate::fold"
+ },
+ {
+  "key": "pa_checks",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/precinct_aggregate.rs",
+  "lang": "rust",
+  "symbol": "checks",
+  "why": "The four combine checks per contest: the product of the precinct aggregates equals the region aggregate, the auditor's own fold and the archived correctness.csv value, and the per-precinct ground truths sum to the region's.",
+  "name": "precinct_aggregate::checks"
+ },
+ {
+  "key": "py_resign_from",
+  "repo": "balotachain",
+  "path": "tools/security/canvass/mutate_return.py",
+  "lang": "python",
+  "symbol": "resign_from",
+  "why": "Re-signs a precinct return with a chosen key, election id or close reference. The T14a, T14b, T15, T16 and T21 mounts use it to model a transmission adversary or a compromised precinct that holds a real key.",
+  "name": "resign_from"
+ },
+ {
+  "key": "py_t9",
+  "repo": "balotachain",
+  "path": "tools/security/canvass/mutate_return.py",
+  "lang": "python",
+  "symbol": "t9",
+  "why": "T9: flips one aggregate byte in the signed return on the path, so the signature no longer verifies.",
+  "name": "t9"
+ },
+ {
+  "key": "py_t15",
+  "repo": "balotachain",
+  "path": "tools/security/canvass/mutate_return.py",
+  "lang": "python",
+  "symbol": "t15",
+  "why": "T15: a compromised precinct signs, with its real key, a return over a ledger copy with one ballot omitted. Only the recompute from the chain's read-back catches it.",
+  "name": "t15"
+ },
+ {
+  "key": "py_t24",
+  "repo": "balotachain",
+  "path": "tools/security/canvass/mutate_return.py",
+  "lang": "python",
+  "symbol": "t24",
+  "why": "T24b: at the national hook, replaces an accepted file in national/returns/ after acceptance, the national server altering what it received.",
+  "name": "t24"
+ },
+ {
+  "key": "py_assert_main",
+  "repo": "balotachain",
+  "path": "tools/security/canvass/assert_outcome.py",
+  "lang": "python",
+  "symbol": "main",
+  "why": "The verdict rule: the failed-check set must equal the expected set exactly. For T19 and T20 the pair of the on-chain outcome and the canvass backstop decides. Every row lands in negative-tests-canvass.csv.",
+  "name": "assert_outcome.main"
+ },
+ {
+  "key": "runSubmitRaw",
+  "repo": "balotachain",
+  "path": "tools/security/tamper_invoke/submitraw.go",
+  "lang": "go",
+  "symbol": "runSubmitRaw",
+  "why": "The T19 mount: submits a committed ballot's raw bytes through the gateway on a chosen channel and records the chaincode's answer verbatim.",
+  "name": "runSubmitRaw"
+ },
+ {
+  "key": "runPublishTally",
+  "repo": "balotachain",
+  "path": "tools/security/tamper_invoke/publishtally.go",
+  "lang": "go",
+  "symbol": "runPublishTally",
+  "why": "The T20 mount: publishes one signed tally on the channel and reports COMMIT or REFUSED with the chaincode's response.",
+  "name": "runPublishTally"
+ },
+ {
+  "key": "pa_write_outputs",
+  "repo": "saksi",
+  "path": "packages/saksi-auditor/src/precinct_aggregate.rs",
+  "lang": "rust",
+  "symbol": "write_outputs",
+  "why": "Writes the re-analysis outputs: precincts.csv (one row per precinct, its aggregates and an e column that reads n/a (no key)), combine.txt (the combine checks) and summary.json.",
+  "name": "precinct_aggregate::write_outputs"
  }
 ]
