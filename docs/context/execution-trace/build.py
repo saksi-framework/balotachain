@@ -66,6 +66,9 @@ EXTRA_CSS = """
   .r-admin   { background: var(--reject-weak); color: var(--reject); }
   .r-legacy  { background: var(--code-bg); color: var(--ink-faint); border-style: dashed; border-color: var(--rule); }
   .routes td:first-child { min-width: 14em; }
+  /* Long inline identifiers (paths, composite keys) wrap instead of pushing
+     the page sideways on a phone. */
+  p code, li code, td code, .note code { overflow-wrap: anywhere; }
   /* Grid items default to min-width: auto, so one wide <pre> or table used to
      stretch its whole step past a phone screen; let them scroll in place. */
   .step > .body, .step > .num { min-width: 0; }
@@ -118,6 +121,30 @@ body = re.sub(r"<!--CODE ([^|]+)\|([^|]+)\|(.+?)-->(.*?)<!--/CODE-->", checked, 
 used = set(re.findall(r'data-fn="([^"]+)"', body))
 for k in sorted(used - fn.keys()):
     errors.append(f"data-fn {k} has no extracted source")
+
+
+
+def span(cell, attr):
+    m = re.search(attr + r'="(\d+)"', cell)
+    return int(m.group(1)) if m else 1
+
+
+# Every table row must have as many cells as its header, counting colspan and
+# the cells a rowspan above carries down, so no value can sit under the wrong
+# column.
+for t in re.findall(r"<table[^>]*>(.*?)</table>", body, re.S):
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", t, re.S)
+    if not rows or "<th" not in rows[0]:
+        continue
+    width = sum(span(c, "colspan") for c in re.findall(r"<t[hd][^>]*>", rows[0]))
+    carried = []
+    for r in rows[1:]:
+        cells = re.findall(r"<t[hd][^>]*>", r)
+        n = sum(span(c, "colspan") for c in cells) + len(carried)
+        if n != width:
+            first = re.sub(r"<[^>]+>", "", r).strip()[:60]
+            errors.append(f"table row has {n} cells, header has {width}: {first!r}")
+        carried = [k - 1 for k in carried if k > 1] + [span(c, "rowspan") - 1 for c in cells if span(c, "rowspan") > 1]
 
 text = re.sub(r"<[^>]+>", " ", body)
 for stale in ["appendReceipt", "OfflineVoterCeiling", "check_nullifier_uniqueness", "six checks",

@@ -715,8 +715,8 @@ if spent != nil {
         <table>
           <thead><tr><th>Run</th><th>National canvass ms</th><th>Ballot window s</th><th>Committed TPS</th><th>p50 ms</th><th>p95 ms</th><th>p99 ms (max)</th><th>Precinct window s</th><th>Close to return s</th></tr></thead>
           <tbody>
-          <tr><td>m1</td><td class="num-cell">12960</td><td class="num-cell">3.941</td><td class="num-cell">2029.1</td><td class="num-cell">2034.9</td><td class="num-cell">2058.7</td><td class="num-cell">782.2</td><td class="num-cell">15.6</td></tr>
-          <tr><td>mean ± sd, m1–m3</td><td class="num-cell">12953 ± 12</td><td class="num-cell">3.941 ± 0.000</td><td class="num-cell">2029.1 ± 0.1</td><td class="num-cell">2035.2 ± 0.3</td><td class="num-cell">2055.3 ± 5.0</td><td class="num-cell">782.2 ± 0.2</td><td class="num-cell">15.6 ± 0.0</td></tr>
+          <tr><td>m1</td><td class="num-cell">12960</td><td class="num-cell">761.2</td><td class="num-cell">3.941</td><td class="num-cell">2029.1</td><td class="num-cell">2034.9</td><td class="num-cell">2058.7</td><td class="num-cell">782.2</td><td class="num-cell">15.6</td></tr>
+          <tr><td>mean ± sd, m1–m3</td><td class="num-cell">12953 ± 12</td><td class="num-cell">761.2 ± 0.0</td><td class="num-cell">3.941 ± 0.000</td><td class="num-cell">2029.1 ± 0.1</td><td class="num-cell">2035.2 ± 0.3</td><td class="num-cell">2055.3 ± 5.0</td><td class="num-cell">782.2 ± 0.2</td><td class="num-cell">15.6 ± 0.0</td></tr>
           </tbody>
         </table>
       </div>
@@ -1664,7 +1664,7 @@ T20: [REFUSED] T20 -&gt; publish tally: rpc error: code = Aborted desc = failed 
     <tr><td><code>precincts.csv</code> · <code>combine.txt</code></td><td><button class="fn" data-fn="pa_write_outputs" type="button">precinct_aggregate::write_outputs</button>, after <button class="fn" data-fn="pa_fold" type="button">fold</button> and <button class="fn" data-fn="pa_checks" type="button">checks</button></td><td>the A-additive output: per-precinct aggregates of an archived single-election record, and the four combine checks per contest</td></tr>
   </tbody>
 </table></div>
-<p class="small-note">The A-additive output is a re-analysis of the archived record, not a precinct run: <code>saksi-demo precinct-aggregate --precinct-size 1000</code> over the archived SP-3.5M m3 and MP-3.5M offline records, 3,525 precincts over 3,524,078 voters each. SP-3.5M m3: 3,524,078 records, 4 contests, 17 of 17 checks pass. MP-3.5M offline: 10,572,234 records, 12 contests, 49 of 49 pass. Per-precinct <code>E</code> reads <code>n/a (no key)</code>: the key and the trustee shares no longer exist, by design. Wall times 732 s and 2,062 s, both upper bounds (each overlapped other work).</p>
+<p class="small-note">The A-additive output is a re-analysis of the archived record, not a precinct run: <code>saksi-demo precinct-aggregate --precinct-size 1000</code> over the archived SP-3.5M m3 and MP-3.5M offline records, 3,525 precincts over 3,524,078 voters in all. SP-3.5M m3: 3,524,078 records, 4 contests, 17 of 17 checks pass. MP-3.5M offline: 10,572,234 records, 12 contests, 49 of 49 pass. Per-precinct <code>E</code> reads <code>n/a (no key)</code>: the key and the trustee shares no longer exist, by design. Wall times 732 s and 2,062 s, both upper bounds (each overlapped other work).</p>
 
 
 <h2 id="verified">Verified end to end</h2>
