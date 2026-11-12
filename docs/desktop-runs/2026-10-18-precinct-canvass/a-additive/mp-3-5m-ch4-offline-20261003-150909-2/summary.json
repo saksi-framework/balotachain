@@ -1,0 +1,310 @@
+{
+  "audit_overall": "pass",
+  "checks": [
+    {
+      "check": "audit",
+      "contest": "",
+      "detail": "every ballot, partial decryption and the tally verified",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "president/cand0",
+      "detail": "product of 3525 precinct aggregates (Σc1 fc707942134b59d7116d19ad4230d6f61989d123ca8080d76a3ab7d61cdd1656, Σc2 1820c681d93daa9aa58c319720400f3fc9ce05253f4c6142056aa51cdc91e40d) vs region (Σc1 fc707942134b59d7116d19ad4230d6f61989d123ca8080d76a3ab7d61cdd1656, Σc2 1820c681d93daa9aa58c319720400f3fc9ce05253f4c6142056aa51cdc91e40d)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "president/cand0",
+      "detail": "region Σc2 1820c681d93daa9aa58c319720400f3fc9ce05253f4c6142056aa51cdc91e40d vs auditor's fold 1820c681d93daa9aa58c319720400f3fc9ce05253f4c6142056aa51cdc91e40d",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "president/cand0",
+      "detail": "region Σc2 1820c681d93daa9aa58c319720400f3fc9ce05253f4c6142056aa51cdc91e40d vs correctness.csv \"1820c681d93daa9aa58c319720400f3fc9ce05253f4c6142056aa51cdc91e40d\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "president/cand0",
+      "detail": "sum of precinct ground truths 1726799 vs region 1726799",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "president/cand1",
+      "detail": "product of 3525 precinct aggregates (Σc1 7423a3ca85edd4a8c1c61d9072ddc0c641b7f382af95c38fa7cbd91fa8ebb25c, Σc2 56310615dc2ad0091b2cfa28eb7274c0914a3c39a6050141614285855e806f2b) vs region (Σc1 7423a3ca85edd4a8c1c61d9072ddc0c641b7f382af95c38fa7cbd91fa8ebb25c, Σc2 56310615dc2ad0091b2cfa28eb7274c0914a3c39a6050141614285855e806f2b)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "president/cand1",
+      "detail": "region Σc2 56310615dc2ad0091b2cfa28eb7274c0914a3c39a6050141614285855e806f2b vs auditor's fold 56310615dc2ad0091b2cfa28eb7274c0914a3c39a6050141614285855e806f2b",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "president/cand1",
+      "detail": "region Σc2 56310615dc2ad0091b2cfa28eb7274c0914a3c39a6050141614285855e806f2b vs correctness.csv \"56310615dc2ad0091b2cfa28eb7274c0914a3c39a6050141614285855e806f2b\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "president/cand1",
+      "detail": "sum of precinct ground truths 634335 vs region 634335",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "president/cand2",
+      "detail": "product of 3525 precinct aggregates (Σc1 7ab4a498338be6c30eed5c9411f9e505d962b01724dae2325433237d7e59707f, Σc2 1a78efd81dbb4ba1255c4f1fc315f46c318e336ba8a3bd1b39cf32022a1d8c5a) vs region (Σc1 7ab4a498338be6c30eed5c9411f9e505d962b01724dae2325433237d7e59707f, Σc2 1a78efd81dbb4ba1255c4f1fc315f46c318e336ba8a3bd1b39cf32022a1d8c5a)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "president/cand2",
+      "detail": "region Σc2 1a78efd81dbb4ba1255c4f1fc315f46c318e336ba8a3bd1b39cf32022a1d8c5a vs auditor's fold 1a78efd81dbb4ba1255c4f1fc315f46c318e336ba8a3bd1b39cf32022a1d8c5a",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "president/cand2",
+      "detail": "region Σc2 1a78efd81dbb4ba1255c4f1fc315f46c318e336ba8a3bd1b39cf32022a1d8c5a vs correctness.csv \"1a78efd81dbb4ba1255c4f1fc315f46c318e336ba8a3bd1b39cf32022a1d8c5a\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "president/cand2",
+      "detail": "sum of precinct ground truths 599093 vs region 599093",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "president/cand3",
+      "detail": "product of 3525 precinct aggregates (Σc1 ae942c5b0b147d743df3271a6f3b137327b63a1eaf4631727a85ceb24bfc3775, Σc2 fa186e7d01b56011867b306a9406ecba7a548d56e5d83d9c90d9a1c56bf5b72f) vs region (Σc1 ae942c5b0b147d743df3271a6f3b137327b63a1eaf4631727a85ceb24bfc3775, Σc2 fa186e7d01b56011867b306a9406ecba7a548d56e5d83d9c90d9a1c56bf5b72f)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "president/cand3",
+      "detail": "region Σc2 fa186e7d01b56011867b306a9406ecba7a548d56e5d83d9c90d9a1c56bf5b72f vs auditor's fold fa186e7d01b56011867b306a9406ecba7a548d56e5d83d9c90d9a1c56bf5b72f",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "president/cand3",
+      "detail": "region Σc2 fa186e7d01b56011867b306a9406ecba7a548d56e5d83d9c90d9a1c56bf5b72f vs correctness.csv \"fa186e7d01b56011867b306a9406ecba7a548d56e5d83d9c90d9a1c56bf5b72f\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "president/cand3",
+      "detail": "sum of precinct ground truths 563851 vs region 563851",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "vice-president/cand0",
+      "detail": "product of 3525 precinct aggregates (Σc1 5c8c4030929563d924f6e88f6c87842fbb3ee051490332aefd57417fbcf38d03, Σc2 f45030ac400a26c72959056324b06ccf963eba5d3fab0061c20d6acfae045622) vs region (Σc1 5c8c4030929563d924f6e88f6c87842fbb3ee051490332aefd57417fbcf38d03, Σc2 f45030ac400a26c72959056324b06ccf963eba5d3fab0061c20d6acfae045622)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "vice-president/cand0",
+      "detail": "region Σc2 f45030ac400a26c72959056324b06ccf963eba5d3fab0061c20d6acfae045622 vs auditor's fold f45030ac400a26c72959056324b06ccf963eba5d3fab0061c20d6acfae045622",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "vice-president/cand0",
+      "detail": "region Σc2 f45030ac400a26c72959056324b06ccf963eba5d3fab0061c20d6acfae045622 vs correctness.csv \"f45030ac400a26c72959056324b06ccf963eba5d3fab0061c20d6acfae045622\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "vice-president/cand0",
+      "detail": "sum of precinct ground truths 1709179 vs region 1709179",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "vice-president/cand1",
+      "detail": "product of 3525 precinct aggregates (Σc1 44a10860ce794c33bb1cd517cd8db1cb45dd9c6d8ea70cd82c9f14ed3dce354b, Σc2 8edac69097e9157605f6f6fd5863d09a1094a842c56d86c8f392e53d2a3be205) vs region (Σc1 44a10860ce794c33bb1cd517cd8db1cb45dd9c6d8ea70cd82c9f14ed3dce354b, Σc2 8edac69097e9157605f6f6fd5863d09a1094a842c56d86c8f392e53d2a3be205)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "vice-president/cand1",
+      "detail": "region Σc2 8edac69097e9157605f6f6fd5863d09a1094a842c56d86c8f392e53d2a3be205 vs auditor's fold 8edac69097e9157605f6f6fd5863d09a1094a842c56d86c8f392e53d2a3be205",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "vice-president/cand1",
+      "detail": "region Σc2 8edac69097e9157605f6f6fd5863d09a1094a842c56d86c8f392e53d2a3be205 vs correctness.csv \"8edac69097e9157605f6f6fd5863d09a1094a842c56d86c8f392e53d2a3be205\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "vice-president/cand1",
+      "detail": "sum of precinct ground truths 657827 vs region 657827",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "vice-president/cand2",
+      "detail": "product of 3525 precinct aggregates (Σc1 0ee6e63fbc7552149187b856e20cb4fafb6daf66e2bf0078437dc873e33a0377, Σc2 b47159198f4778a28787b9bd659d9c84d9b3c182bf7a12fe232b479fc7250b15) vs region (Σc1 0ee6e63fbc7552149187b856e20cb4fafb6daf66e2bf0078437dc873e33a0377, Σc2 b47159198f4778a28787b9bd659d9c84d9b3c182bf7a12fe232b479fc7250b15)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "vice-president/cand2",
+      "detail": "region Σc2 b47159198f4778a28787b9bd659d9c84d9b3c182bf7a12fe232b479fc7250b15 vs auditor's fold b47159198f4778a28787b9bd659d9c84d9b3c182bf7a12fe232b479fc7250b15",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "vice-president/cand2",
+      "detail": "region Σc2 b47159198f4778a28787b9bd659d9c84d9b3c182bf7a12fe232b479fc7250b15 vs correctness.csv \"b47159198f4778a28787b9bd659d9c84d9b3c182bf7a12fe232b479fc7250b15\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "vice-president/cand2",
+      "detail": "sum of precinct ground truths 604967 vs region 604967",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "vice-president/cand3",
+      "detail": "product of 3525 precinct aggregates (Σc1 f0209773e0b6d96c2eab7ec251c7ef38d2a53fcef52853c04f789bd9baa6a27d, Σc2 b0e76027b000afd71741751fe3e0a8cc7c66e789485366950110840461a4730f) vs region (Σc1 f0209773e0b6d96c2eab7ec251c7ef38d2a53fcef52853c04f789bd9baa6a27d, Σc2 b0e76027b000afd71741751fe3e0a8cc7c66e789485366950110840461a4730f)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "vice-president/cand3",
+      "detail": "region Σc2 b0e76027b000afd71741751fe3e0a8cc7c66e789485366950110840461a4730f vs auditor's fold b0e76027b000afd71741751fe3e0a8cc7c66e789485366950110840461a4730f",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "vice-president/cand3",
+      "detail": "region Σc2 b0e76027b000afd71741751fe3e0a8cc7c66e789485366950110840461a4730f vs correctness.csv \"b0e76027b000afd71741751fe3e0a8cc7c66e789485366950110840461a4730f\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "vice-president/cand3",
+      "detail": "sum of precinct ground truths 552105 vs region 552105",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "senator/cand0",
+      "detail": "product of 3525 precinct aggregates (Σc1 4a9cf1ba6e29b2be3bf4bffcca6448ef7452ab969e4f3a04d4fed0f24b72a36a, Σc2 8018c92344611b8f23468719fc55c0a02a7f1a9835323ad4d66a3482c242817e) vs region (Σc1 4a9cf1ba6e29b2be3bf4bffcca6448ef7452ab969e4f3a04d4fed0f24b72a36a, Σc2 8018c92344611b8f23468719fc55c0a02a7f1a9835323ad4d66a3482c242817e)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "senator/cand0",
+      "detail": "region Σc2 8018c92344611b8f23468719fc55c0a02a7f1a9835323ad4d66a3482c242817e vs auditor's fold 8018c92344611b8f23468719fc55c0a02a7f1a9835323ad4d66a3482c242817e",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "senator/cand0",
+      "detail": "region Σc2 8018c92344611b8f23468719fc55c0a02a7f1a9835323ad4d66a3482c242817e vs correctness.csv \"8018c92344611b8f23468719fc55c0a02a7f1a9835323ad4d66a3482c242817e\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "senator/cand0",
+      "detail": "sum of precinct ground truths 1691559 vs region 1691559",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "senator/cand1",
+      "detail": "product of 3525 precinct aggregates (Σc1 0693641d3d0f62f7b726eca2d54e66852fbf34973fff8aee0d59a65bb4829233, Σc2 1661cf1837e423b10edaa9c6e9f899ca53d10f48995da9152b54498e0009f67a) vs region (Σc1 0693641d3d0f62f7b726eca2d54e66852fbf34973fff8aee0d59a65bb4829233, Σc2 1661cf1837e423b10edaa9c6e9f899ca53d10f48995da9152b54498e0009f67a)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "senator/cand1",
+      "detail": "region Σc2 1661cf1837e423b10edaa9c6e9f899ca53d10f48995da9152b54498e0009f67a vs auditor's fold 1661cf1837e423b10edaa9c6e9f899ca53d10f48995da9152b54498e0009f67a",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "senator/cand1",
+      "detail": "region Σc2 1661cf1837e423b10edaa9c6e9f899ca53d10f48995da9152b54498e0009f67a vs correctness.csv \"1661cf1837e423b10edaa9c6e9f899ca53d10f48995da9152b54498e0009f67a\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "senator/cand1",
+      "detail": "sum of precinct ground truths 681321 vs region 681321",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "senator/cand2",
+      "detail": "product of 3525 precinct aggregates (Σc1 c8ccb65cc5833b980fb07f5e1f4bbe48320f2b7178fafe3cb5a48c028e1d0357, Σc2 d0b7773df269a131013f00bf059d497b5f2cf37f6e015de85259806db78c9d28) vs region (Σc1 c8ccb65cc5833b980fb07f5e1f4bbe48320f2b7178fafe3cb5a48c028e1d0357, Σc2 d0b7773df269a131013f00bf059d497b5f2cf37f6e015de85259806db78c9d28)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "senator/cand2",
+      "detail": "region Σc2 d0b7773df269a131013f00bf059d497b5f2cf37f6e015de85259806db78c9d28 vs auditor's fold d0b7773df269a131013f00bf059d497b5f2cf37f6e015de85259806db78c9d28",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "senator/cand2",
+      "detail": "region Σc2 d0b7773df269a131013f00bf059d497b5f2cf37f6e015de85259806db78c9d28 vs correctness.csv \"d0b7773df269a131013f00bf059d497b5f2cf37f6e015de85259806db78c9d28\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "senator/cand2",
+      "detail": "sum of precinct ground truths 610840 vs region 610840",
+      "pass": true
+    },
+    {
+      "check": "combine.product",
+      "contest": "senator/cand3",
+      "detail": "product of 3525 precinct aggregates (Σc1 b8e83017517e3bbb0a138a3326e5b05c013bf65fde612ad2b9380fc150784a36, Σc2 c4ab9a5f2dfda0c312bae21b6397e4334fabe82288912d9cf3f70d6962a53f6d) vs region (Σc1 b8e83017517e3bbb0a138a3326e5b05c013bf65fde612ad2b9380fc150784a36, Σc2 c4ab9a5f2dfda0c312bae21b6397e4334fabe82288912d9cf3f70d6962a53f6d)",
+      "pass": true
+    },
+    {
+      "check": "combine.audit_fold",
+      "contest": "senator/cand3",
+      "detail": "region Σc2 c4ab9a5f2dfda0c312bae21b6397e4334fabe82288912d9cf3f70d6962a53f6d vs auditor's fold c4ab9a5f2dfda0c312bae21b6397e4334fabe82288912d9cf3f70d6962a53f6d",
+      "pass": true
+    },
+    {
+      "check": "combine.correctness_csv",
+      "contest": "senator/cand3",
+      "detail": "region Σc2 c4ab9a5f2dfda0c312bae21b6397e4334fabe82288912d9cf3f70d6962a53f6d vs correctness.csv \"c4ab9a5f2dfda0c312bae21b6397e4334fabe82288912d9cf3f70d6962a53f6d\"",
+      "pass": true
+    },
+    {
+      "check": "combine.ground_truth",
+      "contest": "senator/cand3",
+      "detail": "sum of precinct ground truths 540358 vs region 540358",
+      "pass": true
+    }
+  ],
+  "contests": 12,
+  "exit_code": 0,
+  "pass": true,
+  "per_precinct_e": "n/a (no key)",
+  "precinct_size": 1000,
+  "precincts": 3525,
+  "records": 10572234,
+  "run_dir": "/home/user/scratch-precinct/mp-3-5m-ch4-offline-20261003-150909-2",
+  "run_time_s": 2061.395749353,
+  "source": "console record (ballots.ndjson); ledger read-back not used",
+  "voters": 3524078
+}

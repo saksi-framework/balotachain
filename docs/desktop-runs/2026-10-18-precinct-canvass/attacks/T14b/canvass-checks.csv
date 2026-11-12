@@ -1,0 +1,8 @@
+check,verdict,reason
+canvass.registry,pass,"10 returns, each for a distinct registered precinct of cv-T14b"
+canvass.completeness,pass,"all 10 registered precincts have an accepted return"
+canvass.signature,pass,"every return verifies under its registered authority key"
+canvass.precinct_recompute,fail,"p03: close block 145 vs close.json 144, close tip hash differs from close.json"
+canvass.national_sum,pass,"product of 10 accepted aggregates equals the national aggregate"
+canvass.accuracy,pass,"10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0"
+canvass.nullifier_unique,pass,"3000 nullifiers, none in two precinct ledgers"

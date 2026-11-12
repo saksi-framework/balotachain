@@ -1,0 +1,18 @@
+# build verification, 2026-10-18T19:03:12+08:00, desktop WSL Ubuntu
+git -C ~/Code/saksi rev-parse HEAD: 0cdc3350f4275936c8be560b67e04049257e16f9
+git -C ~/Code/saksi log -1 --format=%s: Merge pull request #61 from saksi-framework/feat/precinct-canvass
+git -C ~/Code/saksi status --short (lines): 0
+git -C ~/balotachain rev-parse 20d9860: 20d9860bc4e890ef4486890a4bf8c8cdc5c28341
+go version: go version go1.23.4 linux/amd64
+rustc: rustc 1.98.1 (48a229cea 2026-09-01)
+sha256sum now:
+9cdab7917819030e27ebb464efeacc5a772dba956637a78a71e2ace04b98bd19  /home/user/Code/saksi/target/release/saksi-demo
+77a046ce5fd490709ff36077e0ed92144f30fb87a794f319ff823e08d12fb1f1  /home/user/Code/saksi/target/saksi-campaign
+6ce375e14590261b88c9130144174eca952b1682cdd155f6fa75d24ce9717b6e  /home/user/Code/saksi/target/saksi-canvass-demo
+655a76ca825e993e3e0adc8dd16e14196dcaba1e4960d9a37ea01c02c7cb0aac  /home/user/balotachain/tools/security/tamper_invoke/tamper_invoke
+diff against binary-sha256.txt: identical
+mtimes:
+2026-10-18 03:14:42.157401514 +0800 /home/user/Code/saksi/target/release/saksi-demo
+2026-10-18 03:14:44.769476620 +0800 /home/user/Code/saksi/target/saksi-campaign
+2026-10-18 03:14:45.477496980 +0800 /home/user/Code/saksi/target/saksi-canvass-demo
+2026-10-18 03:14:52.074974192 +0800 /home/user/balotachain/tools/security/tamper_invoke/tamper_invoke

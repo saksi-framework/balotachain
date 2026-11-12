@@ -1,0 +1,1 @@
+  [REFUSED] T20 -> publish tally: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, a tally is already published for election "cv-T20-p03"

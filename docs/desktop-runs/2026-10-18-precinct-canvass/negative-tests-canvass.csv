@@ -1,0 +1,14 @@
+scenario,mount,expected_checks,failed_checks,onchain,verdict
+T19,ballot resubmitted across precincts (submit-raw --channel),refused on chain: none,,"  [REFUSED] T19 -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=election-open: election ""cv-T19-p03"" is not open for ballots",PASS
+T20,a precinct's tally published on another precinct,refused on chain: none,,"  [REFUSED] T20 -> publish tally: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, a tally is already published for election ""cv-T20-p03""",PASS
+T9,one aggregate byte flipped after signing,"canvass.signature,canvass.completeness,canvass.precinct_recompute,canvass.national_sum","canvass.completeness,canvass.signature,canvass.precinct_recompute,canvass.national_sum",,PASS
+T10,return delivered twice,canvass.registry,canvass.registry,,PASS
+T11,"unregistered precinct, fresh-key signature",canvass.registry,canvass.registry,,PASS
+T12,sibling return relabelled and substituted,"canvass.signature,canvass.completeness,canvass.precinct_recompute,canvass.national_sum","canvass.completeness,canvass.signature,canvass.precinct_recompute,canvass.national_sum",,PASS
+T13,return dropped on the path,"canvass.completeness,canvass.national_sum","canvass.completeness,canvass.national_sum",,PASS
+T14a,"wrong election id, re-signed with the real key","canvass.registry,canvass.completeness,canvass.national_sum","canvass.registry,canvass.completeness,canvass.national_sum",,PASS
+T14b,"stale close reference, re-signed with the real key",canvass.precinct_recompute,canvass.precinct_recompute,,PASS
+T15,real key over a ledger missing one ballot,"canvass.precinct_recompute,canvass.national_sum","canvass.precinct_recompute,canvass.national_sum",,PASS
+T16,doctored aggregate re-signed with the stolen real key,"canvass.precinct_recompute,canvass.national_sum","canvass.precinct_recompute,canvass.national_sum",,PASS
+T21,signed with another registered precinct's key,"canvass.signature,canvass.completeness,canvass.national_sum","canvass.completeness,canvass.signature,canvass.national_sum",,PASS
+T24,accepted national/returns file replaced after acceptance,"canvass.signature,canvass.completeness,canvass.precinct_recompute,canvass.national_sum","canvass.completeness,canvass.signature,canvass.precinct_recompute,canvass.national_sum",,PASS

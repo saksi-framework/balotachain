@@ -1,0 +1,8 @@
+check,verdict,reason
+canvass.registry,pass,"10 returns, each for a distinct registered precinct of cv-T12"
+canvass.completeness,fail,"no accepted return from p04 (received but rejected: p04.json)"
+canvass.signature,fail,"p04.json (p04): signature does not verify under this public key"
+canvass.precinct_recompute,fail,"p04: ledger digest differs, aggregates differ (president/cand0, president/cand1, president/cand2, president/cand3, vice-president/cand0, vice-president/cand1, vice-president/cand2, vice-president/cand3, senator/cand0, senator/cand1, senator/cand2, senator/cand3), close block 144 vs close.json 190, close tip hash differs from close.json"
+canvass.national_sum,fail,"product of returned aggregates differs from the national aggregate in president/cand0, president/cand1, president/cand2, president/cand3, vice-president/cand0, vice-president/cand1, vice-president/cand2, vice-president/cand3, senator/cand0, senator/cand1, senator/cand2, senator/cand3"
+canvass.accuracy,pass,"10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0"
+canvass.nullifier_unique,pass,"3000 nullifiers, none in two precinct ledgers"

@@ -1,0 +1,1 @@
+  [REFUSED] T19 -> submit ballot: rpc error: code = Aborted desc = failed to endorse transaction, see attached details for more info; chaincode response 500, gate=election-open: election "cv-T19-p03" is not open for ballots

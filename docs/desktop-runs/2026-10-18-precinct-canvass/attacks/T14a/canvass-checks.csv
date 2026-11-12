@@ -1,0 +1,8 @@
+check,verdict,reason
+canvass.registry,fail,"p03.json: election id ""wrong-p03"" is not ""cv-T14a-p03"""
+canvass.completeness,fail,"no accepted return from p03 (received but rejected: p03.json)"
+canvass.signature,pass,"every return verifies under its registered authority key"
+canvass.precinct_recompute,pass,"every return equals the recompute from its ledger read-back and close reference"
+canvass.national_sum,fail,"product of returned aggregates differs from the national aggregate in president/cand0, president/cand1, president/cand2, president/cand3, vice-president/cand0, vice-president/cand1, vice-president/cand2, vice-president/cand3, senator/cand0, senator/cand1, senator/cand2, senator/cand3"
+canvass.accuracy,pass,"10 precinct audits pass with E = 0; national decryption of the ledger product gives E = 0"
+canvass.nullifier_unique,pass,"3000 nullifiers, none in two precinct ledgers"
