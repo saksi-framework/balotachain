@@ -1,0 +1,25 @@
+{
+  "status": 200,
+  "body": {
+    "state": "tallied",
+    "overall": "fail",
+    "failed_checks": [
+      {
+        "check": "tally.homomorphic_sum",
+        "status": "fail",
+        "passed": 4,
+        "failed": 1,
+        "detail": "contest President/Ana-Reyes: decoded 0, tally claims 1"
+      },
+      {
+        "check": "tally.signatures",
+        "status": "fail",
+        "passed": 0,
+        "failed": 1,
+        "detail": "signature of trustee 2 does not verify"
+      }
+    ],
+    "expected_ballots": 6,
+    "verified_at": "2026-11-15T10:30:00Z"
+  }
+}

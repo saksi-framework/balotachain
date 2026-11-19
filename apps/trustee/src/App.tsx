@@ -3,8 +3,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
-  type FormEvent,
   type ReactNode,
 } from "react";
 import {
@@ -13,7 +11,6 @@ import {
   Chip,
   PrimaryButton,
   SecondaryButton,
-  TextInput,
   AlertIcon,
   CheckIcon,
   LockIcon,
@@ -25,9 +22,20 @@ import {
 } from "@balotachain/ui";
 import { ProgressBar } from "./components/ProgressBar";
 import {
+  Avatar,
+  CardHead,
+  KsLine,
+  Login,
+  Notice,
+  formatStamp,
+  initialsOf,
+  noteText,
+} from "./components/common";
+import { PROBE_TRIES, probeWithRetry } from "./lib/trustee";
+import { LiveApp } from "./live/LiveApp";
+import {
   ApiError,
   getMe,
-  login,
   logout,
   listRuns,
   loadCeremony,
@@ -76,20 +84,6 @@ type Load =
   | { kind: "error"; message: string }
   | { kind: "ready"; ceremony: Ceremony };
 
-const cardLabel: CSSProperties = {
-  fontSize: 12.5,
-  fontWeight: 600,
-  letterSpacing: 0.6,
-  textTransform: "uppercase",
-  color: tokens.color.text2,
-};
-
-const noteText: CSSProperties = {
-  fontSize: 13,
-  color: tokens.color.text2,
-  lineHeight: 1.5,
-};
-
 /**
  * The console has no trustee presence concept — a trustee is a name in a run's
  * config, never a connected client — so there is no honest "Offline" state.
@@ -109,27 +103,6 @@ function rosterStatus(t: CeremonyTrustee, sending: boolean): RosterStatus {
   if (t.submitted) return "Recorded";
   if (t.submitting || sending) return "Recording…";
   return t.submit_error ? "Failed" : "Waiting";
-}
-
-/** "Roberto Lim" -> "RL". */
-export function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  const first = parts[0][0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
-  return (first + last).toUpperCase();
-}
-
-function formatStamp(iso?: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })} · ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function positionLabel(id: string): string {
@@ -166,69 +139,6 @@ function recall(runId: string): string | null {
   } catch {
     return null;
   }
-}
-
-function Avatar({
-  initials,
-  size,
-  radius,
-  filled,
-}: {
-  initials: string;
-  size: number;
-  radius: number;
-  filled: boolean;
-}) {
-  return (
-    <span
-      aria-hidden
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radius,
-        flexShrink: 0,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: size >= 46 ? 16 : size >= 40 ? 14 : 13,
-        fontWeight: 700,
-        background: filled ? tokens.color.teal : tokens.color.neutralFill,
-        color: filled ? tokens.color.surface : tokens.color.text2,
-      }}
-    >
-      {initials}
-    </span>
-  );
-}
-
-function CardHead({
-  title,
-  label,
-  style,
-}: {
-  title: string;
-  label?: string;
-  style?: CSSProperties;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        marginBottom: 18,
-        ...style,
-      }}
-    >
-      <h2
-        style={{ fontSize: 17, fontWeight: 700, margin: 0, letterSpacing: 0.2 }}
-      >
-        {title}
-      </h2>
-      {label ? <span style={cardLabel}>{label}</span> : null}
-    </div>
-  );
 }
 
 /** The signed-in trustee and the Sign out / Not you? control, for the TopBar. */
@@ -893,25 +803,6 @@ function VerificationCard({ ceremony }: { ceremony: Ceremony }) {
   );
 }
 
-function KsLine({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "13px 0",
-        borderTop: `1px solid ${tokens.color.border}`,
-        fontSize: 14,
-      }}
-    >
-      <span style={{ color: tokens.color.text2 }}>{label}</span>
-      {children}
-    </div>
-  );
-}
-
 function KeyShareCard({
   ceremony,
   you,
@@ -1220,124 +1111,6 @@ function IdentityPicker({
   );
 }
 
-function Login({ onSignedIn }: { onSignedIn: () => void }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      await login(username, password);
-      onSignedIn();
-    } catch (err) {
-      // "invalid credentials", or the lockout 429 — shown exactly as sent.
-      setError(err instanceof Error ? err.message : String(err));
-      setBusy(false);
-    }
-  }
-
-  const label: CSSProperties = {
-    display: "block",
-    fontSize: 13,
-    fontWeight: 600,
-    color: tokens.color.text2,
-    marginBottom: 6,
-  };
-
-  return (
-    <main
-      className="bc-wrap"
-      style={{ paddingTop: 60, paddingBottom: 60, maxWidth: 520 }}
-    >
-      <Card>
-        <CardHead title="Sign in" label="Trustee console" />
-        <p style={{ ...noteText, marginTop: 0 }}>
-          Sign in with the account for your institution. Your trustee identity
-          comes from this account, not from the link you opened.
-        </p>
-        <form
-          onSubmit={submit}
-          style={{ display: "flex", flexDirection: "column", gap: 16 }}
-        >
-          <label>
-            <span style={label}>Username</span>
-            <TextInput
-              value={username}
-              autoComplete="username"
-              onChange={(e) => setUsername(e.currentTarget.value)}
-            />
-          </label>
-          <label>
-            <span style={label}>Password</span>
-            <TextInput
-              type="password"
-              value={password}
-              autoComplete="current-password"
-              onChange={(e) => setPassword(e.currentTarget.value)}
-            />
-          </label>
-          {error ? (
-            <span
-              role="alert"
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: tokens.color.error,
-              }}
-            >
-              {error}
-            </span>
-          ) : null}
-          <PrimaryButton
-            type="submit"
-            disabled={busy || !username || !password}
-          >
-            {busy ? "Signing in…" : "Sign in"}
-          </PrimaryButton>
-        </form>
-        <p style={{ ...noteText, marginBottom: 0 }}>
-          Demo-grade access control: accounts come from a file and sessions end
-          when the console restarts.
-        </p>
-      </Card>
-    </main>
-  );
-}
-
-function Notice({
-  children,
-  onRetry,
-}: {
-  children: ReactNode;
-  onRetry?: () => void;
-}) {
-  return (
-    <main className="bc-wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
-      <Card>
-        <p
-          style={{
-            margin: 0,
-            fontSize: 15,
-            color: tokens.color.text2,
-            overflowWrap: "anywhere",
-          }}
-        >
-          {children}
-        </p>
-        {onRetry ? (
-          <div style={{ marginTop: tokens.space.sm }}>
-            <SecondaryButton onClick={onRetry}>Retry</SecondaryButton>
-          </div>
-        ) : null}
-      </Card>
-    </main>
-  );
-}
-
 function Footer() {
   return (
     <footer
@@ -1365,7 +1138,56 @@ function Footer() {
   );
 }
 
+export { initialsOf };
+
+/**
+ * The page decides by asking the server, not by its address: a live trustee
+ * process answers `GET /api/trustee/peer` with its id (`probeLiveTrustee`).
+ * Anything else is the study console, whose view is `StudyApp`, unchanged.
+ */
 export default function App() {
+  const [mode, setMode] = useState<
+    | { kind: "probing" }
+    | { kind: "study" }
+    | { kind: "live"; id: number }
+    | { kind: "unknown"; reason: string }
+  >({ kind: "probing" });
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    probeWithRetry(ctrl.signal).then((answer) => {
+      if (!ctrl.signal.aborted) setMode(answer);
+    });
+    // Stops the retry loop and any request in flight (N1).
+    return () => ctrl.abort();
+  }, [attempt]);
+  if (mode.kind === "probing") {
+    return (
+      <main className="bc-wrap" style={{ paddingTop: 60, paddingBottom: 60 }}>
+        <Card>
+          <Skeleton label="Loading…" />
+        </Card>
+      </main>
+    );
+  }
+  if (mode.kind === "unknown") {
+    return (
+      <Notice
+        onRetry={() => {
+          setMode({ kind: "probing" });
+          setAttempt((n) => n + 1);
+        }}
+      >
+        This page could not tell whether a trustee process or the election
+        console is serving it: {mode.reason}. It asked {PROBE_TRIES} times.
+      </Notice>
+    );
+  }
+  if (mode.kind === "live") return <LiveApp trusteeId={mode.id} />;
+  return <StudyApp />;
+}
+
+export function StudyApp() {
   const [auth, setAuth] = useState<Auth>({ kind: "checking" });
   const [runId, setRunId] = useState<string | null>(paramFromUrl("run"));
   const [trusteeId, setTrusteeId] = useState<string | null>(

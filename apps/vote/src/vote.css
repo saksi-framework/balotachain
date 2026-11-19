@@ -1,0 +1,339 @@
+/* Phone voter app (DESIGN.md, Layout; design review D16): one fluid column
+   from 320px to 480px, centred on the page background beyond that; 24px
+   side padding, 16px under 360px; the action pinned at the bottom except
+   while the keyboard is open or the screen is shorter than 500px.
+   Shared tokens come from @balotachain/ui. Every font size here is in rem,
+   so the phone's text-size setting scales the page. */
+
+:root {
+  /* Side padding of the column (D16). */
+  --ba-gutter: 24px;
+
+  /* The voting page's type sizes. 13, 16 and 24 are DESIGN.md's scale;
+     14, 15, 17 and 18 are sizes the approved phone mockups draw. */
+  --ba-type-small: 0.8125rem; /* 13px */
+  --ba-type-detail: 0.875rem; /* 14px: field labels, a choice's detail */
+  --ba-type-note: 0.9375rem; /* 15px: notices and explanatory lines */
+  --ba-type-body: 1rem; /* 16px */
+  --ba-type-name: 1.0625rem; /* 17px: a position or choice in a card */
+  --ba-type-result: 1.125rem; /* 18px: the board check's result line */
+  --ba-type-title: 1.5rem; /* 24px: the screen's heading */
+
+  /* Safe-area insets. Through variables so a test page can stand in for a
+     notch (headless browsers report 0). */
+  --ba-safe-top: env(safe-area-inset-top, 0px);
+  --ba-safe-right: env(safe-area-inset-right, 0px);
+  --ba-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ba-safe-left: env(safe-area-inset-left, 0px);
+
+  /* M3 (5c-2 review): the column is centred, so a side inset only costs
+     width where the column reaches the unsafe edge: the inset less the
+     page margin beside the column, never below 0. */
+  --ba-side-margin: max(0px, (100vw - 480px) / 2);
+  --ba-inset-left: max(0px, var(--ba-safe-left) - var(--ba-side-margin));
+  --ba-inset-right: max(0px, var(--ba-safe-right) - var(--ba-side-margin));
+
+  /* The pinned footer's measured height (Screen sets it), so a field or a
+     row brought into view is never left under the footer (D20); and the
+     sticky practice strip's, so it is never left under the strip (M5). */
+  scroll-padding-bottom: var(--ba-footer-h, 0px);
+  scroll-padding-top: var(--ba-banner-h, 0px);
+}
+
+@media (max-width: 359px) {
+  :root {
+    --ba-gutter: 16px;
+  }
+}
+
+.ba-screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--bc-color-bg);
+}
+
+/* The practice strip, when shown, is the first thing on the screen, so it
+   takes the top safe-area inset; the top bar then does not. */
+.ba-practice {
+  padding: max(8px, var(--ba-safe-top)) max(16px, var(--ba-inset-right)) 8px
+    max(16px, var(--ba-inset-left));
+}
+
+.ba-topbar {
+  padding: var(--ba-safe-top) var(--ba-inset-right) 0 var(--ba-inset-left);
+  background: var(--bc-color-surface);
+}
+
+.ba-practice + .ba-topbar {
+  padding-top: 0;
+}
+
+.ba-body {
+  flex: 1;
+  padding: var(--bc-space-md) max(var(--ba-gutter), var(--ba-inset-right))
+    var(--bc-space-sm) max(var(--ba-gutter), var(--ba-inset-left));
+  overflow-wrap: anywhere;
+}
+
+/* Focused by script on each screen change; not an interactive target. */
+.ba-body:focus,
+.ba-heading:focus {
+  outline: none;
+}
+
+.ba-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px max(var(--ba-gutter), var(--ba-inset-right))
+    max(var(--bc-space-md), var(--ba-safe-bottom))
+    max(var(--ba-gutter), var(--ba-inset-left));
+  background: var(--bc-color-bg);
+  border-top: 1px solid var(--bc-color-border);
+}
+
+/* Three actions (the partly recorded receipt): the spacing scale's
+   smaller steps, so the footer costs less of the screen. */
+.ba-footer-dense {
+  gap: var(--bc-space-xs);
+  padding-top: var(--bc-space-xs);
+  padding-bottom: max(var(--bc-space-sm), var(--ba-safe-bottom));
+}
+
+.ba-footer > button {
+  width: 100%;
+}
+
+/* The footer joins the page flow, so it never covers a field: while the
+   on-screen keyboard is open (`data-keyboard`, set by useKeyboardOpen), on
+   screens shorter than 500px (landscape), and when it would take more than
+   40% of the visible height (`data-flow="tall"`, set by Screen; M1). The
+   change is instant. */
+:root[data-keyboard="open"] .ba-footer,
+.ba-footer[data-flow="tall"] {
+  position: static;
+}
+
+:root[data-keyboard="open"] {
+  scroll-padding-bottom: 0;
+}
+
+@media (max-height: 499px) {
+  .ba-footer {
+    position: static;
+  }
+
+  :root {
+    scroll-padding-bottom: 0;
+  }
+}
+
+.ba-title {
+  margin: 0;
+  font-size: var(--ba-type-title);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.ba-lead {
+  margin: 8px 0 0;
+  color: var(--bc-color-text-2);
+}
+
+/* The build line at the foot of every screen (task 5b-1). */
+.ba-about {
+  margin-top: var(--bc-space-lg);
+  font-size: var(--ba-type-small);
+  line-height: 1.5;
+  color: var(--bc-color-text-subtle);
+  text-align: center;
+}
+
+.ba-stack {
+  display: grid;
+  gap: 12px;
+}
+
+/* The check-in's date of birth: month, day and year side by side. */
+.ba-date {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.6fr;
+  gap: 12px;
+}
+
+/* The declaration on the found screen. */
+.ba-declaration {
+  margin-top: var(--bc-space-xs);
+}
+
+.ba-declaration p {
+  margin: 0 0 12px;
+}
+
+/* A tick box and its sentence: one 44px-tall target. */
+.ba-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 4px 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ba-check input {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--bc-color-teal);
+  cursor: pointer;
+}
+
+.ba-check input:focus-visible {
+  outline: 2px solid var(--bc-color-teal);
+  outline-offset: 3px;
+}
+
+/* The signature box: the console's 1000 x 400 box drawn 5:2, so a stroke is
+   not distorted. While a finger draws in it the page does not scroll or
+   zoom (touch-action), and nothing is selected. */
+.ba-sign-box {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 2;
+  margin-top: var(--bc-space-xs);
+  background: var(--bc-color-surface);
+  border: 1.5px solid var(--bc-color-border);
+  border-radius: var(--bc-radius-button);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: crosshair;
+}
+
+.ba-link {
+  color: var(--bc-color-teal);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ba-link:hover {
+  color: var(--bc-color-teal-dark);
+  text-decoration: underline;
+}
+
+/* A text link on its own row of the footer. D17: a 44px-tall hit area; the
+   -2px margins keep the drawn 40px row, so nothing around it moves. */
+.ba-footer-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin: -2px 0;
+  text-align: center;
+}
+
+.ba-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Card sections are separated by a border line, never a nested card. */
+.ba-list > li + li {
+  border-top: 1px solid var(--bc-color-border);
+}
+
+/* Screen transitions: forward slides in from the right, back from the left. */
+.ba-screen-fwd {
+  animation: ba-screen-fwd 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ba-screen-back {
+  animation: ba-screen-back 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes ba-screen-fwd {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ba-screen-back {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The one authored moment: the "ballot recorded" tick. */
+.ba-pop {
+  animation: ba-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ba-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ba-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: ba-spin 800ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes ba-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ba-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ba-screen-fwd,
+  .ba-screen-back,
+  .ba-pop {
+    animation: ba-fade 200ms ease-out;
+  }
+
+  .ba-spinner {
+    animation-duration: 2400ms;
+  }
+}

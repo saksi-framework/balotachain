@@ -14,6 +14,8 @@ export default [
       "docs/**",
       "**/.dart_tool/**",
       "**/build/**",
+      // Vendored saksi build output, copied unchanged (tools/sync-saksi-wasm.sh).
+      "packages/saksi-wasm/**",
     ],
   },
   js.configs.recommended,

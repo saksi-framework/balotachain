@@ -21,6 +21,8 @@ vi.mock("./lib/bulletin", async (importActual) => {
     loadBoard: (id: string) => loadBoardMock(id),
     verifyTrackingCode: (runId: string, code: string) =>
       verifyTrackingCodeMock(runId, code),
+    // These tests are the study board: the console's live route is off.
+    getLiveElection: () => Promise.resolve({ kind: "off" }),
   };
 });
 

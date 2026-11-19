@@ -1,0 +1,9 @@
+{
+  "status": 422,
+  "body": {
+    "error": "SubmitBallot was refused by the chain",
+    "refused": true,
+    "gate": "nullifier",
+    "reason": "submit SubmitBallot: rpc error: chaincode response 500, gate=nullifier: nullifier already spent in election \"live-20261115-100000-f1x7ad31\" (double vote)"
+  }
+}

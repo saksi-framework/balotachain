@@ -1,0 +1,19 @@
+# Fictional voters for the demonstration. No row is a real person; every name and date of birth is invented.
+last_name,first_name,middle_name,date_of_birth
+Halimbawa,Uno,Pagsubok,1990-01-01
+Halimbawa,Dos,,1991-02-02
+Sampol,Tres,Huwad,1992-03-03
+Sampol,Kwatro,,1988-04-14
+Pagsubok,Singko,Halimbawa,1979-05-25
+Pagsubok,Sais,,1985-06-16
+Huwad,Siyete,Sampol,1995-07-07
+Huwad,Otso,,1983-08-28
+Kathang-Isip,Nuwebe,,1999-09-19
+Kathang-Isip,Diyes,Pagsubok,1972-10-10
+Modelo,Onse,,1968-11-21
+Modelo,Dose,Huwad,2001-12-12
+Panggagaya,Trese,,1997-01-13
+Panggagaya,Katorse,Modelo,1976-02-24
+Larawan,Kinse,,1964-03-15
+Larawan,Disisais,Sampol,2003-04-26
+Dummy,Disisiyete,,1993-05-17

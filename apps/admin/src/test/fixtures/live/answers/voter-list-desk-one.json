@@ -1,0 +1,82 @@
+{
+  "status": 200,
+  "body": {
+    "election_id": "live-20261115-100000-f1x7ad31",
+    "election_state": "open",
+    "precinct": "0001A",
+    "precinct_label": "Precinct 0001A (demonstration)",
+    "fingerprint": "cc0ad92dc0fce5cd088bde29bd4f6c03f3d66122e4fe06d4f44425851273dd75",
+    "fingerprint_short": "cc0ad92dc0fce5cd",
+    "count": 5,
+    "counts": {
+      "not_checked_in": 1,
+      "at_desk": 1,
+      "approved": 1,
+      "signed": 1,
+      "credential_issued": 1,
+      "checked_in": 2
+    },
+    "desk": [
+      {
+        "seq": 3,
+        "last_name": "Sampol",
+        "first_name": "Tres",
+        "middle_name": "",
+        "status": "at_desk"
+      }
+    ],
+    "entries": [
+      {
+        "seq": 1,
+        "last_name": "Halimbawa",
+        "first_name": "Uno",
+        "middle_name": "Pagsubok",
+        "status": "credential_issued",
+        "signature": {
+          "strokes": [
+            [
+              [120, 210],
+              [124, 215],
+              [131, 222]
+            ],
+            [
+              [400, 180],
+              [410, 190]
+            ]
+          ]
+        }
+      },
+      {
+        "seq": 2,
+        "last_name": "Peña",
+        "first_name": "Dos",
+        "middle_name": "Santos-Reyes",
+        "status": "signed",
+        "signature": {
+          "cannot_sign": true
+        }
+      },
+      {
+        "seq": 3,
+        "last_name": "Sampol",
+        "first_name": "Tres",
+        "middle_name": "",
+        "status": "at_desk"
+      },
+      {
+        "seq": 4,
+        "last_name": "Tularan",
+        "first_name": "Kwatro",
+        "middle_name": "Pagsubok",
+        "status": "approved"
+      },
+      {
+        "seq": 5,
+        "last_name": "Wala",
+        "first_name": "Singko",
+        "middle_name": "",
+        "status": "not_checked_in"
+      }
+    ]
+  }
+}

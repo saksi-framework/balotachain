@@ -1,0 +1,132 @@
+{
+  "election": {
+    "status": 200,
+    "body": {
+      "run_id": "live-20261115-091500-f1x7c0de",
+      "election_id": "live-20261115-091500-f1x7c0de",
+      "title": "Fixture Student Council 2026",
+      "state": "ceremony",
+      "positions": [
+        {
+          "id": "President",
+          "candidates": ["Maria-Santos", "Jose-Rizal", "Ana-Reyes"]
+        },
+        {
+          "id": "Vice-President",
+          "candidates": ["Carlo-Lim", "Bea-Tan"]
+        }
+      ],
+      "trustees": 5,
+      "threshold": 3,
+      "params": "0a1b2c3d",
+      "contest_ids": [
+        "President/Maria-Santos",
+        "President/Jose-Rizal",
+        "President/Ana-Reyes",
+        "Vice-President/Carlo-Lim",
+        "Vice-President/Bea-Tan"
+      ],
+      "issuer_public_key": "e2c1f0a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1",
+      "roster_fingerprint": "3C4D-8E21-55A0-B7F3-1D9C-0A42",
+      "counts": {
+        "voters_on_roll": 3,
+        "credentials_issued": 0,
+        "ballot_records": 0,
+        "ballot_records_source": "chain",
+        "trustees_decrypted": 0,
+        "tally_signatures": 0
+      },
+      "lifecycle": {
+        "CreateElection": {
+          "tx_id": "c0ffee01",
+          "block_number": 390
+        }
+      },
+      "created_at": "2026-11-15T09:15:00Z",
+      "updated_at": "2026-11-15T09:40:00Z"
+    }
+  },
+  "board": {
+    "status": 200,
+    "body": {
+      "election_id": "live-20261115-091500-f1x7c0de",
+      "name": "Fixture Student Council 2026",
+      "mode": "live",
+      "distribution": "",
+      "on_chain": true,
+      "status": "ceremony",
+      "opened_at": "2026-11-15T09:15:00Z",
+      "sealed": true,
+      "verified": false,
+      "integrity": {
+        "voters": 3,
+        "positions": 2,
+        "candidates": 5,
+        "ballot_records": 0,
+        "verified": 0,
+        "rejected": 0,
+        "turnout_pct": 0,
+        "turnout_note": "turnout is ballot records over voter accounts times positions"
+      },
+      "crypto": {
+        "tally_proof_verified": false,
+        "trustees_submitted": 0,
+        "trustees_total": 5,
+        "threshold": 3,
+        "issuer_public_key": "e2c1f0a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1"
+      },
+      "checks": [
+        {
+          "name": "The election key was made by the trustees' ceremony",
+          "pass": false,
+          "detail": "the key ceremony has not finished"
+        },
+        {
+          "name": "Enough trustees decrypted",
+          "pass": false,
+          "detail": "0 of 5 trustees decrypted; 3 required"
+        },
+        {
+          "name": "The tally was published on the chain",
+          "pass": false,
+          "detail": "no tally has been published yet"
+        },
+        {
+          "name": "The independent verifier passed the on-chain record",
+          "pass": false,
+          "detail": "not verified yet"
+        }
+      ],
+      "artifacts": [],
+      "files": [],
+      "live": {
+        "state": "ceremony",
+        "title": "Fixture Student Council 2026",
+        "counts": {
+          "voters_on_roll": 3,
+          "credentials_issued": 0,
+          "ballot_records": 0,
+          "ballot_records_source": "chain",
+          "trustees_decrypted": 0,
+          "tally_signatures": 0
+        },
+        "decryption": {
+          "trustees_decrypted": 0,
+          "threshold": 3,
+          "trustees": 5,
+          "decrypted": [],
+          "tally_signatures": []
+        },
+        "roster_fingerprint": "3C4D-8E21-55A0-B7F3-1D9C-0A42",
+        "ballots": [],
+        "contest_ids": [
+          "President/Maria-Santos",
+          "President/Jose-Rizal",
+          "President/Ana-Reyes",
+          "Vice-President/Carlo-Lim",
+          "Vice-President/Bea-Tan"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+/* The live trustee screen (D5). Wide: the action card beside the roster, the
+   key share and the log full width below. Below 720px: one column in the
+   order tracker, action, roster, key share, log. */
+.lt-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-space-md);
+  padding-top: var(--bc-space-md);
+  padding-bottom: var(--bc-space-lg);
+}
+
+.lt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--bc-space-md);
+  align-items: start;
+}
+
+.lt-trackrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-space-xs);
+}
+
+.lt-checkrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--bc-space-xs) var(--bc-space-sm);
+}
+
+@media (max-width: 719px) {
+  .lt-main {
+    gap: var(--bc-space-sm);
+    padding-top: var(--bc-space-sm);
+  }
+
+  .lt-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--bc-space-sm);
+  }
+
+  .lt-checkrow {
+    justify-content: flex-start;
+  }
+}

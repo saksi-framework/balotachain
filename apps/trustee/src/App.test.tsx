@@ -30,6 +30,12 @@ vi.mock("./lib/bulletin", async (importActual) => {
   };
 });
 
+// The study console: the live probe answers "study" without the network.
+vi.mock("./lib/trustee", async (actual) => ({
+  ...(await actual<typeof import("./lib/trustee")>()),
+  probeWithRetry: async () => ({ kind: "study" }),
+}));
+
 import App from "./App";
 
 const run: RunView = {

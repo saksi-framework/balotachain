@@ -23,8 +23,8 @@ import {
   type ChipVariant,
   CheckIcon,
   AlertIcon,
+  Stepper,
 } from "@balotachain/ui";
-import { Stepper } from "./components/Stepper";
 import {
   ApiError,
   getMe,
@@ -589,7 +589,7 @@ function Meter({ value, max }: { value: number; max: number }) {
   );
 }
 
-function Login({ onSignedIn }: { onSignedIn: () => void }) {
+export function Login({ onSignedIn }: { onSignedIn: () => void }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

@@ -45,15 +45,32 @@ export const tokens = {
     eyebrow: 13,
     small: 13,
     button: 18,
+    /** Board band only: its one main figure, weight 700, tabular (D18). */
+    figure: 48,
     lineHeight: 1.5,
     fontFamily: `"Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif`,
     mono: `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Consolas, monospace`,
+  },
+  /**
+   * The same sizes in rem (16px = 1rem), for inline styles. A number in a
+   * React style is px and ignores the reader's text-size setting; these
+   * follow it, and draw the same at the default size.
+   */
+  font: {
+    small: "0.8125rem",
+    mono: "0.875rem",
+    body: "1rem",
+    button: "1.125rem",
+    h3: "1.25rem",
+    h2: "1.5rem",
+    h1: "1.75rem",
+    figure: "3rem",
   },
   /** DESIGN.md type roles, ready to spread into a style object. */
   typeRole: {
     /** Names a section: 13px, 600, tracked, uppercase. Never a kicker above a heading. */
     label: {
-      fontSize: 13,
+      fontSize: "0.8125rem",
       fontWeight: 600,
       letterSpacing: "0.04em",
       textTransform: "uppercase",
@@ -61,7 +78,7 @@ export const tokens = {
     /** Every value a person compares character by character. */
     mono: {
       fontFamily: `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Consolas, monospace`,
-      fontSize: 14,
+      fontSize: "0.875rem",
       fontWeight: 400,
       fontVariantNumeric: "tabular-nums",
     },

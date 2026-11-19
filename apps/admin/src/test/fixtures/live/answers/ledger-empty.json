@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "body": {
+    "election_id": "live-20261115-100000-f1x7ad31",
+    "status": "open",
+    "params": "0a1b2c3d",
+    "nullifier_count": 0,
+    "ballots": [],
+    "partials": []
+  }
+}

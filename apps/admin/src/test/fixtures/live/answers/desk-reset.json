@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "body": {
+    "seq": 2,
+    "last_name": "Peña",
+    "first_name": "Dos",
+    "middle_name": "Santos-Reyes",
+    "status": "not_checked_in"
+  }
+}

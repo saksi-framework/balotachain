@@ -1,0 +1,6 @@
+{
+  "status": 400,
+  "body": {
+    "error": "election-params: position id \"President\" listed twice"
+  }
+}

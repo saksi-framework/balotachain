@@ -1,0 +1,252 @@
+{
+  "election": {
+    "status": 200,
+    "body": {
+      "run_id": "live-20261115-091500-f1x7c0de",
+      "election_id": "live-20261115-091500-f1x7c0de",
+      "title": "Fixture Student Council 2026",
+      "state": "verified",
+      "positions": [
+        {
+          "id": "President",
+          "candidates": ["Maria-Santos", "Jose-Rizal", "Ana-Reyes"]
+        },
+        {
+          "id": "Vice-President",
+          "candidates": ["Carlo-Lim", "Bea-Tan"]
+        }
+      ],
+      "trustees": 5,
+      "threshold": 3,
+      "params": "0a1b2c3d",
+      "contest_ids": [
+        "President/Maria-Santos",
+        "President/Jose-Rizal",
+        "President/Ana-Reyes",
+        "Vice-President/Carlo-Lim",
+        "Vice-President/Bea-Tan"
+      ],
+      "issuer_public_key": "e2c1f0a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1",
+      "dkg": "0d0e0a0d",
+      "joint_public_key": "9f8e7d6c",
+      "joint_key_fingerprint": "7A1B-3C9F-0D2E-41A8-9B6C-E8F9",
+      "roster_fingerprint": "3C4D-8E21-55A0-B7F3-1D9C-0A42",
+      "counts": {
+        "voters_on_roll": 3,
+        "credentials_issued": 3,
+        "ballot_records": 6,
+        "ballot_records_source": "chain",
+        "trustees_decrypted": 3,
+        "tally_signatures": 3,
+        "trustees_joined": 5
+      },
+      "lifecycle": {
+        "CreateElection": {
+          "tx_id": "c0ffee01",
+          "block_number": 390
+        }
+      },
+      "totals": [2, 1, 0, 2, 1],
+      "verify_overall": "pass",
+      "created_at": "2026-11-15T09:15:00Z",
+      "updated_at": "2026-11-15T09:40:00Z"
+    }
+  },
+  "board": {
+    "status": 200,
+    "body": {
+      "election_id": "live-20261115-091500-f1x7c0de",
+      "name": "Fixture Student Council 2026",
+      "mode": "live",
+      "distribution": "",
+      "on_chain": true,
+      "status": "verified",
+      "opened_at": "2026-11-15T09:15:00Z",
+      "sealed": false,
+      "verified": true,
+      "contests": [
+        {
+          "id": "President",
+          "label": "President",
+          "seats": 1,
+          "total_votes": 3,
+          "contested": false,
+          "candidates": [
+            {
+              "id": "Maria-Santos",
+              "label": "Maria-Santos",
+              "votes": 2,
+              "rank": 1,
+              "elected": true,
+              "share": 66.66666666666666
+            },
+            {
+              "id": "Jose-Rizal",
+              "label": "Jose-Rizal",
+              "votes": 1,
+              "rank": 2,
+              "elected": false,
+              "share": 33.33333333333333
+            },
+            {
+              "id": "Ana-Reyes",
+              "label": "Ana-Reyes",
+              "votes": 0,
+              "rank": 3,
+              "elected": false,
+              "share": 0
+            }
+          ]
+        },
+        {
+          "id": "Vice-President",
+          "label": "Vice-President",
+          "seats": 1,
+          "total_votes": 3,
+          "contested": false,
+          "candidates": [
+            {
+              "id": "Carlo-Lim",
+              "label": "Carlo-Lim",
+              "votes": 2,
+              "rank": 1,
+              "elected": true,
+              "share": 66.66666666666666
+            },
+            {
+              "id": "Bea-Tan",
+              "label": "Bea-Tan",
+              "votes": 1,
+              "rank": 2,
+              "elected": false,
+              "share": 33.33333333333333
+            }
+          ]
+        }
+      ],
+      "integrity": {
+        "voters": 3,
+        "positions": 2,
+        "candidates": 5,
+        "ballot_records": 6,
+        "verified": 6,
+        "rejected": 0,
+        "turnout_pct": 100,
+        "turnout_note": "turnout is ballot records over voter accounts times positions"
+      },
+      "crypto": {
+        "tally_proof_verified": true,
+        "trustees_submitted": 3,
+        "trustees_total": 5,
+        "threshold": 3,
+        "issuer_public_key": "e2c1f0a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1",
+        "committed_nullifiers": 6
+      },
+      "checks": [
+        {
+          "name": "The election key was made by the trustees' ceremony",
+          "pass": true,
+          "detail": "joint key fingerprint 7A1B-3C9F-0D2E-41A8-9B6C-E8F9"
+        },
+        {
+          "name": "Enough trustees decrypted",
+          "pass": true,
+          "detail": "3 of 5 trustees decrypted; 3 required"
+        },
+        {
+          "name": "The tally was published on the chain",
+          "pass": true,
+          "detail": "3 trustee signatures"
+        },
+        {
+          "name": "The independent verifier passed the on-chain record",
+          "pass": true,
+          "detail": "every proof verifies and the totals match the published tally"
+        }
+      ],
+      "artifacts": [],
+      "files": ["ballots.ndjson", "receipts.csv", "trail.ndjson"],
+      "live": {
+        "state": "verified",
+        "title": "Fixture Student Council 2026",
+        "counts": {
+          "voters_on_roll": 3,
+          "credentials_issued": 3,
+          "ballot_records": 6,
+          "ballot_records_source": "chain",
+          "trustees_decrypted": 3,
+          "tally_signatures": 3,
+          "trustees_joined": 5
+        },
+        "decryption": {
+          "trustees_decrypted": 3,
+          "threshold": 3,
+          "trustees": 5,
+          "decrypted": [1, 2, 3],
+          "tally_signatures": [1, 2, 3]
+        },
+        "joint_key_fingerprint": "7A1B-3C9F-0D2E-41A8-9B6C-E8F9",
+        "roster_fingerprint": "3C4D-8E21-55A0-B7F3-1D9C-0A42",
+        "ballots": [
+          {
+            "index": 0,
+            "position_id": "President",
+            "tracking_code": "BC-7F3A-92C1",
+            "ballot_fingerprint": "4F2A-7F3A-91C0-92C1-77D1-0B3E",
+            "tx_id": "7f3a92c1a1b2c3d4e5f60718293a4b5c6d7e8f907f3a92c111223344",
+            "block_number": 395
+          },
+          {
+            "index": 1,
+            "position_id": "Vice-President",
+            "tracking_code": "BC-7F3A-A3D2",
+            "ballot_fingerprint": "4F2A-7F3A-91C0-A3D2-77D1-0B3E",
+            "tx_id": "7f3aa3d2a1b2c3d4e5f60718293a4b5c6d7e8f907f3aa3d211223344",
+            "block_number": 396
+          },
+          {
+            "index": 2,
+            "position_id": "President",
+            "tracking_code": "BC-7F3A-B4E3",
+            "ballot_fingerprint": "4F2A-7F3A-91C0-B4E3-77D1-0B3E",
+            "tx_id": "7f3ab4e3a1b2c3d4e5f60718293a4b5c6d7e8f907f3ab4e311223344",
+            "block_number": 397
+          },
+          {
+            "index": 3,
+            "position_id": "Vice-President",
+            "tracking_code": "BC-7F3A-C5F4",
+            "ballot_fingerprint": "4F2A-7F3A-91C0-C5F4-77D1-0B3E",
+            "tx_id": "7f3ac5f4a1b2c3d4e5f60718293a4b5c6d7e8f907f3ac5f411223344",
+            "block_number": 398
+          },
+          {
+            "index": 4,
+            "position_id": "President",
+            "tracking_code": "BC-7F3A-D705",
+            "ballot_fingerprint": "4F2A-7F3A-91C0-D705-77D1-0B3E",
+            "tx_id": "7f3ad705a1b2c3d4e5f60718293a4b5c6d7e8f907f3ad70511223344",
+            "block_number": 399
+          },
+          {
+            "index": 5,
+            "position_id": "Vice-President",
+            "tracking_code": "BC-7F3A-E816",
+            "ballot_fingerprint": "4F2A-7F3A-91C0-E816-77D1-0B3E",
+            "tx_id": "7f3ae816a1b2c3d4e5f60718293a4b5c6d7e8f907f3ae81611223344",
+            "block_number": 400
+          }
+        ],
+        "totals": [2, 1, 0, 2, 1],
+        "contest_ids": [
+          "President/Maria-Santos",
+          "President/Jose-Rizal",
+          "President/Ana-Reyes",
+          "Vice-President/Carlo-Lim",
+          "Vice-President/Bea-Tan"
+        ],
+        "verify_overall": "pass"
+      }
+    }
+  }
+}

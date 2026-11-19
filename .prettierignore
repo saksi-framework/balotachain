@@ -12,3 +12,7 @@ apps/voter/macos/
 apps/voter/linux/
 apps/voter/windows/
 dist-web/
+# Vendored saksi build output (tools/sync-saksi-wasm.sh) and the generated
+# vote test election (apps/vote/src/test/fixture/make-fixture.sh).
+packages/saksi-wasm/
+apps/vote/src/test/fixture/live-election.json

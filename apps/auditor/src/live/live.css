@@ -1,0 +1,362 @@
+/*
+ * The live board's layout (design review D4, D21). The study board keeps its
+ * inline styles; only the live view uses these classes.
+ *
+ *   under 720px      one column, 16px gutters: band, check, results, trustees, proofs
+ *   720px to 1023px  the same column and order, 24px gutters, capped at 720px, centred
+ *   1024px and up    band full width; results | check + trustees; proofs full width
+ *
+ * Type sizes are rem from the DESIGN.md scale (13 / 16 / 20 / 24 / 28); only
+ * the band's one figure uses --bc-type-figure (D18).
+ */
+
+.lb-root {
+  min-height: 100vh;
+  background: var(--bc-color-bg);
+  color: var(--bc-color-text-1);
+  font-family: var(--bc-font-family);
+  font-size: var(--bc-type-body);
+  line-height: var(--bc-line-height);
+}
+
+.lb-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--bc-space-md) var(--bc-space-sm) 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "top"
+    "check"
+    "results"
+    "trustees"
+    "proofs";
+  gap: var(--bc-space-lg);
+}
+
+.lb-page > * {
+  min-width: 0;
+}
+
+.lb-top {
+  grid-area: top;
+  display: grid;
+  gap: var(--bc-space-sm);
+}
+.lb-check {
+  grid-area: check;
+}
+.lb-main {
+  grid-area: results;
+  display: grid;
+  gap: var(--bc-space-lg);
+}
+.lb-main > * {
+  min-width: 0;
+}
+.lb-side {
+  grid-area: trustees;
+  display: grid;
+  gap: var(--bc-space-lg);
+}
+.lb-proofs {
+  grid-area: proofs;
+}
+
+@media (min-width: 720px) {
+  .lb-page {
+    max-width: 720px;
+    padding: var(--bc-space-lg) var(--bc-space-md) 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lb-page {
+    max-width: 1200px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "top top"
+      "results check"
+      "results trustees"
+      "proofs proofs";
+    column-gap: var(--bc-space-md);
+  }
+  .lb-page > * {
+    align-self: start;
+  }
+}
+
+/* --- the band ------------------------------------------------------------- */
+
+.lb-band {
+  padding: var(--bc-space-md);
+  display: grid;
+  gap: var(--bc-space-xs);
+}
+
+.lb-band-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--bc-space-xs) var(--bc-space-sm);
+}
+
+.lb-band-heading {
+  margin: 0;
+  font-size: var(--bc-type-h1);
+  font-weight: 700;
+  line-height: 1.25;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The one figure: a count, or the state in words when there is no count. */
+.lb-figure {
+  font-size: var(--bc-type-figure);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-band-heading.lb-figure {
+  font-size: var(--bc-type-figure);
+  line-height: 1.1;
+  flex: 1 1 12ch;
+}
+
+.lb-figure-line {
+  margin: var(--bc-space-xs) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.lb-figure-words {
+  font-size: var(--bc-type-h2);
+  font-weight: 600;
+}
+
+.lb-band-line {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--bc-color-text-2);
+  font-size: var(--bc-type-body);
+}
+
+.lb-band-foot {
+  margin-top: var(--bc-space-xs);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--bc-space-sm);
+}
+
+.lb-band-key {
+  flex: 1 1 280px;
+  max-width: 560px;
+  min-width: 0;
+}
+
+/* A failed poll: neutral, the last answer stays on screen (D9). */
+.lb-notice {
+  margin: 0;
+  padding: 12px var(--bc-space-sm);
+  border: 1px solid var(--bc-color-border);
+  border-radius: var(--bc-radius-button);
+  background: var(--bc-color-neutral-fill);
+  color: var(--bc-color-text-2);
+  font-size: var(--bc-type-body);
+}
+
+/* D8: failed checks, first under the band, each in words. */
+.lb-failed {
+  padding: var(--bc-space-sm) var(--bc-space-md);
+  border: 1px solid var(--bc-color-error);
+  border-radius: var(--bc-radius-card);
+  background: var(--bc-color-error-light);
+}
+
+.lb-failed-title {
+  color: var(--bc-color-error);
+  margin-bottom: var(--bc-space-xs);
+}
+
+.lb-failed-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--bc-space-xs);
+}
+
+.lb-failed-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  overflow-wrap: anywhere;
+}
+
+.lb-failed-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--bc-color-error);
+}
+
+/* --- sections ------------------------------------------------------------- */
+
+.lb-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--bc-space-xs) var(--bc-space-sm);
+  margin-bottom: var(--bc-space-sm);
+}
+
+.lb-section-title {
+  margin: 0;
+  font-size: var(--bc-type-small);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bc-color-text-2);
+}
+
+.lb-section-note {
+  font-size: var(--bc-type-small);
+  color: var(--bc-color-text-2);
+}
+
+.lb-stack {
+  display: grid;
+  gap: var(--bc-space-sm);
+  min-width: 0;
+}
+
+.lb-text {
+  margin: 0;
+  font-size: var(--bc-type-body);
+  overflow-wrap: anywhere;
+}
+
+.lb-muted {
+  color: var(--bc-color-text-2);
+}
+
+.lb-link {
+  color: var(--bc-color-teal-dark);
+  font-weight: 600;
+}
+
+.lb-positions {
+  margin: var(--bc-space-sm) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+
+.lb-positions li {
+  padding: var(--bc-space-xs) 0;
+  border-top: 1px solid var(--bc-color-border);
+  min-width: 0;
+}
+
+.lb-position-name {
+  margin: 0;
+  font-size: var(--bc-type-body);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lb-position-candidates {
+  margin: 2px 0 0;
+  font-size: var(--bc-type-small);
+  color: var(--bc-color-text-2);
+  overflow-wrap: anywhere;
+}
+
+/* --- voter list ----------------------------------------------------------- */
+
+.lb-precinct {
+  font-weight: 600;
+}
+
+.lb-list-counts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--bc-space-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-fingerprint {
+  display: grid;
+  gap: var(--bc-space-xs);
+  min-width: 0;
+}
+
+.lb-fingerprint-short {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bc-space-xs);
+}
+
+/* --- trustees -------------------------------------------------------------- */
+
+.lb-trustee-count {
+  margin: 0;
+  font-size: var(--bc-type-h3);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-trustee-list {
+  margin: var(--bc-space-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lb-trustee-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--bc-space-xs);
+  padding: var(--bc-space-xs) 0;
+  border-top: 1px solid var(--bc-color-border);
+}
+
+.lb-trustee-name {
+  font-weight: 600;
+}
+
+.lb-trustee-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* --- proofs ---------------------------------------------------------------- */
+
+.lb-proofs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: var(--bc-space-md);
+  align-items: start;
+}
+
+.lb-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-space-sm);
+}
+
+.lb-files {
+  overflow-wrap: anywhere;
+}

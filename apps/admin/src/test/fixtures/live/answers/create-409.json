@@ -1,0 +1,6 @@
+{
+  "status": 409,
+  "body": {
+    "error": "live election live-20261115-100000-f1x7ad31 is open; one live election at a time (start the next once it is verified, or abandon it in setup or ceremony)"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "status": 200,
+  "body": {
+    "precinct": "0001A",
+    "precinct_label": "Precinct 0001A (demonstration)",
+    "valid": false,
+    "count": 2,
+    "max_rows": 200,
+    "rows": [
+      {
+        "seq": 1,
+        "line": 3,
+        "last_name": "Halimbawa",
+        "first_name": "Uno",
+        "middle_name": "",
+        "date_of_birth_valid": false
+      },
+      {
+        "seq": 2,
+        "line": 4,
+        "last_name": "Halimbawa",
+        "first_name": "Uno",
+        "middle_name": "",
+        "date_of_birth_valid": true
+      }
+    ],
+    "errors": [
+      {
+        "line": 3,
+        "code": "invalid-date",
+        "message": "The date of birth is not a real date from 1900-01-01 on."
+      },
+      {
+        "line": 4,
+        "code": "duplicate",
+        "message": "The same voter as line 3."
+      },
+      {
+        "line": 5,
+        "code": "bad-row",
+        "message": "The row does not have 4 fields."
+      }
+    ],
+    "fingerprint": "",
+    "fingerprint_short": ""
+  }
+}

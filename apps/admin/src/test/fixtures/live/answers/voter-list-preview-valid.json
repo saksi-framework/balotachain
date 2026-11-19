@@ -1,0 +1,39 @@
+{
+  "status": 200,
+  "body": {
+    "precinct": "0001A",
+    "precinct_label": "Precinct 0001A (demonstration)",
+    "valid": true,
+    "count": 3,
+    "max_rows": 200,
+    "rows": [
+      {
+        "seq": 1,
+        "line": 4,
+        "last_name": "Halimbawa",
+        "first_name": "Uno",
+        "middle_name": "Pagsubok",
+        "date_of_birth_valid": true
+      },
+      {
+        "seq": 2,
+        "line": 5,
+        "last_name": "Peña",
+        "first_name": "Dos",
+        "middle_name": "Santos-Reyes",
+        "date_of_birth_valid": true
+      },
+      {
+        "seq": 3,
+        "line": 3,
+        "last_name": "Sampol",
+        "first_name": "Tres",
+        "middle_name": "",
+        "date_of_birth_valid": true
+      }
+    ],
+    "errors": [],
+    "fingerprint": "cc0ad92dc0fce5cd088bde29bd4f6c03f3d66122e4fe06d4f44425851273dd75",
+    "fingerprint_short": "cc0ad92dc0fce5cd"
+  }
+}

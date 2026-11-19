@@ -15,19 +15,19 @@ export type CopyButtonProps = {
 };
 
 const geometry = {
-  xs: { gap: 4, radius: 8, padding: "4px 8px", font: 12, icon: 14 },
+  xs: { gap: 4, radius: 8, padding: "4px 8px", font: "0.75rem", icon: 14 },
   sm: {
     gap: 6,
     radius: 10,
     padding: "7px 11px",
-    font: tokens.type.small,
+    font: tokens.font.small,
     icon: 15,
   },
   md: {
     gap: 7,
     radius: tokens.radius.button,
     padding: "10px 15px",
-    font: 14,
+    font: "0.875rem",
     icon: 17,
   },
 } as const;
@@ -95,6 +95,9 @@ export function CopyButton({
   return (
     <button
       type="button"
+      // D17: `sm` is drawn about 33px tall; `bc-hit` (styles.css) gives it
+      // an invisible 44 by 44 hit area without changing how it draws.
+      className={size === "sm" ? "bc-hit" : undefined}
       onClick={onCopy}
       aria-label={state === "idle" ? label : undefined}
       onMouseEnter={() => setHover(true)}

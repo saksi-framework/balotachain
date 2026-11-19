@@ -59,7 +59,7 @@ stop_console() {
 	local pid
 	[ -f "$PIDFILE" ] || return 0
 	pid="$(cat "$PIDFILE")"
-	if kill -0 "$pid" 2>/dev/null && tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -q saksi-campaign; then
+	if kill -0 "$pid" 2>/dev/null && ps -p "$pid" -o command= 2>/dev/null | grep -q saksi-campaign; then
 		say "stopping the console from an earlier run (pid $pid)"
 		kill "$pid" || true
 		for _ in $(seq 1 20); do curl -fsS "$BASE/api/capabilities" >/dev/null 2>&1 || break; sleep 1; done

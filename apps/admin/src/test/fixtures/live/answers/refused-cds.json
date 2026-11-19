@@ -1,0 +1,9 @@
+{
+  "status": 422,
+  "body": {
+    "error": "SubmitBallot was refused by the chain",
+    "refused": true,
+    "gate": "cds",
+    "reason": "submit SubmitBallot: rpc error: chaincode response 500, gate=cds: contest \"President/Maria-Santos\" CDS well-formedness proof failed: challenge mismatch"
+  }
+}
