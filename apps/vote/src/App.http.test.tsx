@@ -67,18 +67,18 @@ function setup(
 
 /**
  * The stand-in has no issuer: the fixture's credential stands in for the
- * one the phone would get, from the moment the voter has signed the list
- * (the console's `signed`), never before.
+ * one the phone would get, from the moment this phone's voter has signed the
+ * list (the console's `signed` for the entry its cookie holds), never before.
  */
 function credentialOnceSigned(
   raw: KeyValueStore,
   c: ReturnType<typeof fakeConsole>,
 ): KeyValueStore {
   const fixtureStore = withFixtureCredential(raw);
+  // This phone's own check-in only: another phone signing for an entry
+  // (`desk.checkInElsewhere`) puts no credential on this one.
   const signed = () =>
-    [1, 2, 3].some((seq) =>
-      ["signed", "credential_issued"].includes(c.desk.state(seq)),
-    );
+    ["signed", "credential_issued"].includes(c.desk.mine() ?? "");
   return {
     ...raw,
     get: (key) => (signed() ? fixtureStore.get(key) : raw.get(key)),
