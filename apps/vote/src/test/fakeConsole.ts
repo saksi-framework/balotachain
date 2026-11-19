@@ -218,6 +218,14 @@ export function fakeConsole(o: FakeConsoleOptions = {}) {
     state(seq = 1) {
       return entries.get(seq) ?? "not_checked_in";
     },
+    /**
+     * The state of the entry this phone's cookie holds in this election, or
+     * null: what this phone signed, never another phone's check-in.
+     */
+    mine(): FakeCheckinState | null {
+      const t = held(jar.cookie);
+      return t ? (entries.get(t.seq) ?? null) : null;
+    },
     signature(seq = 1) {
       return signatures.get(seq);
     },
