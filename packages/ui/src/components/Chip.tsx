@@ -56,13 +56,13 @@ const palette: Record<
 const sizes: Record<NonNullable<ChipProps["size"]>, CSSProperties> = {
   sm: {
     padding: "2px 8px",
-    fontSize: 11,
+    fontSize: "0.6875rem",
     fontWeight: 700,
     letterSpacing: "0.04em",
     gap: 6,
   },
-  md: { padding: "4px 11px", fontSize: 12.5, fontWeight: 600, gap: 6 },
-  lg: { padding: "8px 16px", fontSize: 14, fontWeight: 600, gap: 8 },
+  md: { padding: "4px 11px", fontSize: "0.78125rem", fontWeight: 600, gap: 6 },
+  lg: { padding: "8px 16px", fontSize: "0.875rem", fontWeight: 600, gap: 8 },
 };
 
 export function Chip({

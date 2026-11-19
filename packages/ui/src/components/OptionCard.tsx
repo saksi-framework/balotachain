@@ -87,10 +87,13 @@ export const OptionCard = forwardRef<HTMLDivElement, OptionCardProps>(
         >
           <span
             style={{
-              fontSize: tokens.type.body,
+              fontSize: tokens.font.body,
               fontWeight: 600,
               color: tokens.color.text1,
               lineHeight: tokens.type.lineHeight,
+              // Names wrap and are never cut; a long word with no hyphen
+              // breaks as a last resort (D20).
+              overflowWrap: "anywhere",
             }}
           >
             {label}
@@ -98,7 +101,7 @@ export const OptionCard = forwardRef<HTMLDivElement, OptionCardProps>(
           {description ? (
             <span
               style={{
-                fontSize: tokens.type.body - 2,
+                fontSize: "0.875rem",
                 color: tokens.color.text2,
                 lineHeight: tokens.type.lineHeight,
               }}
@@ -108,21 +111,32 @@ export const OptionCard = forwardRef<HTMLDivElement, OptionCardProps>(
           ) : null}
         </div>
         {selected ? (
+          // As tall as the label's first line, so the mark stays level with
+          // it however the name wraps or the text is sized (D20).
           <span
             aria-hidden="true"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
-              width: 24,
-              height: 24,
-              borderRadius: tokens.radius.pill,
-              background: tokens.color.teal,
-              color: tokens.color.surface,
+              height: `${tokens.type.lineHeight}em`,
+              fontSize: tokens.font.body,
               flexShrink: 0,
             }}
           >
-            <CheckIcon size={16} />
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 24,
+                height: 24,
+                borderRadius: tokens.radius.pill,
+                background: tokens.color.teal,
+                color: tokens.color.surface,
+              }}
+            >
+              <CheckIcon size={16} />
+            </span>
           </span>
         ) : null}
       </div>

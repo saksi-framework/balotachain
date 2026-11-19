@@ -1,0 +1,9 @@
+{
+  "election": {
+    "status": 404,
+    "body": {
+      "error": "no live election has been set up"
+    }
+  },
+  "board": null
+}

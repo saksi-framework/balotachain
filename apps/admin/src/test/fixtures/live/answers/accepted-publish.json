@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "body": {
+    "published": true,
+    "totals": [2, 1, 0, 1, 2],
+    "signatures_used": 2,
+    "tx_id": "c3",
+    "block_number": 417
+  }
+}

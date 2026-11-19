@@ -1,0 +1,57 @@
+{
+  "status": 200,
+  "body": {
+    "run_id": "live-20261115-100000-f1x7ad31",
+    "election_id": "live-20261115-100000-f1x7ad31",
+    "title": "Fixture Presenter Council 2026",
+    "state": "tallied",
+    "positions": [
+      {
+        "id": "President",
+        "candidates": ["Maria-Santos", "Juan-P.-Dela-Cruz", "Ana-Reyes"]
+      },
+      {
+        "id": "Secretary",
+        "candidates": ["Carlo-Lim", "Bea-Tan"]
+      }
+    ],
+    "trustees": 5,
+    "threshold": 3,
+    "params": "0a1b2c3d",
+    "contest_ids": [
+      "President/Maria-Santos",
+      "President/Juan-P.-Dela-Cruz",
+      "President/Ana-Reyes",
+      "Secretary/Carlo-Lim",
+      "Secretary/Bea-Tan"
+    ],
+    "issuer_public_key": "e2c1f0a9b8d7c6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1",
+    "counts": {
+      "voters_on_roll": 3,
+      "credentials_issued": 3,
+      "ballot_records": 6,
+      "ballot_records_source": "chain",
+      "trustees_decrypted": 3,
+      "tally_signatures": 3,
+      "trustees_joined": 5
+    },
+    "lifecycle": {
+      "CreateElection": {
+        "tx_id": "a1",
+        "block_number": 390
+      }
+    },
+    "created_at": "2026-11-15T10:00:00Z",
+    "updated_at": "2026-11-15T10:05:00Z",
+    "dkg": "0d0e0a0d",
+    "joint_public_key": "9f8e7d6c",
+    "joint_key_fingerprint": "7A1B-3C9F-0D2E-41A8-9B6C-E8F9",
+    "roster_fingerprint": "3C4D-8E21-55A0-B7F3-1D9C-0A42",
+    "totals": [2, 1, 0, 1, 2],
+    "verify_overall": "fail",
+    "auto_verify": {
+      "state": "done",
+      "at": "2026-11-15T10:05:04Z"
+    }
+  }
+}

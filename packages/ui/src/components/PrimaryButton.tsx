@@ -32,7 +32,7 @@ export const PrimaryButton = forwardRef<HTMLButtonElement, PrimaryButtonProps>(
       border: "none",
       background: bg,
       color: disabled ? tokens.color.text2 : tokens.color.surface,
-      fontSize: tokens.type.button,
+      fontSize: tokens.font.button,
       fontWeight: 600,
       fontFamily: tokens.type.fontFamily,
       letterSpacing: 0.1,

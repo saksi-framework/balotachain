@@ -114,7 +114,202 @@ export type Board = {
   files?: string[] | null;
   partial?: boolean;
   partial_reason?: string;
+  /** Present on a live run only (`mode: "live"`, board.go `Live`). */
+  live?: LiveBoard;
 };
+
+// --- live election ---------------------------------------------------------
+//
+// Field names copied from the Go JSON tags in
+// `saksi/packages/saksi-campaign/live_http.go` (`LiveCounts`,
+// `LiveElectionView`), `live.go` (`LivePosition`, `LiveTx`) and
+// `live_board.go` (`LiveBoard`, `LiveBoardDecryption`, `LiveBoardBallot`).
+
+/** The live election's states (docs/live/http-api.md, "States"). */
+export type LiveState =
+  | "setup"
+  | "ceremony"
+  | "open"
+  | "closed"
+  | "tallied"
+  | "verified"
+  | "abandoned";
+
+/** `LiveCounts`. */
+export type LiveCounts = {
+  voters_on_roll: number;
+  /**
+   * The entries on the precinct's voter list (voter-list-api.md, "Counts in
+   * the election view and on the board"). Sent by a console with the voter
+   * list; read only when it is a number.
+   */
+  voters_on_list?: number;
+  /** Entries that signed the list (`signed` plus `credential_issued`). */
+  checked_in?: number;
+  credentials_issued: number;
+  /** The chain's committed nullifier count, or the console's own count. */
+  ballot_records: number;
+  /** "chain", or "console" when the chain did not answer. */
+  ballot_records_source: string;
+  /**
+   * The console's figure for the fewest ballot records decryption needs
+   * (http-api.md): from `open` on; absent from an older console.
+   */
+  min_ballot_records?: number;
+  trustees_decrypted: number;
+  tally_signatures: number;
+  /**
+   * Trustees whose receive key is in. Added by a later console; read only
+   * when it is a number.
+   */
+  trustees_joined?: number;
+};
+
+/** `LivePosition`. */
+export type LivePosition = { id: string; candidates: string[] };
+
+/** `LiveTx`. */
+export type LiveTx = { tx_id: string; block_number: number };
+
+/** `GET /api/live/election` (`LiveElectionView`). */
+export type LiveElectionView = {
+  run_id: string;
+  election_id: string;
+  title: string;
+  state: string;
+  positions: LivePosition[] | null;
+  trustees: number;
+  threshold: number;
+  params: string;
+  contest_ids: string[] | null;
+  issuer_public_key: string;
+  dkg?: string;
+  joint_public_key?: string;
+  joint_key_fingerprint?: string;
+  verification_keys?: unknown;
+  roster_fingerprint?: string;
+  ceremony_error?: string;
+  /**
+   * The voter list's public facts (voter-list-api.md): no name, no date.
+   * Absent for an election made before the voter list.
+   */
+  precinct?: string;
+  precinct_label?: string;
+  voter_list_fingerprint?: string;
+  voter_list_fingerprint_short?: string;
+  counts: LiveCounts;
+  lifecycle: Record<string, LiveTx> | null;
+  totals?: number[];
+  verify_overall?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** `LiveBoardBallot`. */
+export type LiveBoardBallot = {
+  index: number;
+  position_id: string;
+  tracking_code: string;
+  ballot_fingerprint: string;
+  tx_id?: string;
+  block_number?: number;
+};
+
+/** `LiveBoardDecryption`: k of threshold. */
+export type LiveBoardDecryption = {
+  trustees_decrypted: number;
+  threshold: number;
+  trustees: number;
+  decrypted: number[] | null;
+  tally_signatures: number[] | null;
+};
+
+/** `LiveBoard`, the board answer's `live` object. */
+export type LiveBoard = {
+  state: string;
+  title: string;
+  /**
+   * The voter list's public facts (voter-list-api.md): no name, no date.
+   * Absent for an election made before the voter list.
+   */
+  precinct?: string;
+  precinct_label?: string;
+  voter_list_fingerprint?: string;
+  voter_list_fingerprint_short?: string;
+  /** The sentence the board shows next to the list's facts. */
+  voter_list_note?: string;
+  counts: LiveCounts;
+  decryption: LiveBoardDecryption;
+  joint_key_fingerprint?: string;
+  roster_fingerprint?: string;
+  ballots: LiveBoardBallot[] | null;
+  totals?: number[];
+  contest_ids: string[] | null;
+  verify_overall?: string;
+  failed_checks?: string[] | null;
+};
+
+/**
+ * What `GET /api/live/election` said: a live election, live mode with nothing
+ * set up yet, or anything else (live mode off, an older console, a page that
+ * is not the console's route).
+ */
+export type LiveProbe =
+  | { kind: "live"; view: LiveElectionView }
+  | { kind: "none" }
+  | { kind: "off" };
+
+/** The console's 404 body before any live election is set up. */
+const NO_LIVE_ELECTION = "no live election has been set up";
+
+/**
+ * Ask the console for its live election. A network failure, or an answer
+ * that says nothing (5xx, 408, 429), throws; every other answer that is not
+ * the console's live route reads as `off`.
+ */
+export async function getLiveElection(
+  signal?: AbortSignal,
+): Promise<LiveProbe> {
+  const res = await fetch(BASE + "/api/live/election", {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  if (saysNothing(res.status)) {
+    throw new HttpError(
+      `/api/live/election returned ${res.status}`,
+      res.status,
+    );
+  }
+  let body: unknown = null;
+  try {
+    body = await res.json();
+  } catch (e) {
+    // A 200 that says it is JSON but does not parse was cut off on the way:
+    // it says nothing (the caller tries again), never "not a live console".
+    if (res.ok && /\bjson\b/i.test(res.headers.get("Content-Type") ?? "")) {
+      throw e;
+    }
+    return { kind: "off" };
+  }
+  if (res.status === 404) {
+    const error = (body as { error?: unknown } | null)?.error;
+    return error === NO_LIVE_ELECTION ? { kind: "none" } : { kind: "off" };
+  }
+  if (res.ok && isElectionView(body)) return { kind: "live", view: body };
+  return { kind: "off" };
+}
+
+function isElectionView(body: unknown): body is LiveElectionView {
+  if (typeof body !== "object" || body === null) return false;
+  const v = body as Record<string, unknown>;
+  return (
+    typeof v.run_id === "string" &&
+    v.run_id !== "" &&
+    typeof v.state === "string" &&
+    typeof v.counts === "object" &&
+    v.counts !== null
+  );
+}
 
 /**
  * One ballot RECORD. Nullifiers are derived per voter per position, so a
@@ -128,6 +323,8 @@ export type BallotRecord = {
   position_label?: string;
   nullifier?: string;
   ballot_sha256?: string;
+  /** Live runs only: the fingerprint of the recorded bytes, as the phone showed it. */
+  ballot_fingerprint?: string;
   /** Ledger commit time, from the ballot's commit receipt. Absent offline, and
    * absent on-chain when no per-ballot receipt was recorded. */
   recorded_at?: string;
@@ -147,14 +344,35 @@ export type VerifyOutcome =
   | { kind: "missing" }
   | { kind: "ambiguous" };
 
+/** The console answered with an HTTP error; `status` says which. */
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+/**
+ * An HTTP status that says nothing about the page: the server failed (5xx),
+ * timed out (408) or asked to slow down (429). Anything else below 500 is an
+ * answer.
+ */
+export function saysNothing(status: number): boolean {
+  return status >= 500 || status === 408 || status === 429;
+}
+
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(BASE + path, {
     signal,
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
-    throw new Error(
+    throw new HttpError(
       `${path} returned ${res.status}: ${(await res.text()).trim()}`,
+      res.status,
     );
   }
   return (await res.json()) as T;

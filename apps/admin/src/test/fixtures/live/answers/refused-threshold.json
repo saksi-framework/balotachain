@@ -1,0 +1,9 @@
+{
+  "status": 422,
+  "body": {
+    "error": "PublishTally was refused by the chain",
+    "refused": true,
+    "gate": "threshold",
+    "reason": "submit PublishTally: rpc error: chaincode response 500, tally carries 2 valid signatures, needs 3"
+  }
+}

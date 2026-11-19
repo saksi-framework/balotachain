@@ -9,7 +9,7 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "lint": "eslint . --ext .js,.mjs,.cjs,.ts,.tsx --no-error-on-unmatched-pattern",
-    "format:check": "prettier --check --no-error-on-unmatched-pattern \"eslint.config.mjs\" \"package.json\" \"pnpm-lock.yaml\" \".github/workflows/*.{yml,yaml}\" \"apps/**/*.{js,mjs,cjs,ts,tsx,json,yml,yaml}\"",
+    "format:check": "prettier --check --no-error-on-unmatched-pattern \"eslint.config.mjs\" \"package.json\" \"pnpm-lock.yaml\" \".github/workflows/*.{yml,yaml}\" \"apps/**/*.{js,mjs,cjs,ts,tsx,json,yml,yaml}\" \"packages/**/*.{ts,tsx,css}\"",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "build": "pnpm -r --if-present build"

@@ -1,0 +1,9 @@
+{
+  "status": 429,
+  "body": {
+    "error": "too many ballots at once; try again in a moment"
+  },
+  "headers": {
+    "Retry-After": "1"
+  }
+}

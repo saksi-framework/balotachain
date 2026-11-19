@@ -1,0 +1,268 @@
+/* The presenter page (D6). 1024px and wider: the action card beside the
+   "Now" panel, as drawn. Narrower (a 1280px projector at 150% zoom is 853px):
+   one column in the order tracker, action, Now, links, demonstrations,
+   abandon. Below 720px the gutters are 16px (bc-wrap). */
+.lp-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-space-md);
+  padding-top: var(--bc-space-md);
+  padding-bottom: var(--bc-space-lg);
+}
+
+.lp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--bc-space-md);
+  align-items: start;
+}
+
+.lp-trackrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-space-xs);
+}
+
+.lp-checkrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--bc-space-xs) var(--bc-space-sm);
+}
+
+.lp-now {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: var(--bc-space-xs) var(--bc-space-sm);
+  margin: 0;
+}
+
+.lp-now dt {
+  color: var(--bc-color-text-2);
+}
+
+.lp-now dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.lp-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-space-xs) var(--bc-space-md);
+  align-items: baseline;
+}
+
+.lp-link {
+  color: var(--bc-color-teal);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+
+.lp-row {
+  display: grid;
+  gap: var(--bc-space-xs);
+  padding-top: var(--bc-space-sm);
+  border-top: 1px solid var(--bc-color-border);
+}
+
+.lp-form-names {
+  display: grid;
+  gap: var(--bc-space-xs);
+}
+
+.lp-name-row {
+  display: flex;
+  gap: var(--bc-space-xs);
+  align-items: flex-start;
+}
+
+.lp-name-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lp-demos > summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: var(--bc-type-h3);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.lp-demos > summary:focus-visible {
+  outline: 2px solid var(--bc-color-teal);
+  outline-offset: 2px;
+  border-radius: var(--bc-radius-button);
+}
+
+@media (max-width: 1023px) {
+  .lp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lp-checkrow {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 719px) {
+  .lp-main {
+    gap: var(--bc-space-sm);
+    padding-top: var(--bc-space-sm);
+  }
+
+  .lp-grid {
+    gap: var(--bc-space-sm);
+  }
+
+  .lp-now {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .lp-now dd {
+    margin-bottom: var(--bc-space-xs);
+  }
+}
+
+/* The disclosure's own marker is replaced by the chevron: right when closed,
+   down when open. No transition (nothing moves unless the state changed). */
+.lp-demos > summary {
+  list-style: none;
+}
+
+.lp-demos > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lp-demos[open] .lp-chevron {
+  transform: rotate(90deg);
+}
+
+/* Step 1 before an election exists: no Now panel, the form alone. */
+.lp-grid-single {
+  grid-template-columns: minmax(0, 760px);
+}
+
+/* The id on chain and its shown text, on one line per field. */
+.lp-idline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--bc-space-sm);
+}
+
+/* Candidates in two columns on a wide window. */
+@media (min-width: 1024px) {
+  .lp-form-names {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--bc-space-sm);
+  }
+
+  .lp-form-names > .lp-span {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The voter list's preview: long lists scroll inside their box. */
+/* The desk (voter-list-api.md): one request per row, in desk order. */
+.lp-desk,
+.lp-entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+
+/*
+ * The list's columns are the list's, not each row's: every row takes them
+ * through subgrid, so the status chips stand in one column whatever the
+ * name or the signature (m6). The chip and reset tracks have fixed widths
+ * at presenter size, so the chip column does not move sideways when a
+ * status first appears (visual m1); a narrow window may still shrink them.
+ */
+.lp-entries {
+  grid-template-columns:
+    3ch minmax(0, 2fr) minmax(max-content, 18rem) 160px
+    minmax(min-content, 12rem);
+  column-gap: var(--bc-space-sm);
+}
+
+.lp-desk {
+  gap: var(--bc-space-sm);
+}
+
+.lp-desk-entry {
+  display: grid;
+  gap: var(--bc-space-xs);
+}
+
+.lp-desk-entry + .lp-desk-entry {
+  padding-top: var(--bc-space-sm);
+  border-top: 1px solid var(--bc-color-border);
+}
+
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-space-sm);
+  align-items: center;
+}
+
+/* The list: number, name, status, signature, reset. */
+.lp-entry {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  row-gap: var(--bc-space-xs);
+  align-items: center;
+  padding: var(--bc-space-xs) 0;
+  border-bottom: 1px solid var(--bc-color-border);
+}
+
+.lp-entry-no {
+  font-variant-numeric: tabular-nums;
+  color: var(--bc-color-text-2);
+}
+
+.lp-entry-confirm {
+  grid-column: 1 / -1;
+}
+
+/* One fixed box per row, drawn or not, so no row grows when a voter signs. */
+.lp-entry-sig {
+  width: 160px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.lp-signature {
+  display: block;
+  width: 160px;
+  height: 64px;
+  background: var(--bc-color-surface);
+  border: 1px solid var(--bc-color-border);
+  border-radius: var(--bc-radius-button);
+}
+
+@media (max-width: 719px) {
+  .lp-entries {
+    grid-template-columns: 3ch minmax(0, 1fr);
+  }
+
+  .lp-entry > :nth-child(n + 3) {
+    grid-column: 2;
+  }
+
+  .lp-entry-sig {
+    min-height: 0;
+  }
+}

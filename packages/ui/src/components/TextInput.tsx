@@ -28,7 +28,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
         : `1.5px solid ${tokens.color.border}`,
       borderRadius: tokens.radius.button,
       color: tokens.color.text1,
-      fontSize: tokens.type.body,
+      fontSize: tokens.font.body,
       fontWeight: variant === "mono" ? 600 : 400,
       letterSpacing: variant === "mono" ? 1 : 0,
       fontFamily:

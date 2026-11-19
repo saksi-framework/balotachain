@@ -1,0 +1,7 @@
+{
+  "status": 400,
+  "body": {
+    "error": "the ballot is for election \"live-other\", not the live election \"live-20261115-100000-f1x7ad31\"; it was not relayed",
+    "code": "wrong-election"
+  }
+}

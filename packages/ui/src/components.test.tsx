@@ -4,7 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Chip, type ChipVariant } from "./components/Chip.js";
 import { CopyButton } from "./components/CopyButton.js";
 import { TopBar } from "./components/TopBar.js";
-import { VerifiableValue } from "./components/VerifiableValue.js";
+import {
+  VerifiableValue,
+  withGroupBreaks,
+} from "./components/VerifiableValue.js";
+import { OptionCard } from "./components/OptionCard.js";
+import { SecondaryButton } from "./components/SecondaryButton.js";
+import { tokens } from "./tokens.js";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -144,6 +150,25 @@ describe("VerifiableValue", () => {
       "/api/verify-code/x",
     );
   });
+
+  it("m8: a grouped value breaks only between its groups", () => {
+    const key = "5F2C-0A1B-D7A5-4E61-0000-1111-2222-3333";
+    render(<VerifiableValue value={key} label="Election key" />);
+    const code = host.querySelector("code")!;
+    // The text is unchanged; a break opportunity follows every hyphen
+    // (a hyphen before a digit gives none by itself).
+    expect(code.textContent).toBe(key);
+    expect(code.querySelectorAll("wbr")).toHaveLength(7);
+    for (const w of code.querySelectorAll("wbr")) {
+      expect(w.previousSibling?.textContent?.endsWith("-")).toBe(true);
+    }
+  });
+});
+
+describe("withGroupBreaks", () => {
+  it("leaves a value without hyphens as it is", () => {
+    expect(withGroupBreaks("abcdef")).toBe("abcdef");
+  });
 });
 
 describe("TopBar", () => {
@@ -162,8 +187,96 @@ describe("TopBar", () => {
     );
   });
 
+  it("shows the mark alone, with no separator, for an empty app name", () => {
+    render(<TopBar appName="" electionName="SSC 2026" />);
+    expect(host.querySelector("h1")!.textContent).toBe("BalotaChain");
+    expect(host.textContent).not.toContain("—");
+  });
+
   it("keeps the compact title bar", () => {
     render(<TopBar title="Review" />);
     expect(host.querySelector("h1")!.textContent).toBe("Review");
+  });
+
+  it("cuts a long compact title to one line unless wrapping is asked for (D20)", () => {
+    const title =
+      "Chairperson of the Student Council Committee on Rules and Ethics";
+    render(<TopBar title={title} />);
+    let h1 = host.querySelector("h1")!;
+    expect(h1.style.whiteSpace).toBe("nowrap");
+    expect(h1.style.textOverflow).toBe("ellipsis");
+    expect(h1.parentElement!.style.height).toBe("56px");
+
+    render(<TopBar title={title} wrapTitle />);
+    h1 = host.querySelector("h1")!;
+    expect(h1.textContent).toBe(title);
+    expect(h1.style.whiteSpace).toBe("");
+    expect(h1.style.textOverflow).toBe("");
+    expect(h1.style.overflowWrap).toBe("anywhere");
+    // The bar grows with the title, from the drawn 56px.
+    expect(h1.parentElement!.style.height).toBe("");
+    expect(h1.parentElement!.style.minHeight).toBe("56px");
+  });
+});
+
+describe("OptionCard (D20)", () => {
+  it("wraps a long name, breaking a word as the last resort, and keeps the mark on the first line", () => {
+    const name =
+      "BartolomeDeLasCasasYSantiagoDeLaCruzMercadoRealondaDelRosarioIII";
+    render(<OptionCard label={name} selected onSelect={() => {}} />);
+    const label = [...host.querySelectorAll("span")].find(
+      (s) => s.textContent === name,
+    )!;
+    expect(label.style.overflowWrap).toBe("anywhere");
+    expect(label.style.whiteSpace).toBe("");
+    // The mark's box is one label line tall (1.5em at the label's size).
+    const mark = host.querySelector("[aria-hidden=true]") as HTMLElement;
+    expect(mark.style.height).toBe("1.5em");
+    expect(mark.style.fontSize).toBe(label.style.fontSize);
+  });
+});
+
+describe("SecondaryButton (D15)", () => {
+  it("is drawn with the 12px button radius, not a pill", () => {
+    expect(tokens.radius.button).toBe(12);
+    render(<SecondaryButton>Finish my ballot</SecondaryButton>);
+    expect(host.querySelector("button")!.style.borderRadius).toBe("12px");
+  });
+});
+
+describe("type scale (D18)", () => {
+  it("carries the board band's figure size, 48px (3rem)", () => {
+    expect(tokens.type.figure).toBe(48);
+  });
+});
+
+describe("44px hit areas (D17)", () => {
+  it("gives the compact bar's Back a 44 by 44 box that keeps the drawn 40px footprint", () => {
+    render(<TopBar title="Review" back={() => {}} />);
+    const back = host.querySelector("button[aria-label=Back]") as HTMLElement;
+    expect(back.style.width).toBe("44px");
+    expect(back.style.height).toBe("44px");
+    expect(back.style.margin).toBe("-2px");
+  });
+
+  it("gives the small Copy button the invisible 44px hit area, and only the small one", () => {
+    render(<CopyButton value="abc" size="sm" />);
+    expect(host.querySelector("button")!.className).toBe("bc-hit");
+    render(<CopyButton value="abc" size="md" />);
+    expect(host.querySelector("button")!.className).toBe("");
+    render(<CopyButton value="abc" size="xs" />);
+    expect(host.querySelector("button")!.className).toBe("");
+  });
+
+  it("gives a value's Check link the invisible 44px hit area", () => {
+    render(
+      <VerifiableValue
+        label="Tracking code"
+        value="BC-7F3A-19C2"
+        checkHref="/board/"
+      />,
+    );
+    expect(host.querySelector("a")!.className).toBe("bc-hit");
+    expect(host.querySelector("button")!.className).toBe("bc-hit");
   });
 });

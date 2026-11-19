@@ -2,4 +2,5 @@ packages:
   - "apps/trustee"
   - "apps/admin"
   - "apps/auditor"
+  - "apps/vote"
   - "packages/*"

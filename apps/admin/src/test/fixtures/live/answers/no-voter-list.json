@@ -1,0 +1,7 @@
+{
+  "status": 409,
+  "body": {
+    "error": "this live election has no voter list",
+    "code": "no-voter-list"
+  }
+}

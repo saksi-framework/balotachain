@@ -4,66 +4,55 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type FormEvent,
   type ReactNode,
 } from "react";
 import {
   tokens,
   Card,
   Chip,
-  PrimaryButton,
   SecondaryButton,
   Skeleton,
-  TextInput,
   TopBar,
-  VerifiableValue,
   CheckIcon,
   AlertIcon,
   UsersIcon,
   DownloadIcon,
   CodeIcon,
 } from "@balotachain/ui";
-import { ResultBar } from "./components/ResultBar";
 import { StatCard } from "./components/StatCard";
 import {
+  CheckList,
+  Fingerprint,
+  FooterLink,
+  RaceCard,
+  VerifyVoteCard,
+  cols,
+  formatNumber,
+  formatStamp,
+  noteText,
+} from "./components/boardParts";
+import { LiveBoard } from "./live/LiveBoard";
+import {
+  getLiveElection,
+  HttpError,
+  saysNothing,
   listRuns,
   loadBoard,
-  verifyTrackingCode,
   fileUrl,
   verifierUrl,
   type Board,
-  type BallotRecord,
-  type BoardCandidate,
-  type BoardContest,
+  type LiveElectionView,
   type RunView,
 } from "./lib/bulletin";
 
-/**
- * A tracking code is the first eight HEX characters of a ballot's nullifier, so
- * anything outside [A-F0-9] can never match a real record. Rejecting it here
- * saves a request and gives the voter the real reason.
- */
-const TRACKING_CODE_RE = /^BC-[A-F0-9]{4}-[A-F0-9]{4}$/i;
-
 /** Ballots are one per voter per position, so a run's ballot count is that product. */
 const POLL_MS = 4000;
-
-type VerifyState =
-  | { kind: "idle" }
-  | { kind: "found"; record: BallotRecord }
-  | { kind: "missing" }
-  | { kind: "ambiguous" }
-  | { kind: "malformed" };
 
 type Load =
   | { kind: "loading" }
   | { kind: "empty" }
   | { kind: "error"; message: string }
   | { kind: "ready"; board: Board };
-
-/** Grid columns that drop to one below their minimum, so no page scroll. */
-const cols = (min: number) =>
-  `repeat(auto-fit, minmax(min(${min}px, 100%), 1fr))`;
 
 const sectionHeading: CSSProperties = {
   fontSize: 15,
@@ -73,31 +62,6 @@ const sectionHeading: CSSProperties = {
   color: tokens.color.text2,
   margin: 0,
 };
-
-const noteText: CSSProperties = {
-  fontSize: 13,
-  color: tokens.color.text2,
-  lineHeight: 1.5,
-  margin: "12px 0 0",
-};
-
-function formatNumber(n: number): string {
-  return n.toLocaleString("en-US");
-}
-
-/** ISO timestamp -> a readable local date, or "" for a missing one. */
-function formatStamp(iso?: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 function runIdFromUrl(): string | null {
   const q = new URLSearchParams(window.location.search);
@@ -148,154 +112,6 @@ function Section({
       </div>
       {children}
     </section>
-  );
-}
-
-function CandidateRow({
-  candidate,
-  barMax,
-  showPercent,
-  first,
-  lead,
-}: {
-  candidate: BoardCandidate;
-  barMax: number;
-  showPercent: boolean;
-  first: boolean;
-  /** Leading candidates get the primary bar; the rest get `neutral-bar`. */
-  lead: boolean;
-}) {
-  const barPct = barMax > 0 ? (candidate.votes / barMax) * 100 : 0;
-
-  return (
-    <div
-      style={{
-        // The board's compact table row (DESIGN.md: 8px vertical padding).
-        padding: "8px 0",
-        borderTop: first ? "none" : `1px solid ${tokens.color.border}`,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 6,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: 9,
-            minWidth: 0,
-            flexWrap: "wrap",
-          }}
-        >
-          {candidate.label}
-          {candidate.elected ? (
-            <Chip variant="success" size="sm">
-              ELECTED
-            </Chip>
-          ) : null}
-        </div>
-        <div
-          style={{
-            fontSize: 14,
-            color: tokens.color.text1,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {formatNumber(candidate.votes)}
-          <span
-            style={{
-              color: tokens.color.text2,
-              fontWeight: 400,
-              marginLeft: 6,
-              fontSize: 13,
-            }}
-          >
-            {showPercent
-              ? `${candidate.share.toFixed(1)}%`
-              : `#${candidate.rank}`}
-          </span>
-        </div>
-      </div>
-      <ResultBar percent={barPct} dimmed={!lead} />
-    </div>
-  );
-}
-
-function RaceCard({ race }: { race: BoardContest }) {
-  const isMultiSeat = race.seats > 1;
-  const barMax = isMultiSeat
-    ? Math.max(...race.candidates.map((c) => c.votes), 1)
-    : race.total_votes;
-  const elected = race.candidates.filter((c) => c.elected).length;
-  // Elected candidates lead; with nobody elected (an undecided cut) the
-  // candidates level at the top do.
-  const leads = (c: BoardCandidate) => (elected > 0 ? c.elected : c.rank === 1);
-
-  return (
-    <Card style={{ padding: "22px 22px 8px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 4,
-        }}
-      >
-        <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>
-          {race.label}
-        </h3>
-        <span style={{ fontSize: 12.5, color: tokens.color.text2 }}>
-          {race.seats === 1 ? "1 seat" : `${race.seats} seats`}
-        </span>
-      </div>
-      <p
-        style={{
-          fontSize: tokens.type.small,
-          color: tokens.color.text2,
-          margin: "0 0 16px",
-        }}
-      >
-        {formatNumber(race.total_votes)} votes counted
-        {isMultiSeat && !race.contested
-          ? ` · ${elected} of ${race.candidates.length} elected`
-          : ""}
-        {race.contested ? " · the cut is not decided" : ""}
-      </p>
-      {race.candidates.map((c, i) => (
-        <CandidateRow
-          key={c.id}
-          candidate={c}
-          barMax={barMax}
-          showPercent={!isMultiSeat}
-          first={i === 0}
-          lead={leads(c)}
-        />
-      ))}
-      {race.contested ? (
-        <div
-          style={{
-            fontSize: 12.5,
-            color: tokens.color.text2,
-            padding: "12px 0 4px",
-            borderTop: `1px solid ${tokens.color.border}`,
-          }}
-        >
-          More candidates are level at the last elected place than there are
-          seats left, so this race awards nothing. The result is reported as it
-          stands rather than resolved.
-        </div>
-      ) : null}
-    </Card>
   );
 }
 
@@ -493,15 +309,6 @@ function CryptoItem({
   );
 }
 
-/** A hash across the whole crypto grid: the full value, wrapping, with Copy. */
-function Fingerprint({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ gridColumn: "1 / -1", minWidth: 0 }}>
-      <VerifiableValue label={label} value={value} />
-    </div>
-  );
-}
-
 function CryptoVerification({ board }: { board: Board }) {
   const { crypto } = board;
   const tallyFingerprint = crypto.tally_sha256
@@ -585,285 +392,6 @@ function CryptoVerification({ board }: { board: Board }) {
   );
 }
 
-function CheckList({ checks }: { checks: Board["checks"] }) {
-  return (
-    <Card style={{ padding: "8px 22px" }}>
-      {checks.map((c, i) => (
-        <div
-          key={c.name}
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "flex-start",
-            padding: "14px 0",
-            borderTop: i === 0 ? "none" : `1px solid ${tokens.color.border}`,
-          }}
-        >
-          <span
-            aria-hidden
-            style={{
-              display: "inline-flex",
-              flexShrink: 0,
-              marginTop: 1,
-              color: c.pass ? tokens.color.success : tokens.color.warnText,
-            }}
-          >
-            {c.pass ? (
-              <CheckIcon size={19} strokeWidth={2.4} />
-            ) : (
-              <AlertIcon size={19} strokeWidth={1.9} />
-            )}
-          </span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>
-              {c.name}{" "}
-              <Chip variant={c.pass ? "success" : "warning"} size="sm">
-                {c.pass ? "PASS" : "NOT YET"}
-              </Chip>
-            </div>
-            <div
-              style={{
-                fontSize: 13.5,
-                color: tokens.color.text2,
-                marginTop: 3,
-                wordBreak: "break-word",
-              }}
-            >
-              {c.detail}
-            </div>
-          </div>
-        </div>
-      ))}
-      <p style={{ ...noteText, paddingBottom: 14 }}>
-        This list is the console's summary of the artifacts this election
-        produced. It is not the independent auditor's own findings list, which
-        the audit tool does not currently publish in machine-readable form.
-      </p>
-    </Card>
-  );
-}
-
-function VerifyVoteCard({
-  runId,
-  onChain,
-  announce,
-}: {
-  runId: string;
-  /** The election was run in on-chain mode, so it is never called offline. */
-  onChain: boolean;
-  /** The app's one aria-live region: the outcome is read out when it lands. */
-  announce: (text: string) => void;
-}) {
-  const [code, setCode] = useState("");
-  const [state, setState] = useState<VerifyState>({ kind: "idle" });
-  const [pending, setPending] = useState(false);
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const trimmed = code.trim();
-    if (trimmed.length === 0) return;
-    if (!TRACKING_CODE_RE.test(trimmed)) {
-      setState({ kind: "malformed" });
-      return;
-    }
-    setPending(true);
-    try {
-      const outcome = await verifyTrackingCode(runId, trimmed);
-      if (outcome.kind === "found") {
-        setState({ kind: "found", record: outcome.record });
-      } else {
-        setState({ kind: outcome.kind });
-      }
-    } catch {
-      setState({ kind: "missing" });
-    } finally {
-      setPending(false);
-    }
-  }
-
-  const notice = (() => {
-    switch (state.kind) {
-      case "found": {
-        const {
-          tracking_code: code,
-          recorded_at: at,
-          block_number: block,
-          committed_on_chain: committed,
-        } = state.record;
-        const position = state.record.position_label ?? "this election";
-        const where = block ? ` in block ${block}` : "";
-        let text: string;
-        if (committed && at) {
-          text = `Found — ballot ${code} for ${position} was committed on-chain${where} on ${formatStamp(at)} and is included in the count.`;
-        } else if (committed) {
-          text = `Found — ballot ${code} for ${position} is committed on-chain${where} and included in the count. No per-ballot ledger timestamp was recorded for it.`;
-        } else if (onChain) {
-          // Never call an on-chain election offline: the ballot is in the
-          // record, the ledger just could not confirm this one record.
-          text = `Found — ballot ${code} for ${position} is in this election's record and included in the count. This election is recorded on-chain, but no commit receipt for this ballot could be read.`;
-        } else {
-          text = `Found — ballot ${code} for ${position} is in this election's record and included in the count. (Offline run: there is no ledger timestamp to show.)`;
-        }
-        return { ok: true, said: "Ballot found", text };
-      }
-      case "missing":
-        return {
-          ok: false,
-          said: "No ballot found",
-          text: "No ballot record in this election starts with that code. Check the code on your receipt, and that you are looking at the right election.",
-        };
-      case "ambiguous":
-        return {
-          ok: false,
-          said: "More than one ballot matches",
-          text: "More than one ballot record starts with that code. A code is only the first eight characters of a nullifier, so this can happen — ask for the full nullifier to resolve it.",
-        };
-      case "malformed":
-        return {
-          ok: false,
-          said: "Not a tracking code",
-          text: "That is not a tracking code. They look like BC-XXXX-XXXX, using the digits 0-9 and the letters A-F.",
-        };
-      default:
-        return null;
-    }
-  })();
-
-  // A short word, not the notice itself, so the text is not on the page twice.
-  const said = notice?.said ?? "";
-  useEffect(() => {
-    if (said) announce(said);
-  }, [said, announce]);
-
-  return (
-    <Card
-      style={{
-        padding: 28,
-        display: "grid",
-        gridTemplateColumns: cols(340),
-        gap: 32,
-        alignItems: "center",
-      }}
-    >
-      <div>
-        <h2
-          style={{
-            fontSize: 21,
-            fontWeight: 700,
-            color: tokens.color.text1,
-            margin: "0 0 8px",
-          }}
-        >
-          Verify your vote
-        </h2>
-        <p
-          style={{
-            fontSize: 15,
-            color: tokens.color.text2,
-            margin: 0,
-            maxWidth: 440,
-            lineHeight: 1.55,
-          }}
-        >
-          Paste the tracking code from your receipt to confirm your ballot was
-          included in the final tally — without revealing your choice. The code
-          is part of your ballot's nullifier, which is unlinkable to how you
-          voted. You have one code per position.
-        </p>
-      </div>
-
-      <form
-        onSubmit={onSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: 12 }}
-      >
-        <TextInput
-          variant="mono"
-          placeholder="e.g. BC-7F3A-92C1"
-          autoComplete="off"
-          value={code}
-          onChange={(e) => setCode(e.currentTarget.value)}
-          aria-label="Tracking code"
-        />
-        <PrimaryButton
-          type="submit"
-          disabled={pending}
-          style={{ minHeight: 54, width: "100%" }}
-        >
-          {pending ? "Verifying…" : "Verify"}
-        </PrimaryButton>
-
-        {notice ? (
-          <div
-            style={{
-              marginTop: 2,
-              display: "flex",
-              alignItems: "center",
-              gap: 11,
-              padding: "13px 16px",
-              borderRadius: tokens.radius.button,
-              background: notice.ok
-                ? tokens.color.successLight
-                : tokens.color.warnLight,
-              border: `1px solid ${
-                notice.ok ? tokens.color.successBorder : tokens.color.warnBorder
-              }`,
-            }}
-          >
-            <span
-              aria-hidden
-              style={{
-                color: notice.ok ? tokens.color.success : tokens.color.warnText,
-                flexShrink: 0,
-              }}
-            >
-              {notice.ok ? (
-                <CheckIcon size={20} strokeWidth={2.4} />
-              ) : (
-                <AlertIcon size={20} strokeWidth={1.7} />
-              )}
-            </span>
-            <span
-              style={{
-                fontSize: 14,
-                color: notice.ok
-                  ? tokens.color.successText
-                  : tokens.color.warnText,
-                fontWeight: 600,
-                lineHeight: 1.4,
-                overflowWrap: "anywhere",
-              }}
-            >
-              {notice.text}
-            </span>
-          </div>
-        ) : null}
-        {state.kind === "found" ? (
-          <>
-            <VerifiableValue
-              label="Tracking code"
-              value={state.record.tracking_code}
-            />
-            {state.record.nullifier ? (
-              <VerifiableValue
-                label="Nullifier"
-                value={state.record.nullifier}
-                truncate
-              />
-            ) : null}
-            {state.record.ballot_sha256 ? (
-              <VerifiableValue
-                label="Ballot SHA-256"
-                value={state.record.ballot_sha256}
-                truncate
-              />
-            ) : null}
-          </>
-        ) : null}
-      </form>
-    </Card>
-  );
-}
-
 function TallyPendingNotice({ board }: { board: Board }) {
   const { crypto } = board;
   return (
@@ -908,62 +436,6 @@ function Notice({
         ) : null}
       </Card>
     </main>
-  );
-}
-
-function FooterLink({
-  children,
-  href,
-  solid = false,
-  download = false,
-}: {
-  children: ReactNode;
-  href: string;
-  solid?: boolean;
-  download?: boolean;
-}) {
-  const [hover, setHover] = useState(false);
-  return (
-    <a
-      href={href}
-      download={download || undefined}
-      target={download ? undefined : "_blank"}
-      rel="noreferrer"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        textDecoration: "none",
-        border: `1.5px solid ${
-          solid
-            ? hover
-              ? tokens.color.tealDark
-              : tokens.color.teal
-            : hover
-              ? tokens.color.teal
-              : tokens.color.border
-        }`,
-        borderRadius: tokens.radius.button,
-        padding: "10px 16px",
-        fontSize: 14,
-        fontWeight: 600,
-        color: solid
-          ? tokens.color.surface
-          : hover
-            ? tokens.color.tealDark
-            : tokens.color.text1,
-        background: solid
-          ? hover
-            ? tokens.color.tealDark
-            : tokens.color.teal
-          : tokens.color.surface,
-        transition: "border-color 150ms, background 150ms, color 150ms",
-      }}
-    >
-      {children}
-    </a>
   );
 }
 
@@ -1052,7 +524,7 @@ function Footer({ board }: { board: Board }) {
   );
 }
 
-function App() {
+function StudyBoard() {
   const [runs, setRuns] = useState<RunView[]>([]);
   const [runId, setRunId] = useState<string | null>(runIdFromUrl());
   const [load, setLoad] = useState<Load>({ kind: "loading" });
@@ -1364,6 +836,176 @@ function App() {
       ) : null}
     </div>
   );
+}
+
+/**
+ * Which board this page is. With `?run=` the board answer decides: a `live`
+ * object means the live view. Without it, the console's live route decides:
+ * a live election (or live mode with nothing set up yet) is the live view,
+ * which follows the console's current election; any other answer is the
+ * study board, exactly as before.
+ */
+type Entry =
+  | { kind: "probing" }
+  /** No try got an answer: say so and offer to try again. */
+  | { kind: "unanswered" }
+  | { kind: "study" }
+  | { kind: "live-run"; runId: string; board: Board }
+  | { kind: "live-follow"; view: LiveElectionView | null };
+
+/** One probe try waits this long for an answer. */
+export const PROBE_LIMIT_MS = 4000;
+/** Tries in all before the page says it got no answer. */
+export const PROBE_TRIES = 4;
+/** Waits between tries: a short backoff. */
+export const PROBE_BACKOFF_MS = [500, 1000, 2000];
+
+/**
+ * Which board this page is, decided only by an answer. A definitive answer
+ * decides (see `askEntry`). An answer that says nothing (a network error, a
+ * 5xx, 408 or 429, no answer within `PROBE_LIMIT_MS`) is tried again, up to
+ * `PROBE_TRIES` times; after that the page says so and offers to try again.
+ * It never falls back to the study board on silence.
+ */
+async function probeEntry(signal: AbortSignal): Promise<Entry> {
+  for (let i = 0; i < PROBE_TRIES; i++) {
+    if (i > 0) await sleep(PROBE_BACKOFF_MS[i - 1]!, signal);
+    if (signal.aborted) break;
+    const entry = await tryEntry(signal);
+    if (entry) return entry;
+  }
+  return { kind: "unanswered" };
+}
+
+/** Waits `ms`, or less if `signal` aborts; the timer never outlives it. */
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve();
+    const timer = window.setTimeout(done, ms);
+    function done() {
+      window.clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    }
+    signal.addEventListener("abort", done);
+  });
+}
+
+/** One try with a time limit; null when the console said nothing. */
+function tryEntry(signal: AbortSignal): Promise<Entry | null> {
+  const inner = new AbortController();
+  const stop = () => inner.abort();
+  signal.addEventListener("abort", stop);
+  let timer: number | undefined;
+  const limit = new Promise<null>((resolve) => {
+    timer = window.setTimeout(() => {
+      inner.abort();
+      resolve(null);
+    }, PROBE_LIMIT_MS);
+  });
+  return Promise.race([askEntry(inner.signal), limit]).finally(() => {
+    window.clearTimeout(timer);
+    signal.removeEventListener("abort", stop);
+  });
+}
+
+/** A failure that is an answer: an HTTP status below 500, not 408 or 429. */
+function isAnswer(e: unknown): boolean {
+  return e instanceof HttpError && !saysNothing(e.status);
+}
+
+async function askEntry(signal: AbortSignal): Promise<Entry | null> {
+  const run = runIdFromUrl();
+  if (run) {
+    try {
+      const board = await loadBoard(run, signal);
+      return board.live
+        ? { kind: "live-run", runId: run, board }
+        : { kind: "study" };
+    } catch (e) {
+      // A 404 for the run, or any other answer: the study board loads it
+      // again and shows the console's own words. A non-JSON page is an
+      // answer too (a SyntaxError from the body).
+      if (isAnswer(e) || e instanceof SyntaxError) return { kind: "study" };
+      return null;
+    }
+  }
+  try {
+    const probe = await getLiveElection(signal);
+    if (probe.kind === "live") return { kind: "live-follow", view: probe.view };
+    if (probe.kind === "none") return { kind: "live-follow", view: null };
+    // `live mode is off`, a non-JSON page, 401, 403: the study board.
+    return { kind: "study" };
+  } catch {
+    // A network error, an abort at the limit, a 5xx, 408 or 429.
+    return null;
+  }
+}
+
+function App() {
+  const [entry, setEntry] = useState<Entry>({ kind: "probing" });
+  /** Bumped by "Try again" on the no-answer notice. */
+  const [probe, setProbe] = useState(0);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    setEntry({ kind: "probing" });
+    probeEntry(ctrl.signal).then((e) => {
+      if (!ctrl.signal.aborted) setEntry(e);
+    });
+    return () => ctrl.abort();
+  }, [probe]);
+
+  switch (entry.kind) {
+    case "study":
+      return <StudyBoard />;
+    case "live-run":
+      return <LiveBoard runId={entry.runId} initialBoard={entry.board} />;
+    case "live-follow":
+      return <LiveBoard initialView={entry.view} />;
+    default:
+      return (
+        <div
+          style={{
+            minHeight: "100vh",
+            background: tokens.color.bg,
+            color: tokens.color.text1,
+            fontFamily: tokens.type.fontFamily,
+          }}
+        >
+          <TopBar appName="Bulletin Board" />
+          <main
+            className="bc-wrap"
+            style={{ paddingTop: 60, paddingBottom: 60 }}
+          >
+            <Card>
+              {entry.kind === "unanswered" ? (
+                <>
+                  <p
+                    role="status"
+                    style={{
+                      margin: 0,
+                      fontSize: tokens.font.body,
+                      color: tokens.color.text2,
+                    }}
+                  >
+                    The board could not reach the election console. It asked{" "}
+                    {PROBE_TRIES} times and got no answer it could use.
+                  </p>
+                  <div style={{ marginTop: tokens.space.sm }}>
+                    <SecondaryButton onClick={() => setProbe((n) => n + 1)}>
+                      Try again
+                    </SecondaryButton>
+                  </div>
+                </>
+              ) : (
+                <Skeleton label="Loading the bulletin board…" />
+              )}
+            </Card>
+          </main>
+        </div>
+      );
+  }
 }
 
 export default App;

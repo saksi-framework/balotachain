@@ -1,0 +1,7 @@
+{
+  "status": 409,
+  "body": {
+    "error": "list entry 4 is not at the desk",
+    "code": "wrong-state"
+  }
+}

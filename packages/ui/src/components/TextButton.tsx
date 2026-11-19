@@ -23,7 +23,7 @@ export const TextButton = forwardRef<HTMLButtonElement, TextButtonProps>(
       border: "none",
       background: "transparent",
       color: hover && !disabled ? tokens.color.tealDark : tokens.color.teal,
-      fontSize: tokens.type.body,
+      fontSize: tokens.font.body,
       fontWeight: 600,
       fontFamily: tokens.type.fontFamily,
       lineHeight: tokens.type.lineHeight,

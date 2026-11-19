@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "body": {
+    "seq": 4,
+    "last_name": "Tularan",
+    "first_name": "Kwatro",
+    "middle_name": "Pagsubok",
+    "status": "approved"
+  }
+}

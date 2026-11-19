@@ -7,11 +7,19 @@ export type CompactTopBarProps = {
   title: string;
   back?: () => void;
   right?: ReactNode;
+  /**
+   * Let a long title wrap onto more lines (the bar grows) instead of being
+   * cut with an ellipsis. Off by default; the voting page opts in (D20).
+   */
+  wrapTitle?: boolean;
 };
 
 /** Desktop console bar shared by admin, trustee and the bulletin board. */
 export type ConsoleTopBarProps = {
-  /** e.g. "Trustee Console"; shown after the BalotaChain mark. */
+  /**
+   * e.g. "Trustee Console"; shown after the BalotaChain mark. An empty string
+   * shows the mark alone (the live trustee screen, as drawn in D5).
+   */
   appName: string;
   /** The election being viewed, when there is one. */
   electionName?: ReactNode;
@@ -87,10 +95,15 @@ function ConsoleBar({ appName, electionName, role }: ConsoleTopBarProps) {
                 lineHeight: "inherit",
               }}
             >
-              BalotaChain{" "}
-              <span style={{ color: tokens.color.text2, fontWeight: 500 }}>
-                — {appName}
-              </span>
+              BalotaChain
+              {appName ? (
+                <>
+                  {" "}
+                  <span style={{ color: tokens.color.text2, fontWeight: 500 }}>
+                    — {appName}
+                  </span>
+                </>
+              ) : null}
             </h1>
             {electionName ? (
               <span
@@ -123,14 +136,29 @@ function ConsoleBar({ appName, electionName, role }: ConsoleTopBarProps) {
   );
 }
 
-function CompactBar({ title, back, right }: CompactTopBarProps) {
+function CompactBar({
+  title,
+  back,
+  right,
+  wrapTitle = false,
+}: CompactTopBarProps) {
   const bar: CSSProperties = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     gap: tokens.space.sm,
-    height: 56,
-    padding: `0 ${tokens.space.sm}px`,
+    // Wrapping: at least the drawn 56px, taller as the title needs. When
+    // the title would get narrower than 8em (large text on a small phone),
+    // the right-hand slot moves under it instead.
+    ...(wrapTitle
+      ? {
+          minHeight: 56,
+          // 6px keeps a one-line bar at the drawn 56px with the 40px Back.
+          padding: `6px ${tokens.space.sm}px`,
+          flexWrap: "wrap",
+          rowGap: 0,
+        }
+      : { height: 56, padding: `0 ${tokens.space.sm}px` }),
     background: tokens.color.surface,
     borderBottom: `1px solid ${tokens.color.border}`,
   };
@@ -141,12 +169,15 @@ function CompactBar({ title, back, right }: CompactTopBarProps) {
     minWidth: 40,
   };
 
+  // D17: a 44 by 44 hit area. The -2px margin keeps the drawn 40px
+  // footprint, so the title and the slots do not move.
   const backBtn: CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    margin: -2,
     border: "none",
     background: "transparent",
     color: tokens.color.text1,
@@ -155,15 +186,20 @@ function CompactBar({ title, back, right }: CompactTopBarProps) {
   };
 
   const titleStyle: CSSProperties = {
-    flex: 1,
     textAlign: "center",
-    fontSize: tokens.type.body,
+    fontSize: tokens.font.body,
     fontWeight: 600,
     color: tokens.color.text1,
     lineHeight: tokens.type.lineHeight,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+    ...(wrapTitle
+      ? // Never cut (D20); a long word with no hyphen breaks as a last resort.
+        { flex: "1 1 8em", margin: 0, overflowWrap: "anywhere", minWidth: 0 }
+      : {
+          flex: 1,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }),
   };
 
   return (
@@ -181,7 +217,9 @@ function CompactBar({ title, back, right }: CompactTopBarProps) {
         ) : null}
       </div>
       <h1 style={titleStyle}>{title}</h1>
-      <div style={{ ...slot, justifyContent: "flex-end" }}>{right}</div>
+      <div style={{ ...slot, justifyContent: "flex-end", marginLeft: "auto" }}>
+        {right}
+      </div>
     </header>
   );
 }

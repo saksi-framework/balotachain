@@ -58,6 +58,12 @@ typography:
     fontWeight: 400
     fontSize: 0.875rem
     fontFeature: tnum
+  # Board band only: the main figure of the board's band (D18).
+  figure:
+    fontFamily: "Source Sans 3"
+    fontWeight: 700
+    fontSize: 3rem
+    fontFeature: tnum
 rounded:
   sm: 8px
   md: 12px
@@ -73,7 +79,7 @@ components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.full}"
     height: 56px
   button-primary-hover:
     backgroundColor: "{colors.primary-hover}"
@@ -85,7 +91,7 @@ components:
   input:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.border}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
   card:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.border}"
@@ -133,7 +139,7 @@ framework and Hyperledger Fabric. The audience is the defense panel, the electio
 (COMELEC-style institutions) and Filipino voters.
 
 **Mode per surface:**
-- Voter app (Flutter, phone, 390px): Operate. One task per screen, large targets.
+- Voter app (web page, phone, 320px and up; drawn at 390px): Operate. One task per screen, large targets.
 - Trustee console (browser, desktop): Operate. One decision at a time, state always visible.
 - Admin console (browser, desktop): Operate. Election lifecycle as steps.
 - Public bulletin board (browser, desktop and projector): Read. Results and proofs anyone can check.
@@ -193,7 +199,8 @@ codes, transaction ids, hashes and block numbers. Tabular figures keep columns o
 - Desktop apps: content max 1200px, centred, 24px gutters; 32px between sections, 16px inside cards.
 - Step tabs (admin) wrap onto a second line below 1280px. They never truncate.
 - Tables on the board use a compact row (8px vertical padding); everything else is comfortable.
-- Voter app: single column at 390px, 24px side padding, the primary action pinned at the bottom.
+- Voter app: single column, fluid from 320px to 480px, 24px side padding (16px under 360px), the
+  primary action pinned at the bottom except while the keyboard is open.
 - Below 720px the desktop apps stack to one column with 16px gutters and no horizontal page scroll.
   Long hashes wrap (`overflow-wrap: anywhere`) or truncate in the middle with the full value in the
   copy button.
@@ -207,10 +214,15 @@ a card: a card's sections are separated by a border line.
 
 ## Shapes
 
-- `lg` 16px: cards and panels.
-- `md` 12px: buttons and option rows.
-- `sm` 8px: inputs and the verifiable-value block.
-- `full`: chips and avatars.
+| Element | Radius |
+|---|---|
+| Primary button | `full` (pill) |
+| Secondary button | `md` 12px |
+| Option row | `lg` 16px |
+| Text input | `md` 12px |
+| Cards and panels | `lg` 16px |
+| Verifiable-value block | `sm` 8px |
+| Chips and avatars | `full` |
 
 A nested element's radius is the outer radius minus the gap between them.
 
@@ -272,3 +284,6 @@ All shared React components live in `packages/ui`; apps do not keep their own co
 | 2026-09-29 | `text-subtle` #677473 replaces #9AA6A5; warning text only in `warning-text` | Old values failed WCAG AA (2.5:1 and 3.1:1) |
 | 2026-09-29 | Light only; dark mode deferred | Use scenes are lit rooms, a projector and daylight |
 | 2026-09-29 | Console pages keep their look, UX only | Internal, never shown (user decision) |
+| 2026-11-14 | Shapes corrected to the approved mockups | The mockups draw the primary button as a pill, option rows at 16px and inputs at 12px; the secondary button moves to 12px (design review D15) |
+| 2026-11-14 | Voter surface is the web page, 320px and up | The live demo votes on members' own phones in a browser; the Flutter app is not part of it (design review D16) |
+| 2026-11-14 | Figure size added for the board band only | The band must read from the back row on a projector; one `figure` size plus browser zoom, not a second scale (design review D18) |

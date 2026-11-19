@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "body": {
+    "election_id": "live-20261115-100000-f1x7ad31",
+    "position_id": "President",
+    "nullifier": "40474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b1219",
+    "tracking_code": "BC-4047-4E55",
+    "ballot_fingerprint": "4F2A-91C3-07B8-D6E5",
+    "tx_id": "b9",
+    "block_number": 401,
+    "recorded_bytes_match": true
+  }
+}

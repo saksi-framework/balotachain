@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { tokens } from "../tokens.js";
 import { CopyButton } from "./CopyButton.js";
 
@@ -19,6 +19,26 @@ export function middleTruncate(value: string, keep = KEEP): string {
   return value.length <= keep * 2 + 1
     ? value
     : `${value.slice(0, keep)}…${value.slice(-keep)}`;
+}
+
+/**
+ * A grouped value ("5F2C-0A1B-…") with a break opportunity after every
+ * hyphen, so a wrapped line ends between groups, never inside one (a hyphen
+ * before a digit gives no break by itself, and `overflow-wrap: anywhere`
+ * would otherwise split a group). The text is unchanged.
+ */
+export function withGroupBreaks(value: string): ReactNode {
+  const parts = value.split("-");
+  if (parts.length === 1) return value;
+  return parts.map((part, i) =>
+    i < parts.length - 1 ? (
+      <Fragment key={i}>
+        {part}-<wbr />
+      </Fragment>
+    ) : (
+      <Fragment key={i}>{part}</Fragment>
+    ),
+  );
 }
 
 /** "Tracking code" -> "tracking code", but "TX id" and "SHA-256" stay as-is. */
@@ -69,15 +89,17 @@ export function VerifiableValue({
             overflowWrap: "anywhere",
           }}
         >
-          {shown}
+          {withGroupBreaks(shown)}
         </code>
         {checkHref ? (
           <a
             href={checkHref}
+            // D17: an invisible 44 by 44 hit area around the drawn word.
+            className="bc-hit"
             style={{
               color: tokens.color.teal,
               fontWeight: 600,
-              fontSize: tokens.type.small,
+              fontSize: tokens.font.small,
               flexShrink: 0,
             }}
           >

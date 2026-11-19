@@ -39,13 +39,16 @@
   --bc-space-md: 24px;
   --bc-space-lg: 32px;
 
-  --bc-type-body: 16px;
-  --bc-type-h1: 28px;
-  --bc-type-h2: 24px;
-  --bc-type-h3: 20px;
-  --bc-type-eyebrow: 13px;
-  --bc-type-small: 13px;
-  --bc-type-button: 18px;
+  /* rem (16px = 1rem): the reader's text-size setting scales them. */
+  --bc-type-body: 1rem;
+  --bc-type-h1: 1.75rem;
+  --bc-type-h2: 1.5rem;
+  --bc-type-h3: 1.25rem;
+  --bc-type-eyebrow: 0.8125rem;
+  --bc-type-small: 0.8125rem;
+  --bc-type-button: 1.125rem;
+  /* Board band only: its one main figure, weight 700, tabular (D18). */
+  --bc-type-figure: 3rem;
   --bc-line-height: 1.5;
   --bc-font-family:
     "Source Sans 3 Variable", "Source Sans 3", system-ui, sans-serif;
@@ -102,6 +105,23 @@ button {
 :focus-visible {
   outline: 2px solid var(--bc-color-teal);
   outline-offset: 2px;
+}
+
+/* A hit area of at least 44 by 44px around a control drawn smaller (D17).
+   Invisible: the control draws and lays out as before; taps on the larger
+   area land on the control. */
+.bc-hit {
+  position: relative;
+}
+
+.bc-hit::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 
 /* Visually hidden, still read by screen readers (the aria-live region). */

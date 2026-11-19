@@ -1,0 +1,7 @@
+{
+  "status": 400,
+  "body": {
+    "error": "the voter list's fingerprint is not the one confirmed; preview the list again",
+    "code": "voter-list-changed"
+  }
+}

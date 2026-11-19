@@ -2,6 +2,7 @@ export { tokens } from "./tokens.js";
 export type { Tokens } from "./tokens.js";
 
 export { cn } from "./cn.js";
+export { idToName } from "./names.js";
 
 export { Card } from "./components/Card.js";
 export type { CardProps } from "./components/Card.js";
@@ -34,11 +35,21 @@ export type {
 export { Chip } from "./components/Chip.js";
 export type { ChipProps, ChipVariant } from "./components/Chip.js";
 
-export { VerifiableValue } from "./components/VerifiableValue.js";
+export {
+  VerifiableValue,
+  withGroupBreaks,
+} from "./components/VerifiableValue.js";
 export type { VerifiableValueProps } from "./components/VerifiableValue.js";
 
 export { Skeleton } from "./components/Skeleton.js";
 export type { SkeletonProps } from "./components/Skeleton.js";
+
+export { Stepper, STEPPER_WORDS } from "./components/Stepper.js";
+export type {
+  StepperProps,
+  StepperStep,
+  StepperState,
+} from "./components/Stepper.js";
 
 export { PageDots } from "./components/PageDots.js";
 export type { PageDotsProps } from "./components/PageDots.js";
@@ -59,3 +70,5 @@ export {
   CodeIcon,
 } from "./components/Icon.js";
 export type { IconProps } from "./components/Icon.js";
+
+export { pollSignal, POLL_TIMEOUT_MS } from "./pollSignal.js";
